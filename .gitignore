@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+backend/.env
+.env
+
+# Uploaded files (keep folder structure, ignore actual files)
+backend/uploads/**/*
+!backend/uploads/profile/.gitkeep
+!backend/uploads/aadhaar/.gitkeep
+!backend/uploads/driving-license/.gitkeep
+!backend/uploads/vehicle/.gitkeep
+!backend/uploads/rc/.gitkeep
+!backend/uploads/temp/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
