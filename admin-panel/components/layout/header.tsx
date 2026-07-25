@@ -48,6 +48,10 @@ export function Header() {
         </div>
       </div>
 
+      <div className="flex sm:hidden flex-1 justify-center items-center">
+        <h1 className="text-lg font-bold text-white tracking-tight truncate">{capitalizedTitle}</h1>
+      </div>
+
       <div className="flex flex-1 items-center justify-end gap-4 sm:flex-initial">
         <form className="hidden lg:flex lg:max-w-xs relative items-center group">
           <Search className="absolute left-3 h-4 w-4 text-zinc-400 transition-colors group-focus-within:text-yellow-400" />
