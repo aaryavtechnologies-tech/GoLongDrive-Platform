@@ -44,7 +44,7 @@ export function BookingsOverviewChart({ data, isLoading }: BookingsChartProps) {
                 />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff' }}
-                  formatter={(value: number) => [value, 'Bookings']}
+                  formatter={(value: any) => [value, 'Bookings']}
                 />
                 <Area 
                   type="monotone" 

@@ -27,7 +27,7 @@ export function SecuritySettingsForm() {
   const { settings, updateSettings, isUpdating, isLoading } = useSettings();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       passwordMinLength: 8,
       requireUppercase: true,

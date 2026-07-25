@@ -25,7 +25,7 @@ export function EmailSettingsForm() {
   const { settings, updateSettings, isUpdating, isLoading } = useSettings();
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(formSchema) as any,
     defaultValues: {
       host: '',
       port: 587,

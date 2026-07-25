@@ -152,7 +152,7 @@ export function CouponDialog({ isOpen, onClose, couponToEdit }: CouponDialogProp
               <label className="text-sm font-medium text-zinc-300">Discount Type</label>
               <Select 
                 value={formData.discountType} 
-                onValueChange={(v) => handleSelectChange('discountType', v)}
+                onValueChange={(v) => handleSelectChange('discountType', v as string)}
               >
                 <SelectTrigger className="bg-zinc-900 border-zinc-800 text-white focus:ring-yellow-400">
                   <SelectValue />

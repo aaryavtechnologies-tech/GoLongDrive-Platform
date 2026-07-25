@@ -40,7 +40,7 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
                 <Tooltip
                   cursor={{ fill: '#333' }}
                   contentStyle={{ backgroundColor: '#18181b', borderColor: '#333', color: '#fff' }}
-                  formatter={(value: number) => [`₹${value}`, 'Revenue']}
+                  formatter={(value: any) => [`₹${value}`, 'Revenue']}
                 />
                 <Bar dataKey="total" fill="#eab308" radius={[4, 4, 0, 0]} />
               </BarChart>

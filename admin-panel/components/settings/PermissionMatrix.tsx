@@ -71,7 +71,7 @@ export function PermissionMatrix({ permissions, selectedPermissionIds, onChange,
                     <TableCell className="font-medium">{module}</TableCell>
                     <TableCell className="text-center">
                       <Checkbox 
-                        checked={isAllSelected ? true : isIndeterminate ? 'indeterminate' : false}
+                        checked={isAllSelected ? true : isIndeterminate ? ('indeterminate' as any) : false}
                         onCheckedChange={(checked) => handleToggleModuleRow(module, checked as boolean)}
                         disabled={disabled}
                       />

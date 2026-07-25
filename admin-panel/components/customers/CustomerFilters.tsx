@@ -57,7 +57,7 @@ export function CustomerFilters({ filters, onFilterChange, onRefresh, isFetching
           />
         </div>
         
-        <Select value={filters.status || 'All'} onValueChange={handleStatusChange}>
+        <Select value={filters.status || 'All'} onValueChange={(val: any) => handleStatusChange(val)}>
           <SelectTrigger className="w-full sm:w-[180px] bg-zinc-900 border-zinc-800 text-white">
             <div className="flex items-center gap-2">
               <ListFilter className="h-4 w-4 text-zinc-400" />

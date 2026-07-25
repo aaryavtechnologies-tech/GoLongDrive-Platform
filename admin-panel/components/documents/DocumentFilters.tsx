@@ -77,7 +77,7 @@ export function DocumentFilters({ filters, onFilterChange, onRefresh, isFetching
 
         <Select 
           value={filters.type || 'All'} 
-          onValueChange={(v) => onFilterChange({ ...filters, type: v === 'All' ? 'All' : v })}
+          onValueChange={(v) => onFilterChange({ ...filters, type: v === 'All' ? 'All' : (v as string | undefined) })}
         >
           <SelectTrigger className="w-full sm:w-[180px] bg-zinc-900 border-zinc-800 text-white">
             <div className="flex items-center gap-2">

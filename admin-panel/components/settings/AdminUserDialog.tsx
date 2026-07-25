@@ -41,7 +41,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
       email: '',
       password: '',
       role: 'ADMIN',
-      roleId: '',
+      roleId: undefined,
       isActive: true,
     },
   });
@@ -52,7 +52,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
         name: user.name,
         email: user.email,
         role: user.role,
-        roleId: user.roleId?._id || '',
+        roleId: user.roleId?._id || undefined,
         isActive: user.isActive,
         password: '', // do not populate password
       });
@@ -62,7 +62,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
         email: '',
         password: '',
         role: 'ADMIN',
-        roleId: '',
+        roleId: undefined,
         isActive: true,
       });
     }
@@ -112,7 +112,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
             <label className="text-sm font-medium">Role Type</label>
             <Select 
               value={form.watch('role')} 
-              onValueChange={(val) => form.setValue('role', val)}
+              onValueChange={(val) => form.setValue('role', val as any)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select a generic role" />
@@ -128,7 +128,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
             <label className="text-sm font-medium">Custom Role (Optional)</label>
             <Select 
               value={form.watch('roleId')} 
-              onValueChange={(val) => form.setValue('roleId', val === 'none' ? '' : val)}
+              onValueChange={(val) => form.setValue('roleId', val === 'none' ? undefined : (val as any))}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select custom role" />

@@ -53,8 +53,8 @@ export function CustomerActions({ customer }: CustomerActionsProps) {
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="bg-zinc-950 border-white/10 text-zinc-300">
-          <DropdownMenuItem asChild className="hover:bg-zinc-900 cursor-pointer">
-            <Link href={`/customers/${customer.id}`}>
+          <DropdownMenuItem className="hover:bg-zinc-900 cursor-pointer">
+            <Link href={`/customers/${customer.id}`} className="flex w-full items-center">
               <Eye className="mr-2 h-4 w-4" />
               View Profile
             </Link>

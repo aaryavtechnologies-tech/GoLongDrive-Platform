@@ -102,7 +102,7 @@ export function RevenueCharts() {
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => [`${value}%`, 'Usage']}
+                    formatter={(value: any) => [`${value}%`, 'Usage']}
                     contentStyle={{ backgroundColor: '#18181b', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }}
                     itemStyle={{ color: '#fff' }}
                   />

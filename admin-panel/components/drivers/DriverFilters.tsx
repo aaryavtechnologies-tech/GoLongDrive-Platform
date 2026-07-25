@@ -62,7 +62,7 @@ export function DriverFilters({ filters, onFilterChange, onRefresh, isFetching }
           />
         </div>
         
-        <Select value={filters.status || 'All'} onValueChange={handleStatusChange}>
+        <Select value={filters.status || 'All'} onValueChange={(val: any) => handleStatusChange(val)}>
           <SelectTrigger className="w-full sm:w-[170px] bg-zinc-900 border-zinc-800 text-white">
             <div className="flex items-center gap-2">
               <ListFilter className="h-4 w-4 text-zinc-400" />
@@ -80,7 +80,7 @@ export function DriverFilters({ filters, onFilterChange, onRefresh, isFetching }
           </SelectContent>
         </Select>
 
-        <Select value={filters.availability || 'All'} onValueChange={handleAvailabilityChange}>
+        <Select value={filters.availability || 'All'} onValueChange={(val: any) => handleAvailabilityChange(val)}>
           <SelectTrigger className="w-full sm:w-[150px] bg-zinc-900 border-zinc-800 text-white">
             <div className="flex items-center gap-2">
               <Car className="h-4 w-4 text-zinc-400" />

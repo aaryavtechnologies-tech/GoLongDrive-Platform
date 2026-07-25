@@ -39,7 +39,7 @@ export function DocumentsTable({ data, isLoading, rowSelection, setRowSelection 
       header: ({ table }) => (
         <div className="flex items-center justify-center h-full pl-2">
           <Checkbox
-            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+            checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && ("indeterminate" as any))}
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
             className="border-zinc-600 data-[state=checked]:bg-yellow-400 data-[state=checked]:text-black"
