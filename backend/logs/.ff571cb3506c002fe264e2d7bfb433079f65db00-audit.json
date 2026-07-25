@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/wefix/Documents/chirag-projects/GoLongDrive-Platform/backend/logs/.ff571cb3506c002fe264e2d7bfb433079f65db00-audit.json",
+    "files": [
+        {
+            "date": 1784998444801,
+            "name": "/Users/wefix/Documents/chirag-projects/GoLongDrive-Platform/backend/logs/application-2026-07-25.log",
+            "hash": "c397ea7959e9351e8cece726aa2d727013a0a625dfe548528153b5a180fd909e"
+        }
+    ],
+    "hashType": "sha256"
+}
