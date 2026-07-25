@@ -2,7 +2,9 @@ import { useFonts } from "expo-font";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
-import "react-native-reanimated";
+import { View, ActivityIndicator } from "react-native";
+import Animated from "react-native-reanimated";
+import { Image } from "expo-image";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { socketService } from "@/services/socket.service";
@@ -71,7 +73,18 @@ export default function RootLayout() {
   }, [token]);
 
   if (!isReady) {
-    return null; // or a custom splash screen component if we want
+    return (
+      <View className="flex-1 bg-black items-center justify-center">
+        <Animated.View className="items-center justify-center" style={{ padding: 20 }}>
+          <Image 
+            source={require("../assets/images/logo.jpeg")}
+            className="w-32 h-32 rounded-3xl border-2 border-yellow-500/20"
+            contentFit="cover"
+          />
+          <ActivityIndicator size="large" color="#EAB308" className="mt-8" />
+        </Animated.View>
+      </View>
+    );
   }
 
   return (
