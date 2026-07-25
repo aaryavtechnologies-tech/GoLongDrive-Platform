@@ -62,9 +62,24 @@ const getAllPermissions = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, 'Permissions fetched', { permissions });
 });
 
+/**
+ * @route   DELETE /api/admin/roles/:id
+ * @access  Private (Admin)
+ */
+const deleteRole = asyncHandler(async (req, res) => {
+  const role = await Role.findById(req.params.id);
+  
+  if (!role) throw ApiError.notFound('Role not found');
+  if (role.isSystem) throw ApiError.badRequest('System roles cannot be deleted');
+
+  await role.deleteOne();
+  return sendSuccess(res, 200, 'Role deleted successfully');
+});
+
 module.exports = {
   createRole,
   getAllRoles,
   updateRole,
+  deleteRole,
   getAllPermissions
 };

@@ -8,7 +8,7 @@
  */
 
 const router = require('express').Router();
-const { getSettings, updateSettings } = require('../controllers/admin.settings.controller');
+const { getSettings, updateSettings, getSystemStatus } = require('../controllers/admin.settings.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { requirePermission } = require('../middleware/permission.middleware');
@@ -31,6 +31,20 @@ const canManageSettings = requirePermission('Settings', 'manage');
  *         description: Settings retrieved
  */
 router.get('/', isAdmin, canReadSettings, getSettings);
+
+/**
+ * @swagger
+ * /api/admin/settings/system/status:
+ *   get:
+ *     summary: Get system status
+ *     tags: [System Settings]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: System status retrieved
+ */
+router.get('/system/status', isAdmin, canReadSettings, getSystemStatus);
 
 /**
  * @swagger

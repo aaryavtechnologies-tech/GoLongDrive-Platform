@@ -31,6 +31,24 @@ const settingSchema = new mongoose.Schema(
       apiSecret: String,
       webhookSecret: String,
     },
+    securitySettings: {
+      passwordMinLength: { type: Number, default: 8 },
+      requireUppercase: { type: Boolean, default: true },
+      requireNumbers: { type: Boolean, default: true },
+      requireSymbols: { type: Boolean, default: true },
+      sessionTimeout: { type: Number, default: 60 },
+      loginAttemptLimit: { type: Number, default: 5 },
+      jwtTokenDuration: { type: String, default: '15m' },
+      refreshTokenDuration: { type: String, default: '7d' },
+    },
+    notificationSettings: {
+      enableEmailNotifications: { type: Boolean, default: true },
+      bookingNotifications: { type: Boolean, default: true },
+      driverNotifications: { type: Boolean, default: true },
+      paymentNotifications: { type: Boolean, default: true },
+      documentNotifications: { type: Boolean, default: true },
+      systemNotifications: { type: Boolean, default: true },
+    }
   },
   { timestamps: true }
 );

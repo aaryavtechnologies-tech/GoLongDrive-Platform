@@ -8,7 +8,7 @@
  */
 
 const router = require('express').Router();
-const { createRole, getAllRoles, updateRole, getAllPermissions } = require('../controllers/admin.role.controller');
+const { createRole, getAllRoles, updateRole, deleteRole, getAllPermissions } = require('../controllers/admin.role.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { requirePermission } = require('../middleware/permission.middleware');
@@ -53,6 +53,20 @@ router.get('/', isAdmin, canManageRoles, getAllRoles);
  *         description: Role updated
  */
 router.put('/:id', isAdmin, canManageRoles, updateRole);
+
+/**
+ * @swagger
+ * /api/admin/roles/{id}:
+ *   delete:
+ *     summary: Delete a role
+ *     tags: [Roles & Permissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Role deleted
+ */
+router.delete('/:id', isAdmin, canManageRoles, deleteRole);
 
 /**
  * @swagger

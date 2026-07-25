@@ -22,6 +22,8 @@ const adminRoleRoutes = require('./admin.role.routes');
 const healthRoutes = require('./health.routes');
 const notificationRoutes = require('./notification.routes');
 const reviewRoutes = require('./review.routes');
+const adminUserRoutes = require('./admin.user.routes');
+const auditRoutes = require('./audit.routes');
 
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
@@ -48,6 +50,8 @@ router.use('/admin/dashboard', adminDashboardRoutes);
 router.use('/admin/settings', adminSettingsRoutes);
 router.use('/admin/cms', adminCmsRoutes);
 router.use('/admin/roles', adminRoleRoutes);
+router.use('/admin/admin-users', adminUserRoutes);
+router.use('/admin/audit-logs', auditRoutes);
 
 // Public/Admin Contact Routes
 router.use('/contact', adminContactRoutes);
