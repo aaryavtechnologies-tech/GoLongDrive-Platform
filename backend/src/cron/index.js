@@ -5,6 +5,7 @@ const Coupon = require('../models/Coupon.model');
 const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const setupCronJobs = () => {
   // 1. Expire Coupons - Runs daily at midnight
@@ -32,6 +33,18 @@ const setupCronJobs = () => {
       logger.info('Cron: Running weekly upload directory cleanup check.');
     } catch (error) {
       logger.error(`Cron (Uploads Cleanup) Error: ${error.message}`);
+    }
+  });
+
+  // 3. Keep MongoDB alive - Runs every 14 minutes
+  cron.schedule('*/14 * * * *', async () => {
+    try {
+      if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.db.admin().ping();
+        logger.info('Cron: Pinged MongoDB to keep it awake.');
+      }
+    } catch (error) {
+      logger.error(`Cron (MongoDB Ping) Error: ${error.message}`);
     }
   });
 
