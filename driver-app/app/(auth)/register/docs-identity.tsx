@@ -56,13 +56,13 @@ export default function DocsIdentityStepScreen() {
             <Text style={styles.groupTitle}>Aadhaar Card</Text>
             <DocumentUploadCard
               title="Front Side"
-              imageUri={documents.aadhaarFront}
-              onPress={() => pickImage('aadhaarFront')}
+              value={documents.aadhaarFront}
+              onChange={() => pickImage('aadhaarFront')}
             />
             <DocumentUploadCard
               title="Back Side"
-              imageUri={documents.aadhaarBack}
-              onPress={() => pickImage('aadhaarBack')}
+              value={documents.aadhaarBack}
+              onChange={() => pickImage('aadhaarBack')}
             />
           </View>
 
@@ -70,13 +70,13 @@ export default function DocsIdentityStepScreen() {
             <Text style={styles.groupTitle}>Driving License</Text>
             <DocumentUploadCard
               title="Front Side"
-              imageUri={documents.drivingLicenseFront}
-              onPress={() => pickImage('drivingLicenseFront')}
+              value={documents.drivingLicenseFront}
+              onChange={() => pickImage('drivingLicenseFront')}
             />
             <DocumentUploadCard
               title="Back Side"
-              imageUri={documents.drivingLicenseBack}
-              onPress={() => pickImage('drivingLicenseBack')}
+              value={documents.drivingLicenseBack}
+              onChange={() => pickImage('drivingLicenseBack')}
             />
           </View>
         </Animated.View>
@@ -84,7 +84,7 @@ export default function DocsIdentityStepScreen() {
 
       <BottomActionBar 
         onNext={handleNext} 
-        disabled={!isValid} 
+        isNextDisabled={!isValid} 
       />
     </View>
   );

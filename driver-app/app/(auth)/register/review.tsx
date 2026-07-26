@@ -105,7 +105,7 @@ export default function ReviewStepScreen() {
           {renderSection(
             "Personal Details", 
             <User size={20} color="#EAB308" />, 
-            () => router.push('/(auth)/register/index'),
+            () => router.push('/(auth)/register'),
             <>
               {renderField("Full Name", state.personalDetails.fullName)}
               {renderField("Phone", state.personalDetails.phone)}

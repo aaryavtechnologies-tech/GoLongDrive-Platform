@@ -56,13 +56,13 @@ export default function DocsVehicleStepScreen() {
             <Text style={styles.groupTitle}>RC Book</Text>
             <DocumentUploadCard
               title="Front Side"
-              imageUri={documents.rcFront}
-              onPress={() => pickImage('rcFront')}
+              value={documents.rcFront}
+              onChange={() => pickImage('rcFront')}
             />
             <DocumentUploadCard
               title="Back Side"
-              imageUri={documents.rcBack}
-              onPress={() => pickImage('rcBack')}
+              value={documents.rcBack}
+              onChange={() => pickImage('rcBack')}
             />
           </View>
 
@@ -70,13 +70,13 @@ export default function DocsVehicleStepScreen() {
             <Text style={styles.groupTitle}>Certificates</Text>
             <DocumentUploadCard
               title="Insurance Certificate"
-              imageUri={documents.insuranceCertificate}
-              onPress={() => pickImage('insuranceCertificate')}
+              value={documents.insuranceCertificate}
+              onChange={() => pickImage('insuranceCertificate')}
             />
             <DocumentUploadCard
               title="PUC Certificate"
-              imageUri={documents.pucCertificate}
-              onPress={() => pickImage('pucCertificate')}
+              value={documents.pucCertificate}
+              onChange={() => pickImage('pucCertificate')}
             />
           </View>
         </Animated.View>
@@ -84,7 +84,7 @@ export default function DocsVehicleStepScreen() {
 
       <BottomActionBar 
         onNext={handleNext} 
-        disabled={!isValid} 
+        isNextDisabled={!isValid} 
       />
     </View>
   );

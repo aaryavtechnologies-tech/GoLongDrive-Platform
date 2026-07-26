@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { useDashboardStore } from "@/store/useDashboardStore";
 import { Wallet, Car, CheckCircle2, Star } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 interface StatCardProps {
   title: string;
@@ -15,15 +16,27 @@ function StatCard({ title, value, icon, delay = 0 }: StatCardProps) {
   return (
     <Animated.View 
       entering={FadeInDown.delay(delay).duration(500).springify()} 
-      style={styles.card}
+      style={styles.cardContainer}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.iconContainer}>
-          {icon}
+      <LinearGradient
+        colors={['#1A1A1A', '#09090B']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.card}
+      >
+        <View style={styles.cardHeader}>
+          <LinearGradient
+            colors={['rgba(234, 179, 8, 0.2)', 'rgba(234, 179, 8, 0.05)']}
+            style={styles.iconContainer}
+          >
+            {icon}
+          </LinearGradient>
         </View>
-      </View>
-      <Text style={styles.valueText}>{value}</Text>
-      <Text style={styles.titleText}>{title}</Text>
+        <View style={styles.contentWrapper}>
+          <Text style={styles.valueText}>{value}</Text>
+          <Text style={styles.titleText}>{title}</Text>
+        </View>
+      </LinearGradient>
     </Animated.View>
   );
 }
@@ -38,13 +51,13 @@ export function StatGrid() {
           title="Today's Earnings" 
           value={`₹${todayEarnings}`} 
           icon={<Wallet size={16} color="#EAB308" />} 
-          delay={600} 
+          delay={300} 
         />
         <StatCard 
           title="Today's Trips" 
           value={todayTrips.toString()} 
           icon={<Car size={16} color="#EAB308" />} 
-          delay={700} 
+          delay={400} 
         />
       </View>
       <View style={styles.row}>
@@ -52,13 +65,13 @@ export function StatGrid() {
           title="Acceptance" 
           value={`${acceptanceRate}%`} 
           icon={<CheckCircle2 size={16} color="#EAB308" />} 
-          delay={800} 
+          delay={500} 
         />
         <StatCard 
           title="Rating" 
           value={rating.toString()} 
           icon={<Star size={16} color="#EAB308" />} 
-          delay={900} 
+          delay={600} 
         />
       </View>
     </View>
@@ -67,53 +80,60 @@ export function StatGrid() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24, // px-6
-    marginBottom: 24, // mb-6
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
   row: {
     flexDirection: 'row',
-    gap: 16, // gap-4
-    marginBottom: 16, // mb-4 (on first row, but can be managed safely by applying it consistently or selectively. Wait, the original code had mb-4 only on the first row. We'll leave it as is and use inline style if needed, or just gap.)
+    gap: 16,
+    marginBottom: 16,
+  },
+  cardContainer: {
+    flex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 4,
   },
   card: {
     flex: 1,
-    backgroundColor: '#111111',
-    padding: 16, // p-4
-    borderRadius: 24, // rounded-3xl
+    padding: 16,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2, // shadow-sm
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12, // mb-3
+    marginBottom: 16,
   },
   iconContainer: {
-    width: 32, // w-8
-    height: 32, // h-8
-    borderRadius: 16, // rounded-full
-    backgroundColor: '#18181B', // zinc-900
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    borderColor: 'rgba(234, 179, 8, 0.3)',
+  },
+  contentWrapper: {
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   valueText: {
-    fontSize: 24, // text-2xl
-    fontWeight: '800', // font-extrabold
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 4, // mb-1
-    letterSpacing: -0.5, // tracking-tight
+    marginBottom: 4,
+    letterSpacing: -0.5,
   },
   titleText: {
-    fontSize: 12, // text-xs
-    color: '#A1A1AA', // zinc-400
-    fontWeight: '500', // font-medium
+    fontSize: 12,
+    color: '#A1A1AA',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
 });

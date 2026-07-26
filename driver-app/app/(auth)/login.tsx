@@ -7,7 +7,7 @@ import { useRouter, Link } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Phone, Lock } from "lucide-react-native";
+import { Phone, Lock, UserPlus } from "lucide-react-native";
 import { AuthService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMutation } from "@tanstack/react-query";
@@ -143,13 +143,38 @@ export default function LoginScreen() {
           >
             Log In
           </Button>
+
+          {/* DEMO LOGIN BUTTON FOR DEVELOPMENT */}
+          <Button
+            style={styles.demoButton}
+            variant="outline"
+            onPress={() => {
+              setAuth(
+                { id: "demo-1", firstName: "Demo", lastName: "Driver", phone: "9999999999", rating: 4.9, totalRides: 120, status: "active", createdAt: new Date().toISOString() },
+                "mock-token-demo",
+                "mock-refresh-demo"
+              );
+              router.replace("/(tabs)");
+            }}
+          >
+            Demo Login (Bypass Backend)
+          </Button>
           
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>New driver?</Text>
+          <View style={styles.registerContainer}>
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
             <Link href="/(auth)/register" asChild>
-              <TouchableOpacity>
-                <Text style={styles.applyText}>Apply now</Text>
-              </TouchableOpacity>
+              <Button 
+                variant="secondary" 
+                style={styles.registerButton}
+                rightIcon={<UserPlus size={20} color="#FFFFFF" />}
+              >
+                Apply as a New Driver
+              </Button>
             </Link>
           </View>
         </Animated.View>
@@ -223,21 +248,33 @@ const styles = StyleSheet.create({
   loginButton: {
     marginTop: 24, // mt-6
   },
-  footerRow: {
+  demoButton: {
+    marginTop: 12, // mt-3
+    borderColor: 'rgba(234, 179, 8, 0.5)',
+  },
+  registerContainer: {
+    marginTop: 32,
+  },
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 32, // mt-8
-    gap: 8, // gap-2
+    marginBottom: 24,
   },
-  footerText: {
-    color: '#A1A1AA', // text-zinc-400
-    fontSize: 16, // text-base
-    fontWeight: '500', // font-medium
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#27272A',
   },
-  applyText: {
-    color: '#EAB308', // text-yellow-500
-    fontWeight: 'bold',
-    fontSize: 16, // text-base
+  dividerText: {
+    color: '#71717A',
+    paddingHorizontal: 16,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  registerButton: {
+    borderWidth: 1,
+    borderColor: '#3F3F46',
+    backgroundColor: '#09090B',
   },
 });
+

@@ -1,11 +1,12 @@
-import React, { useState } from "react";
-import { useWindowDimensions, StatusBar, View, Text, StyleSheet } from "react-native";
+import React, { useState, useRef } from "react";
+import { useWindowDimensions, StatusBar, View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Button } from "@/components/ui/button";
 import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from "react-native-reanimated";
-import { MapPin, Wallet, Headset } from "lucide-react-native";
+import { MapPin, Wallet, Headset, ChevronRight } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 const ONBOARDING_DATA = [
   {
@@ -34,6 +35,7 @@ export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const scrollX = useSharedValue(0);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (event) => {
@@ -41,110 +43,140 @@ export default function OnboardingScreen() {
     },
   });
 
-  const handleNext = async () => {
+  const handleComplete = async () => {
+    await completeOnboarding();
+    router.replace("/(auth)/login");
+  };
+
+  const handleNext = () => {
     if (currentIndex < ONBOARDING_DATA.length - 1) {
-      // Just mark complete and layout will route naturally if user skips or finishes
-      await completeOnboarding();
-      router.push("/(auth)/login");
+      scrollViewRef.current?.scrollTo({ x: (currentIndex + 1) * width, animated: true });
     } else {
-      await completeOnboarding();
-      router.push("/(auth)/login");
+      handleComplete();
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.container}>
-        <Animated.ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={scrollHandler}
-          scrollEventThrottle={16}
-          onMomentumScrollEnd={(e: any) => {
-            setCurrentIndex(Math.round(e.nativeEvent.contentOffset.x / width));
-          }}
-        >
-          {ONBOARDING_DATA.map((item, index) => {
-            return (
-              <View key={item.id} style={[{ width }, styles.slideContainer]}>
-                <View style={styles.iconContainer}>
-                  <View style={[styles.halo1, { transform: [{ scale: 1.1 }] }]} />
-                  <View style={[styles.halo2, { transform: [{ scale: 1.25 }] }]} />
-                  <item.Icon size={80} color="#EAB308" strokeWidth={1.5} />
-                </View>
-                <Text style={styles.titleText}>
-                  {item.title}
-                </Text>
-                <Text style={styles.descriptionText}>
-                  {item.description}
-                </Text>
-              </View>
-            );
-          })}
-        </Animated.ScrollView>
-      </View>
-
-      <View style={styles.footerContainer}>
-        <View style={styles.dotsContainer}>
-          {ONBOARDING_DATA.map((_, index) => {
-            const dotStyle = useAnimatedStyle(() => {
-              const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
-              const dotWidth = interpolate(scrollX.value, inputRange, [8, 32, 8], Extrapolation.CLAMP);
-              const opacity = interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], Extrapolation.CLAMP);
-              return { width: dotWidth, opacity };
-            });
-
-            return (
-              <Animated.View
-                key={index}
-                style={[styles.dot, dotStyle]}
-              />
-            );
-          })}
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <LinearGradient
+        colors={['#000000', '#111111']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          {currentIndex < ONBOARDING_DATA.length - 1 && (
+            <TouchableOpacity onPress={handleComplete}>
+              <Text style={styles.skipText}>Skip</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
-        <Button 
-          onPress={handleNext} 
-          style={styles.actionButton}
-          textStyle={styles.actionButtonText}
-        >
-          {currentIndex === ONBOARDING_DATA.length - 1 ? "Get Started" : "Skip to Login"}
-        </Button>
-      </View>
-    </SafeAreaView>
+        <View style={styles.contentContainer}>
+          <Animated.ScrollView
+            ref={scrollViewRef as any}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(e: any) => {
+              setCurrentIndex(Math.round(e.nativeEvent.contentOffset.x / width));
+            }}
+          >
+            {ONBOARDING_DATA.map((item, index) => {
+              return (
+                <View key={item.id} style={[{ width }, styles.slideContainer]}>
+                  <View style={styles.iconWrapper}>
+                    <LinearGradient
+                      colors={['rgba(234, 179, 8, 0.2)', 'rgba(234, 179, 8, 0.05)']}
+                      style={styles.iconGradient}
+                    >
+                      <View style={[styles.halo1, { transform: [{ scale: 1.2 }] }]} />
+                      <View style={[styles.halo2, { transform: [{ scale: 1.4 }] }]} />
+                      <item.Icon size={72} color="#EAB308" strokeWidth={1.5} />
+                    </LinearGradient>
+                  </View>
+                  <Text style={styles.titleText}>{item.title}</Text>
+                  <Text style={styles.descriptionText}>{item.description}</Text>
+                </View>
+              );
+            })}
+          </Animated.ScrollView>
+        </View>
+
+        <View style={styles.footerContainer}>
+          <View style={styles.dotsContainer}>
+            {ONBOARDING_DATA.map((_, index) => {
+              const dotStyle = useAnimatedStyle(() => {
+                const inputRange = [(index - 1) * width, index * width, (index + 1) * width];
+                const dotWidth = interpolate(scrollX.value, inputRange, [8, 32, 8], Extrapolation.CLAMP);
+                const opacity = interpolate(scrollX.value, inputRange, [0.3, 1, 0.3], Extrapolation.CLAMP);
+                return { width: dotWidth, opacity };
+              });
+
+              return (
+                <Animated.View
+                  key={index}
+                  style={[styles.dot, dotStyle]}
+                />
+              );
+            })}
+          </View>
+
+          <Button 
+            onPress={handleNext} 
+            style={styles.actionButton}
+            rightIcon={currentIndex < ONBOARDING_DATA.length - 1 ? <ChevronRight size={20} color="#000000" /> : undefined}
+          >
+            {currentIndex === ONBOARDING_DATA.length - 1 ? "Get Started" : "Next"}
+          </Button>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
     backgroundColor: '#000000',
   },
-  container: {
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    height: 60,
+  },
+  skipText: {
+    color: '#A1A1AA',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  contentContainer: {
     flex: 1,
   },
   slideContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 32, // px-8
+    paddingHorizontal: 32,
   },
-  iconContainer: {
-    width: 256, // w-64
-    height: 256, // h-64
-    backgroundColor: '#18181B', // bg-zinc-900
-    borderRadius: 128, // rounded-full
+  iconWrapper: {
+    marginBottom: 64,
+  },
+  iconGradient: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 48, // mb-12
-    borderWidth: 2,
-    borderColor: 'rgba(234, 179, 8, 0.2)', // border-yellow-500/20
-    shadowColor: 'rgba(234, 179, 8, 0.15)',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 40,
-    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.3)',
     position: 'relative',
   },
   halo1: {
@@ -153,9 +185,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 128, // rounded-full
+    borderRadius: 90,
     borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.1)',
+    borderColor: 'rgba(234, 179, 8, 0.15)',
   },
   halo2: {
     position: 'absolute',
@@ -163,50 +195,43 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 128, // rounded-full
+    borderRadius: 90,
     borderWidth: 1,
     borderColor: 'rgba(234, 179, 8, 0.05)',
   },
   titleText: {
-    fontSize: 30, // text-3xl
-    fontWeight: '800', // font-extrabold
+    fontSize: 32,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 16, // mb-4
+    marginBottom: 16,
     textAlign: 'center',
-    letterSpacing: -0.5, // tracking-tight
+    letterSpacing: -0.5,
   },
   descriptionText: {
-    fontSize: 16, // text-base
-    color: '#A1A1AA', // text-zinc-400
+    fontSize: 16,
+    color: '#A1A1AA',
     textAlign: 'center',
-    lineHeight: 28, // leading-relaxed
-    paddingHorizontal: 16, // px-4
+    lineHeight: 28,
+    paddingHorizontal: 16,
   },
   footerContainer: {
-    paddingHorizontal: 32, // px-8
-    paddingBottom: 40, // pb-10
-    paddingTop: 16, // pt-4
+    paddingHorizontal: 32,
+    paddingBottom: 40,
+    paddingTop: 16,
   },
   dotsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12, // gap-3
-    marginBottom: 40, // mb-10
+    gap: 12,
+    marginBottom: 40,
   },
   dot: {
-    height: 8, // h-2
-    borderRadius: 4, // rounded-full
-    backgroundColor: '#EAB308', // bg-yellow-500
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EAB308',
   },
   actionButton: {
     width: '100%',
-    backgroundColor: '#EAB308', // bg-yellow-500
-    borderRadius: 12, // rounded-xl
-    height: 56, // h-14
-  },
-  actionButtonText: {
-    color: '#000000', // text-black
-    fontWeight: 'bold',
-    fontSize: 18, // text-lg
+    height: 56,
   },
 });

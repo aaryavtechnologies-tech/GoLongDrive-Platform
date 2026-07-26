@@ -130,14 +130,14 @@ export default function PhotoStepScreen() {
 
       <BottomActionBar 
         onNext={handleNext} 
-        disabled={!isValid} 
+        isNextDisabled={!isValid} 
       />
 
       <CameraCaptureModal
         visible={isCameraVisible}
         onClose={() => setIsCameraVisible(false)}
         onCapture={handleCapture}
-        cameraType={activePhotoType === 'selfie' ? 'front' : 'back'}
+        type={activePhotoType === 'selfie' ? 'front' : 'back'}
         title={`Take ${activePhotoType === 'profilePhoto' ? 'Profile Photo' : activePhotoType === 'selfie' ? 'Selfie' : 'Vehicle Photo'}`}
       />
     </View>

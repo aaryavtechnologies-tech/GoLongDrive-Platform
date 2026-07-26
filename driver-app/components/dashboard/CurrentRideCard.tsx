@@ -1,10 +1,11 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import Animated, { FadeInDown } from "react-native-reanimated";
-import { Navigation, Phone, MapPin, MapPinned } from "lucide-react-native";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { Navigation, Phone, MapPin, MapPinned, Car, Zap } from "lucide-react-native";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "expo-router";
 import { useRideStore } from "@/store/useRideStore";
+import { LinearGradient } from "expo-linear-gradient";
 
 export function CurrentRideCard() {
   const router = useRouter();
@@ -13,73 +14,95 @@ export function CurrentRideCard() {
 
   if (!hasActiveRide) {
     return (
-      <Animated.View entering={FadeInDown.delay(1000).duration(500).springify()} style={styles.container}>
-        <View style={styles.emptyCard}>
-          <View style={styles.emptyIconContainer}>
-            <Navigation size={24} color="#EAB308" />
+      <Animated.View entering={FadeInDown.delay(200).duration(500).springify()} style={styles.container}>
+        <LinearGradient
+          colors={['#18181B', '#09090B']}
+          style={styles.emptyCard}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.emptyIconWrapper}>
+            <LinearGradient
+              colors={['rgba(234, 179, 8, 0.2)', 'rgba(234, 179, 8, 0.05)']}
+              style={styles.emptyIconContainer}
+            >
+              <Zap size={28} color="#EAB308" />
+            </LinearGradient>
           </View>
-          <Text style={styles.emptyTitle}>No active ride right now</Text>
-          <Text style={styles.emptySubtitle}>You're ready for the next booking.</Text>
-        </View>
+          <Text style={styles.emptyTitle}>Ready for Requests</Text>
+          <Text style={styles.emptySubtitle}>Stay online to receive new ride bookings.</Text>
+        </LinearGradient>
       </Animated.View>
     );
   }
 
   return (
-    <Animated.View entering={FadeInDown.delay(1000).duration(500).springify()} style={styles.container}>
+    <Animated.View entering={FadeInDown.delay(200).duration(500).springify()} style={styles.container}>
       <TouchableOpacity 
         activeOpacity={0.9} 
         onPress={() => router.push("/ride/current")}
-        style={styles.card}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.headerLabel}>Current Ride</Text>
-            <Text style={styles.headerValue}>{currentRide.bookingNumber}</Text>
-          </View>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{currentRide.status}</Text>
-          </View>
-        </View>
-
-        {/* Route Info */}
-        <View style={styles.routeContainer}>
-          <View style={styles.routeRow}>
-            <View style={styles.iconPickup}>
-              <MapPin size={20} color="#71717A" />
+        <LinearGradient
+          colors={['#1A1A1A', '#09090B']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerTitleRow}>
+              <View style={styles.activeIndicator}>
+                <View style={styles.activeDot} />
+              </View>
+              <View>
+                <Text style={styles.headerLabel}>ACTIVE TRIP</Text>
+                <Text style={styles.headerValue}>{currentRide.bookingNumber}</Text>
+              </View>
             </View>
-            <View style={styles.routeTextContainer}>
-              <Text style={styles.routeLabel}>Pickup</Text>
-              <Text style={styles.routeValue}>{currentRide.pickup.address}</Text>
-            </View>
-          </View>
-
-          <View style={styles.routeLine} />
-
-          <View style={[styles.routeRow, styles.routeRowLast]}>
-            <View style={styles.iconDropoff}>
-              <MapPinned size={20} color="#EAB308" />
-            </View>
-            <View style={styles.routeTextContainer}>
-              <Text style={styles.routeLabel}>Drop-off</Text>
-              <Text style={styles.routeValue}>{currentRide.destination.address}</Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{currentRide.status}</Text>
             </View>
           </View>
-        </View>
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.phoneButton}>
-            <Phone size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Button 
-            style={styles.manageButton}
-            onPress={() => router.push("/ride/current")}
-          >
-            Manage Trip
-          </Button>
-        </View>
+          {/* Route Info */}
+          <View style={styles.routeContainer}>
+            <View style={styles.routeRow}>
+              <View style={styles.iconPickup}>
+                <MapPin size={18} color="#A1A1AA" />
+              </View>
+              <View style={styles.routeTextContainer}>
+                <Text style={styles.routeLabel}>Pickup Location</Text>
+                <Text style={styles.routeValue} numberOfLines={2}>{currentRide.pickup.address}</Text>
+              </View>
+            </View>
+
+            <View style={styles.routeLine} />
+
+            <View style={[styles.routeRow, styles.routeRowLast]}>
+              <View style={styles.iconDropoff}>
+                <MapPinned size={18} color="#000000" />
+              </View>
+              <View style={styles.routeTextContainer}>
+                <Text style={styles.routeLabel}>Drop-off Location</Text>
+                <Text style={styles.routeValue} numberOfLines={2}>{currentRide.destination.address}</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={styles.phoneButton}>
+              <Phone size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Button 
+              style={styles.manageButton}
+              onPress={() => router.push("/ride/current")}
+              rightIcon={<Navigation size={18} color="#000" />}
+            >
+              Navigate
+            </Button>
+          </View>
+        </LinearGradient>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -87,160 +110,204 @@ export function CurrentRideCard() {
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 24, // px-6
-    marginBottom: 24, // mb-6
+    paddingHorizontal: 24,
+    marginBottom: 24,
   },
   emptyCard: {
-    backgroundColor: '#111111',
-    borderRadius: 24, // rounded-3xl
-    padding: 32, // p-8
+    borderRadius: 24,
+    padding: 32,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    borderColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#EAB308',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    elevation: 4,
+  },
+  emptyIconWrapper: {
+    marginBottom: 20,
+    shadowColor: '#EAB308',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
   emptyIconContainer: {
-    width: 64, // w-16
-    height: 64, // h-16
-    backgroundColor: '#18181B', // zinc-900
-    borderRadius: 32, // rounded-full
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16, // mb-4
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.3)',
   },
   emptyTitle: {
-    fontSize: 20, // text-xl
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 8, // mb-2
+    marginBottom: 8,
     textAlign: 'center',
+    letterSpacing: -0.5,
   },
   emptySubtitle: {
-    fontSize: 14, // text-sm
-    color: '#A1A1AA', // zinc-400
+    fontSize: 15,
+    color: '#A1A1AA',
     textAlign: 'center',
+    lineHeight: 22,
   },
   card: {
-    backgroundColor: '#111111',
-    borderRadius: 24, // rounded-3xl
-    padding: 4, // p-1
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 10, // shadow-lg
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 24,
+    elevation: 8,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20, // p-5
-    paddingBottom: 16, // pb-4
+    padding: 20,
+    backgroundColor: 'rgba(0,0,0,0.2)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  activeIndicator: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#22C55E',
   },
   headerLabel: {
-    fontSize: 12, // text-xs
-    color: '#A1A1AA', // zinc-400
+    fontSize: 11,
+    color: '#22C55E',
     fontWeight: 'bold',
-    marginBottom: 4, // mb-1
+    marginBottom: 2,
     textTransform: 'uppercase',
-    letterSpacing: 0.5, // tracking-wider
+    letterSpacing: 1,
   },
   headerValue: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 18, // text-lg
+    fontWeight: '800',
+    fontSize: 18,
+    letterSpacing: -0.5,
   },
   statusBadge: {
-    backgroundColor: 'rgba(234, 179, 8, 0.1)', // bg-yellow-500/10
-    paddingHorizontal: 12, // px-3
-    paddingVertical: 6, // py-1.5
-    borderRadius: 9999, // rounded-full
+    backgroundColor: 'rgba(234, 179, 8, 0.15)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(234, 179, 8, 0.2)', // border-yellow-500/20
+    borderColor: 'rgba(234, 179, 8, 0.3)',
   },
   statusText: {
-    color: '#EAB308', // text-yellow-500
+    color: '#EAB308',
     fontWeight: 'bold',
-    fontSize: 12, // text-xs
+    fontSize: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5, // tracking-wider
+    letterSpacing: 0.5,
   },
   routeContainer: {
-    padding: 20, // p-5
+    padding: 24,
     position: 'relative',
   },
   routeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24, // mb-6
+    alignItems: 'flex-start',
+    marginBottom: 28,
   },
   routeRowLast: {
     marginBottom: 0,
   },
   iconPickup: {
-    width: 40, // w-10
-    height: 40, // h-10
-    borderRadius: 20, // rounded-full
-    backgroundColor: '#18181B', // zinc-900
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16, // mr-4
+    marginRight: 16,
+    marginTop: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   iconDropoff: {
-    width: 40, // w-10
-    height: 40, // h-10
-    borderRadius: 20, // rounded-full
-    backgroundColor: 'rgba(234, 179, 8, 0.1)', // bg-yellow-500/10
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: '#EAB308',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 16, // mr-4
+    marginRight: 16,
+    marginTop: 2,
   },
   routeTextContainer: {
     flex: 1,
   },
   routeLabel: {
-    fontSize: 12, // text-xs
-    color: '#71717A', // zinc-500
-    fontWeight: '500', // font-medium
-    marginBottom: 2, // mb-0.5
+    fontSize: 12,
+    color: '#71717A',
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   routeValue: {
     color: '#FFFFFF',
-    fontWeight: '600', // font-semibold
-    fontSize: 16, // text-base
+    fontWeight: '600',
+    fontSize: 16,
+    lineHeight: 22,
   },
   routeLine: {
     position: 'absolute',
-    left: 39,
-    top: 48,
-    width: 2, // w-0.5
-    height: 24, // h-6
-    backgroundColor: '#27272A', // zinc-800
+    left: 41,
+    top: 60,
+    width: 2,
+    height: 28,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderStyle: 'dashed',
   },
   actionsContainer: {
-    padding: 12, // p-3
-    backgroundColor: 'rgba(24, 24, 27, 0.5)', // bg-zinc-900/50
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    padding: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     flexDirection: 'row',
-    gap: 12, // gap-3
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
   },
   phoneButton: {
-    width: 56, // w-14
-    height: 56, // h-14
-    backgroundColor: '#27272A', // bg-zinc-800
-    borderRadius: 16, // rounded-2xl
+    width: 56,
+    height: 56,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   manageButton: {
     flex: 1,
-    borderRadius: 16, // rounded-2xl
-    elevation: 0, // shadow-none
-    shadowOpacity: 0,
+    borderRadius: 16,
+    shadowColor: '#EAB308',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
 });
