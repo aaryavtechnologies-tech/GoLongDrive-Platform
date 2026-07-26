@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "../store/useAuthStore";
 
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || "http://localhost:5000";
 
 class SocketService {
   private socket: Socket | null = null;
