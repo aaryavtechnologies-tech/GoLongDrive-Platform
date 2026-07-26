@@ -21,7 +21,7 @@ const routes               = require('./src/routes');
 const swaggerSpec          = require('./docs/swagger');
 const { notFoundHandler, globalErrorHandler } = require('./src/middleware/error.middleware');
 
-// ── XSS sanitise middleware (replaces deprecated xss-clean) ──────────────────
+// ── XSS sanitise middleware ──────────────────
 const xssSanitize = (req, res, next) => {
   const sanitizeValue = (val) => {
     if (typeof val === 'string') return xss(val);
@@ -30,8 +30,15 @@ const xssSanitize = (req, res, next) => {
     }
     return val;
   };
-  if (req.body)  req.body  = sanitizeValue(req.body);
-  if (req.query) req.query = sanitizeValue(req.query);
+  
+  // Express 5 strictly enforces req.query as a getter. 
+  // We must mutate the objects in-place rather than replacing them entirely.
+  if (req.body && typeof req.body === 'object') {
+    Object.keys(req.body).forEach(key => req.body[key] = sanitizeValue(req.body[key]));
+  }
+  if (req.query && typeof req.query === 'object') {
+    Object.keys(req.query).forEach(key => req.query[key] = sanitizeValue(req.query[key]));
+  }
   next();
 };
 
@@ -152,6 +159,16 @@ app.get('/api-docs.json', (req, res) => {
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
+
+// Health check / root route
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Welcome to the GoLongDrive API',
+    version: '1.0.0',
+    status: 'online'
+  });
+});
 
 app.use('/api/v1', routes);
 
