@@ -24,6 +24,7 @@ const notificationRoutes = require('./notification.routes');
 const reviewRoutes = require('./review.routes');
 const adminUserRoutes = require('./admin.user.routes');
 const auditRoutes = require('./audit.routes');
+const systemRoutes = require('./system.routes');
 
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
@@ -55,5 +56,8 @@ router.use('/admin/audit-logs', auditRoutes);
 
 // Public/Admin Contact Routes
 router.use('/contact', adminContactRoutes);
+
+// System Monitoring
+router.use('/system', systemRoutes);
 
 module.exports = router;
