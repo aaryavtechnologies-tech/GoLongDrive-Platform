@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'taxi-booking-api',
       script: './server.js',
-      instances: 'max', // Utilizes all available CPU cores
+      instances: 1, // Changed from max to 1 at user request
       exec_mode: 'cluster',
       autorestart: true,
       watch: false, // Do not watch in production
