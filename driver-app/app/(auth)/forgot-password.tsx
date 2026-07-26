@@ -1,5 +1,5 @@
 import React from "react";
-import { View, KeyboardAvoidingView, Platform } from "react-native";
+import { View, KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Phone } from "lucide-react-native";
 import { useMutation } from "@tanstack/react-query";
 import { AuthService } from "@/services/auth.service";
-import { PageContainer, ScreenHeader, AppCard } from "@/components/ui/layout";
+import { PageContainer, ScreenHeader } from "@/components/ui/layout";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
 const forgotPasswordSchema = z.object({
@@ -45,7 +45,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <KeyboardAvoidingView 
-      className="flex-1 bg-black"
+      style={styles.keyboardView}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageContainer scroll>
@@ -54,26 +54,28 @@ export default function ForgotPasswordScreen() {
           subtitle="Enter your registered phone number and we'll send you an OTP to reset your password." 
         />
 
-        <Animated.View entering={FadeInUp.duration(600).springify()} className="gap-6 mt-2">
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.formContainer}>
           <Controller
             control={control}
             name="phone"
             render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Phone Number"
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-                leftIcon={<Phone size={22} color="#71717A" />}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                value={value}
-                error={errors.phone?.message}
-              />
+              <View style={styles.inputWrapper}>
+                <Input
+                  label="Phone Number"
+                  placeholder="Enter your phone number"
+                  keyboardType="phone-pad"
+                  leftIcon={<Phone size={22} color="#71717A" />}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  value={value}
+                  error={errors.phone?.message}
+                />
+              </View>
             )}
           />
 
           <Button
-            className="mt-6"
+            style={styles.sendButton}
             onPress={handleSubmit(onSubmit)}
             isLoading={sendOtpMutation.isPending}
           >
@@ -84,3 +86,19 @@ export default function ForgotPasswordScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  formContainer: {
+    marginTop: 8, // mt-2
+  },
+  inputWrapper: {
+    marginBottom: 24, // gap-6
+  },
+  sendButton: {
+    marginTop: 24, // mt-6
+  },
+});

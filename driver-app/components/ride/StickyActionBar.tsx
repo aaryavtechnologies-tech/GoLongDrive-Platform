@@ -1,5 +1,5 @@
 import React from "react";
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import Animated, { FadeInUp, useAnimatedStyle, withTiming, interpolateColor } from "react-native-reanimated";
 import { RideStatus, useRideStore } from "@/store/useRideStore";
 import { Button } from "@/components/ui/button";
@@ -58,15 +58,11 @@ export function StickyActionBar() {
   return (
     <Animated.View 
       entering={FadeInUp.delay(800).duration(400).springify()}
-      className="absolute bottom-0 left-0 right-0 p-6 pt-4 bg-black/80"
-      style={{
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.05)',
-      }}
+      style={styles.container}
     >
       <Button 
         size="lg" 
-        className="w-full shadow-lg"
+        style={styles.button}
         variant={isSuccess ? "primary" : "primary"}
         onPress={handleAction}
       >
@@ -75,3 +71,26 @@ export function StickyActionBar() {
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 24, // px-6
+    paddingBottom: 24, // pb-6 (adjusted for standard screen padding at bottom)
+    paddingTop: 16, // pt-4
+    backgroundColor: 'rgba(0, 0, 0, 0.8)', // bg-black/80
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  button: {
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 10, // shadow-lg
+  },
+});

@@ -1,26 +1,19 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "@/components/tw";
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeft } from "lucide-react-native";
 import { useRouter } from "expo-router";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { StatusBar } from "react-native";
 
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
-
-export function PageContainer({ children, className, scroll = false }: { children: React.ReactNode, className?: string, scroll?: boolean }) {
+export function PageContainer({ children, scroll = false, style, contentContainerStyle }: { children: React.ReactNode, scroll?: boolean, style?: any, contentContainerStyle?: any }) {
   return (
-    <SafeAreaView className={cn("flex-1 bg-black", className)}>
+    <SafeAreaView style={[styles.pageContainer, style]}>
       <StatusBar barStyle="light-content" />
       {scroll ? (
-        <ScrollView className="flex-1" contentContainerClassName="flex-grow p-6">
+        <ScrollView style={styles.flex1} contentContainerStyle={[styles.scrollContent, contentContainerStyle]}>
           {children}
         </ScrollView>
       ) : (
-        <View className="flex-1 p-6">
+        <View style={[styles.staticContent, contentContainerStyle]}>
           {children}
         </View>
       )}
@@ -31,20 +24,20 @@ export function PageContainer({ children, className, scroll = false }: { childre
 export function ScreenHeader({ title, subtitle, showBack = true }: { title: string, subtitle?: string, showBack?: boolean }) {
   const router = useRouter();
   return (
-    <View className="mb-10 mt-2">
+    <View style={styles.headerContainer}>
       {showBack && (
         <TouchableOpacity 
           onPress={() => router.back()} 
-          className="w-12 h-12 rounded-full bg-zinc-900/50 items-center justify-center border border-white/5 mb-6"
+          style={styles.backButton}
         >
           <ArrowLeft size={24} color="#FFFFFF" />
         </TouchableOpacity>
       )}
-      <Text className="text-4xl font-extrabold text-white tracking-tight leading-tight">
+      <Text style={styles.titleText}>
         {title}
       </Text>
       {subtitle && (
-        <Text className="text-lg text-zinc-400 mt-3 font-medium leading-relaxed">
+        <Text style={styles.subtitleText}>
           {subtitle}
         </Text>
       )}
@@ -52,10 +45,69 @@ export function ScreenHeader({ title, subtitle, showBack = true }: { title: stri
   );
 }
 
-export function AppCard({ children, className }: { children: React.ReactNode, className?: string }) {
+export function AppCard({ children, style }: { children: React.ReactNode, style?: any }) {
   return (
-    <View className={cn("bg-[#111111] border border-white/5 p-6 rounded-3xl shadow-lg", className)}>
+    <View style={[styles.appCard, style]}>
       {children}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  flex1: {
+    flex: 1,
+  },
+  pageContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    padding: 24, // p-6
+  },
+  staticContent: {
+    flex: 1,
+    padding: 24, // p-6
+  },
+  headerContainer: {
+    marginBottom: 40, // mb-10
+    marginTop: 8, // mt-2
+  },
+  backButton: {
+    width: 48, // w-12
+    height: 48, // h-12
+    borderRadius: 24, // rounded-full
+    backgroundColor: 'rgba(24, 24, 27, 0.5)', // bg-zinc-900/50
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    marginBottom: 24, // mb-6
+  },
+  titleText: {
+    fontSize: 36, // text-4xl
+    fontWeight: '800', // font-extrabold
+    color: '#FFFFFF',
+    letterSpacing: -1, // tracking-tight
+    lineHeight: 44, // leading-tight
+  },
+  subtitleText: {
+    fontSize: 18, // text-lg
+    color: '#A1A1AA', // zinc-400
+    marginTop: 12, // mt-3
+    fontWeight: '500', // font-medium
+    lineHeight: 28, // leading-relaxed
+  },
+  appCard: {
+    backgroundColor: '#111111',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    padding: 24, // p-6
+    borderRadius: 24, // rounded-3xl
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+});

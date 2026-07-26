@@ -1,13 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
-import { View, TextInput, Text } from "@/components/tw";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { TextInput as RNTextInput } from "react-native";
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, interpolateColor } from "react-native-reanimated";
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
+import { View, TextInput, Text, StyleSheet } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, interpolateColor } from "react-native-reanimated";
 
 export interface OTPInputProps {
   length?: number;
@@ -17,7 +10,7 @@ export interface OTPInputProps {
 }
 
 export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) {
-  const inputRef = useRef<RNTextInput>(null);
+  const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   const handlePress = () => {
@@ -32,9 +25,9 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
   };
 
   return (
-    <View className="w-full items-center gap-2">
+    <View style={styles.container}>
       <View
-        className="flex-row items-center justify-center gap-3 w-full"
+        style={styles.boxesContainer}
         onStartShouldSetResponder={() => true}
         onResponderRelease={handlePress}
       >
@@ -70,16 +63,11 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
           return (
             <Animated.View
               key={index}
-              style={[animatedStyle, { borderWidth: 1 }]}
-              className={cn(
-                "w-12 h-14 items-center justify-center rounded-xl"
-              )}
+              style={[styles.box, animatedStyle, { borderWidth: 1 }]}
             >
-              <Text className="text-2xl font-bold text-white">{char}</Text>
+              <Text style={styles.charText}>{char}</Text>
               {isCurrentActive && (
-                <Animated.View 
-                  className="absolute bottom-2 w-4 h-0.5 bg-yellow-500 rounded-full"
-                />
+                <Animated.View style={styles.cursor} />
               )}
             </Animated.View>
           );
@@ -92,14 +80,61 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
         onChangeText={handleChange}
         keyboardType="number-pad"
         maxLength={length}
-        className="absolute w-[1px] h-[1px] opacity-0"
+        style={styles.hiddenInput}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         caretHidden={true}
         textContentType="oneTimeCode"
       />
 
-      {error && <Text className="text-sm text-danger mt-1 font-medium">{error}</Text>}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 8,
+  },
+  boxesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    width: '100%',
+  },
+  box: {
+    width: 48,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+  },
+  charText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  cursor: {
+    position: 'absolute',
+    bottom: 8,
+    width: 16,
+    height: 2,
+    backgroundColor: '#EAB308',
+    borderRadius: 1,
+  },
+  hiddenInput: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#EF4444', // danger
+    marginTop: 4,
+    fontWeight: '500',
+  },
+});

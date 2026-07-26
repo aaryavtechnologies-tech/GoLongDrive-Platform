@@ -1,5 +1,5 @@
 import React from "react";
-import { View, ScrollView, RefreshControl } from "react-native";
+import { View, ScrollView, RefreshControl, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "react-native";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -22,12 +22,12 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <View className="flex-1 bg-black">
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <ScrollView 
-        className="flex-1"
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="pb-24"
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl 
             refreshing={refreshing} 
@@ -48,3 +48,16 @@ export default function HomeScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 96, // pb-24
+  },
+});

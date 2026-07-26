@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Wallet, FileText, Settings, History, HelpCircle, Bell } from "lucide-react-native";
 
@@ -14,12 +14,12 @@ const actions = [
 
 export function QuickActionsRow() {
   return (
-    <Animated.View entering={FadeInDown.delay(1200).duration(500).springify()} className="mb-8">
-      <Text className="px-6 text-white font-bold text-lg mb-4">Quick Actions</Text>
+    <Animated.View entering={FadeInDown.delay(1200).duration(500).springify()} style={styles.container}>
+      <Text style={styles.title}>Quick Actions</Text>
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false}
-        contentContainerClassName="px-6 gap-4"
+        contentContainerStyle={styles.scrollContent}
       >
         {actions.map((action) => {
           const Icon = action.icon;
@@ -27,12 +27,12 @@ export function QuickActionsRow() {
             <TouchableOpacity 
               key={action.id} 
               activeOpacity={0.7}
-              className="items-center"
+              style={styles.actionButton}
             >
-              <View className="w-16 h-16 bg-[#111111] rounded-[20px] items-center justify-center mb-2 border border-white/5 shadow-sm">
+              <View style={styles.iconContainer}>
                 <Icon size={24} color="#EAB308" />
               </View>
-              <Text className="text-xs text-zinc-400 font-medium">{action.label}</Text>
+              <Text style={styles.label}>{action.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -40,3 +40,44 @@ export function QuickActionsRow() {
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginBottom: 32, // mb-8
+  },
+  title: {
+    paddingHorizontal: 24, // px-6
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18, // text-lg
+    marginBottom: 16, // mb-4
+  },
+  scrollContent: {
+    paddingHorizontal: 24, // px-6
+    gap: 16, // gap-4
+  },
+  actionButton: {
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 64, // w-16
+    height: 64, // h-16
+    backgroundColor: '#111111',
+    borderRadius: 20, // rounded-[20px]
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8, // mb-2
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2, // shadow-sm
+  },
+  label: {
+    fontSize: 12, // text-xs
+    color: '#A1A1AA', // zinc-400
+    fontWeight: '500', // font-medium
+  },
+});

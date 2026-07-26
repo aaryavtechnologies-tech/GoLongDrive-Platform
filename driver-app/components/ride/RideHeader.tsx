@@ -1,20 +1,14 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ride } from "@/store/useRideStore";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function RideHeader({ ride }: { ride: Ride }) {
   return (
-    <Animated.View entering={FadeInDown.duration(400).springify()} className="px-6 pt-16 pb-6 border-b border-white/5">
-      <View className="flex-row items-center justify-between mb-4">
-        <View className="bg-yellow-500/10 px-3 py-1.5 rounded-full border border-yellow-500/20">
-          <Text className="text-yellow-500 font-bold text-xs uppercase tracking-wider">
+    <Animated.View entering={FadeInDown.duration(400).springify()} style={styles.container}>
+      <View style={styles.headerRow}>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>
             {ride.status === "assigned" && "New Trip Assigned"}
             {ride.status === "accepted" && "Trip Accepted"}
             {ride.status === "arrived" && "Driver Arrived"}
@@ -22,15 +16,63 @@ export function RideHeader({ ride }: { ride: Ride }) {
             {ride.status === "completed" && "Trip Completed"}
           </Text>
         </View>
-        <Text className="text-zinc-500 text-sm font-semibold">{ride.bookingNumber}</Text>
+        <Text style={styles.bookingNumberText}>{ride.bookingNumber}</Text>
       </View>
       
-      <Text className="text-3xl font-extrabold text-white mb-1 tracking-tight">
+      <Text style={styles.tripTypeText}>
         {ride.tripType}
       </Text>
-      <Text className="text-base text-zinc-400 font-medium">
+      <Text style={styles.pickupTimeText}>
         {ride.pickupTime} Pickup
       </Text>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 24, // px-6
+    paddingTop: 64, // pt-16
+    paddingBottom: 24, // pb-6
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16, // mb-4
+  },
+  statusBadge: {
+    backgroundColor: 'rgba(234, 179, 8, 0.1)', // bg-yellow-500/10
+    paddingHorizontal: 12, // px-3
+    paddingVertical: 6, // py-1.5
+    borderRadius: 9999, // rounded-full
+    borderWidth: 1,
+    borderColor: 'rgba(234, 179, 8, 0.2)', // border-yellow-500/20
+  },
+  statusText: {
+    color: '#EAB308', // text-yellow-500
+    fontWeight: 'bold',
+    fontSize: 12, // text-xs
+    textTransform: 'uppercase',
+    letterSpacing: 0.5, // tracking-wider
+  },
+  bookingNumberText: {
+    color: '#71717A', // text-zinc-500
+    fontSize: 14, // text-sm
+    fontWeight: '600', // font-semibold
+  },
+  tripTypeText: {
+    fontSize: 30, // text-3xl
+    fontWeight: '800', // font-extrabold
+    color: '#FFFFFF',
+    marginBottom: 4, // mb-1
+    letterSpacing: -0.5, // tracking-tight
+  },
+  pickupTimeText: {
+    fontSize: 16, // text-base
+    color: '#A1A1AA', // text-zinc-400
+    fontWeight: '500', // font-medium
+  },
+});

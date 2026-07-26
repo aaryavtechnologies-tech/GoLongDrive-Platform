@@ -32,4 +32,14 @@ export const AuthService = {
     const response = await api.post("/driver/logout");
     return response.data;
   },
+
+  registerDriver: async (data: any) => {
+    // Mock registration API
+    return new Promise((resolve) => setTimeout(() => resolve({ success: true }), 1000));
+  },
+
+  uploadDocument: async (fileUri: string, type: string) => {
+    // Mock file upload API
+    return new Promise((resolve) => setTimeout(() => resolve({ success: true, url: fileUri }), 1000));
+  },
 };

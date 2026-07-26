@@ -1,14 +1,8 @@
 import React from "react";
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ride } from "@/store/useRideStore";
 import { MapPin, Navigation, Clock } from "lucide-react-native";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function RideStatusCard({ ride }: { ride: Ride }) {
   
@@ -31,19 +25,69 @@ export function RideStatusCard({ ride }: { ride: Ride }) {
   }
 
   return (
-    <Animated.View entering={FadeInDown.delay(100).duration(500).springify()} className="px-6 mt-6 mb-6">
-      <View className="bg-[#111111] rounded-3xl p-6 border border-white/5 shadow-lg flex-row items-center">
-        <View className={cn(
-          "w-14 h-14 rounded-full items-center justify-center mr-4",
-          ride.status === "completed" ? "bg-zinc-900" : "bg-yellow-500/10"
-        )}>
+    <Animated.View entering={FadeInDown.delay(100).duration(500).springify()} style={styles.container}>
+      <View style={styles.card}>
+        <View style={[
+          styles.iconContainer,
+          ride.status === "completed" ? styles.iconCompleted : styles.iconActive
+        ]}>
           {icon}
         </View>
-        <View className="flex-1">
-          <Text className="text-xl font-bold text-white mb-1">{title}</Text>
-          <Text className="text-sm font-medium text-zinc-400">{subtitle}</Text>
+        <View style={styles.textContainer}>
+          <Text style={styles.titleText}>{title}</Text>
+          <Text style={styles.subtitleText}>{subtitle}</Text>
         </View>
       </View>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingHorizontal: 24, // px-6
+    marginTop: 24, // mt-6
+    marginBottom: 24, // mb-6
+  },
+  card: {
+    backgroundColor: '#111111',
+    borderRadius: 24, // rounded-3xl
+    padding: 24, // p-6
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)', // border-white/5
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 10, // shadow-lg
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconContainer: {
+    width: 56, // w-14
+    height: 56, // h-14
+    borderRadius: 28, // rounded-full
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 16, // mr-4
+  },
+  iconActive: {
+    backgroundColor: 'rgba(234, 179, 8, 0.1)', // bg-yellow-500/10
+  },
+  iconCompleted: {
+    backgroundColor: '#18181B', // bg-zinc-900
+  },
+  textContainer: {
+    flex: 1,
+  },
+  titleText: {
+    fontSize: 20, // text-xl
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4, // mb-1
+  },
+  subtitleText: {
+    fontSize: 14, // text-sm
+    fontWeight: '500', // font-medium
+    color: '#A1A1AA', // zinc-400
+  },
+});

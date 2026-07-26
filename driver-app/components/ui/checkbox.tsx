@@ -1,37 +1,53 @@
 import React from "react";
-import { TouchableOpacity } from "react-native";
-import { View, Text } from "@/components/tw";
+import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 import { Check } from "lucide-react-native";
-import { clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-
-function cn(...inputs: (string | undefined | null | false)[]) {
-  return twMerge(clsx(inputs));
-}
 
 export interface CheckboxProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label?: string;
-  className?: string;
+  style?: any;
 }
 
-export function Checkbox({ checked, onCheckedChange, label, className }: CheckboxProps) {
+export function Checkbox({ checked, onCheckedChange, label, style }: CheckboxProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
       onPress={() => onCheckedChange(!checked)}
-      className={cn("flex-row items-center gap-3", className)}
+      style={[styles.container, style]}
     >
-      <View
-        className={cn(
-          "w-6 h-6 rounded border items-center justify-center",
-          checked ? "bg-primary border-primary" : "border-border bg-transparent"
-        )}
-      >
+      <View style={[styles.box, checked ? styles.boxChecked : styles.boxUnchecked]}>
         {checked && <Check size={16} color="#000" strokeWidth={3} />}
       </View>
-      {label && <Text className="text-white text-base">{label}</Text>}
+      {label && <Text style={styles.label}>{label}</Text>}
     </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  box: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  boxChecked: {
+    backgroundColor: '#EAB308',
+    borderColor: '#EAB308',
+  },
+  boxUnchecked: {
+    backgroundColor: 'transparent',
+    borderColor: '#262626',
+  },
+  label: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+});

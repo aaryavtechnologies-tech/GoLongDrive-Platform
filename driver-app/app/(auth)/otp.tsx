@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import { View, Text, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
+import { View, Text, KeyboardAvoidingView, Platform, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "@/components/ui/otp-input";
 import { useMutation } from "@tanstack/react-query";
 import { AuthService } from "@/services/auth.service";
-import { PageContainer, ScreenHeader, AppCard } from "@/components/ui/layout";
+import { PageContainer, ScreenHeader } from "@/components/ui/layout";
 import Animated, { FadeInUp } from "react-native-reanimated";
 
 export default function OTPScreen() {
@@ -38,7 +38,7 @@ export default function OTPScreen() {
 
   return (
     <KeyboardAvoidingView 
-      className="flex-1 bg-black"
+      style={styles.keyboardView}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <PageContainer scroll>
@@ -47,7 +47,7 @@ export default function OTPScreen() {
           subtitle={`We've sent a 6-digit code to ${phone ? `+91 ${phone.substring(0, 5)}...` : "your phone number"}.`}
         />
 
-        <Animated.View entering={FadeInUp.duration(600).springify()} className="w-full gap-8 mt-4">
+        <Animated.View entering={FadeInUp.duration(600).springify()} style={styles.formContainer}>
           <OTPInput
             length={6}
             value={otp}
@@ -56,17 +56,17 @@ export default function OTPScreen() {
           />
 
           <Button
-            className="w-full mt-2"
+            style={styles.verifyButton}
             onPress={onSubmit}
             isLoading={verifyOtpMutation.isPending}
           >
             Verify Code
           </Button>
 
-          <View className="flex-row justify-center items-center gap-2 mt-4">
-            <Text className="text-zinc-400 text-base font-medium">Didn't receive the code?</Text>
+          <View style={styles.resendRow}>
+            <Text style={styles.resendText}>Didn't receive the code?</Text>
             <TouchableOpacity activeOpacity={0.7}>
-              <Text className="text-yellow-500 font-bold text-base">Resend</Text>
+              <Text style={styles.resendAction}>Resend</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -74,3 +74,36 @@ export default function OTPScreen() {
     </KeyboardAvoidingView>
   );
 }
+
+const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  formContainer: {
+    width: '100%',
+    gap: 32, // gap-8
+    marginTop: 16, // mt-4
+  },
+  verifyButton: {
+    width: '100%',
+    marginTop: 8, // mt-2
+  },
+  resendRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8, // gap-2
+    marginTop: 16, // mt-4
+  },
+  resendText: {
+    color: '#A1A1AA', // text-zinc-400
+    fontSize: 16, // text-base
+    fontWeight: '500', // font-medium
+  },
+  resendAction: {
+    color: '#EAB308', // text-yellow-500
+    fontWeight: 'bold',
+    fontSize: 16, // text-base
+  },
+});

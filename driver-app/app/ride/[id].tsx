@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { View, ScrollView } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { StatusBar } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useRideStore } from "@/store/useRideStore";
@@ -22,20 +22,20 @@ export default function RideDetailsScreen() {
 
   if (!currentRide) {
     return (
-      <View className="flex-1 bg-black items-center justify-center">
+      <View style={styles.loadingContainer}>
         <StatusBar barStyle="light-content" />
-        <Animated.Text entering={FadeInDown} className="text-white font-bold text-xl">Loading ride...</Animated.Text>
+        <Animated.Text entering={FadeInDown} style={styles.loadingText}>Loading ride...</Animated.Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-black">
+    <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
       <ScrollView 
-        className="flex-1"
+        style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="pb-16"
+        contentContainerStyle={styles.scrollContent}
       >
         <RideHeader ride={currentRide} />
         <CustomerCard ride={currentRide} />
@@ -46,3 +46,27 @@ export default function RideDetailsScreen() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 20, // text-xl
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 64, // pb-16
+  },
+});

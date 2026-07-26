@@ -8,14 +8,17 @@ interface AuthState {
   refreshToken: string | null;
   isLoading: boolean;
   isSignout: boolean;
+  hasSeenOnboarding: boolean;
   setAuth: (driver: Driver, token: string, refreshToken: string) => Promise<void>;
   logout: () => Promise<void>;
   restoreToken: () => Promise<void>;
+  completeOnboarding: () => Promise<void>;
 }
 
 const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
 const DRIVER_KEY = "driver_info";
+const ONBOARDING_KEY = "has_seen_onboarding";
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   driver: null,
@@ -23,6 +26,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   refreshToken: null,
   isLoading: true,
   isSignout: false,
+  hasSeenOnboarding: false,
 
   setAuth: async (driver, token, refreshToken) => {
     try {
@@ -33,6 +37,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ driver, token, refreshToken, isSignout: false });
     } catch (error) {
       console.error("Error saving auth state", error);
+    }
+  },
+
+  completeOnboarding: async () => {
+    try {
+      await SecureStore.setItemAsync(ONBOARDING_KEY, "true");
+      set({ hasSeenOnboarding: true });
+    } catch (error) {
+      console.error("Error saving onboarding state", error);
     }
   },
 
@@ -53,16 +66,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const token = await SecureStore.getItemAsync(TOKEN_KEY);
       const refreshToken = await SecureStore.getItemAsync(REFRESH_TOKEN_KEY);
       const driverStr = await SecureStore.getItemAsync(DRIVER_KEY);
+      const onboardingStr = await SecureStore.getItemAsync(ONBOARDING_KEY);
       
+      const hasSeenOnboarding = onboardingStr === "true";
+
       if (token && refreshToken && driverStr) {
         set({
           token,
           refreshToken,
           driver: JSON.parse(driverStr),
+          hasSeenOnboarding,
           isLoading: false,
         });
       } else {
-        set({ isLoading: false });
+        set({ 
+          hasSeenOnboarding,
+          isLoading: false 
+        });
       }
     } catch (error) {
       console.error("Error restoring auth state", error);
