@@ -13,7 +13,7 @@ RUN npm install --production
 COPY . .
 
 # Expose the application port
-EXPOSE 5000
+EXPOSE 5051
 
 # Set environment to production
 ENV NODE_ENV=production
