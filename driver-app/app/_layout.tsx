@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/useAuthStore";
 import { socketService } from "@/services/socket.service";
 
-import "./global.css"; // NativeWind v4 css
+import "@/app/global.css"; // NativeWind v4 css
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -76,7 +76,7 @@ export default function RootLayout() {
     return (
       <View className="flex-1 bg-black items-center justify-center">
         <Animated.View className="items-center justify-center" style={{ padding: 20 }}>
-          <Image 
+          <Image
             source={require("../assets/images/logo.jpeg")}
             className="w-32 h-32 rounded-3xl border-2 border-yellow-500/20"
             contentFit="cover"

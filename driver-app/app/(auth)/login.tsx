@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, KeyboardAvoidingView, Platform } from "react-native";
-import { ScrollView } from "@/components/tw";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -12,7 +11,9 @@ import { Phone, Lock } from "lucide-react-native";
 import { AuthService } from "@/services/auth.service";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useMutation } from "@tanstack/react-query";
-import { Image } from "@/components/tw/image";
+import { Image } from "expo-image";
+import { PageContainer, ScreenHeader, AppCard } from "@/components/ui/layout";
+import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
 
 const loginSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
@@ -43,14 +44,10 @@ export default function LoginScreen() {
     },
     onError: (error) => {
       console.error("Login Failed:", error);
-      // Real app would show a Toast here
     },
   });
 
   const onSubmit = (data: LoginFormValues) => {
-    // For demo purposes, we can mock success if API isn't ready
-    // loginMutation.mutate({ phone: data.phone, password: data.password });
-    
     // MOCK LOGIN FOR DEVELOPMENT
     setAuth(
       { id: "1", firstName: "John", lastName: "Doe", phone: data.phone, rating: 5, totalRides: 10, status: "active", createdAt: new Date().toISOString() },
@@ -62,22 +59,25 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView 
-      className="flex-1 bg-background"
+      className="flex-1 bg-black"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <ScrollView contentContainerClassName="flex-grow justify-center px-6 py-12">
-        
-        <View className="items-center mb-10">
-          <View className="w-24 h-24 bg-card rounded-3xl items-center justify-center mb-6 border border-border">
-            <Text className="text-4xl font-bold text-primary">G</Text>
+      <PageContainer scroll>
+        <Animated.View entering={FadeInDown.duration(600).springify()} className="items-center mt-8 mb-10">
+          <View className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-yellow-500/20 mb-8 shadow-[0_0_30px_rgba(234,179,8,0.15)]">
+            <Image 
+              source={require("../../assets/images/logo.jpeg")} 
+              className="w-full h-full" 
+              contentFit="cover" 
+            />
           </View>
-          <Text className="text-3xl font-bold text-white mb-2">Welcome Back</Text>
-          <Text className="text-base text-muted text-center">
+          <Text className="text-4xl font-extrabold text-white mb-3 tracking-tight">Welcome Back</Text>
+          <Text className="text-lg text-zinc-400 text-center font-medium max-w-[280px] leading-relaxed">
             Log in to manage your rides and earnings with GoLongDrive
           </Text>
-        </View>
+        </Animated.View>
 
-        <View className="gap-5">
+        <Animated.View entering={FadeInUp.duration(800).springify()} className="gap-6 mt-4">
           <Controller
             control={control}
             name="phone"
@@ -86,7 +86,7 @@ export default function LoginScreen() {
                 label="Phone Number"
                 placeholder="Enter your phone number"
                 keyboardType="phone-pad"
-                leftIcon={<Phone size={20} color="#9ca3af" />}
+                leftIcon={<Phone size={22} color="#71717A" />}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
@@ -103,7 +103,7 @@ export default function LoginScreen() {
                 label="Password"
                 placeholder="Enter your password"
                 isPassword
-                leftIcon={<Lock size={20} color="#9ca3af" />}
+                leftIcon={<Lock size={22} color="#71717A" />}
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
@@ -126,7 +126,7 @@ export default function LoginScreen() {
             />
             
             <Link href="/(auth)/forgot-password" asChild>
-              <Text className="text-primary font-semibold">Forgot Password?</Text>
+              <Text className="text-yellow-500 font-bold text-base">Forgot Password?</Text>
             </Link>
           </View>
 
@@ -138,13 +138,13 @@ export default function LoginScreen() {
             Log In
           </Button>
           
-          <View className="flex-row items-center justify-center mt-6 gap-1">
-            <Text className="text-muted">New driver?</Text>
-            <Text className="text-primary font-semibold">Apply now</Text>
+          <View className="flex-row items-center justify-center mt-8 gap-2">
+            <Text className="text-zinc-400 text-base font-medium">New driver?</Text>
+            <Text className="text-yellow-500 font-bold text-base">Apply now</Text>
           </View>
-        </View>
+        </Animated.View>
 
-      </ScrollView>
+      </PageContainer>
     </KeyboardAvoidingView>
   );
 }

@@ -4,18 +4,23 @@
 
 @layer theme {
   @theme {
-    /* Colors */
-    --color-primary: #eab308; /* Yellow */
+    /* Colors - Premium Dark Theme */
+    --color-primary: #EAB308; /* Rich Yellow */
+    --color-primary-dark: #CA8A04; /* Darker Yellow for active states */
     --color-background: #000000; /* Pure Black */
-    --color-card: #111111;
-    --color-border: #262626;
-    --color-text: #ffffff;
-    --color-muted: #9ca3af; /* Gray */
-    --color-success: #22c55e;
-    --color-danger: #ef4444;
-    --color-warning: #eab308;
+    --color-card: #111111; /* Charcoal / near-black surfaces */
+    --color-card-elevated: #1A1A1A; /* Slightly lighter charcoal */
+    --color-border: #262626; /* Subtle gray borders */
+    --color-border-focus: #3F3F46; /* Lighter gray for focus */
+    --color-text: #FFFFFF;
+    --color-text-secondary: #A1A1AA; /* Soft gray (Zinc 400) */
+    --color-muted: #52525B; /* Zinc 600 */
+    --color-success: #22C55E;
+    --color-danger: #EF4444;
+    --color-warning: #F59E0B;
     
     /* Border Radius */
+    --radius-3xl: 1.5rem;
     --radius-2xl: 1rem;
     --radius-xl: 0.75rem;
     --radius-lg: 0.5rem;

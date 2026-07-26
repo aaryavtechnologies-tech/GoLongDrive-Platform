@@ -1,12 +1,12 @@
 import React, { useState } from "react";
 import { View, Text, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native";
-import { ScrollView } from "@/components/tw";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "@/components/ui/otp-input";
-import { ArrowLeft } from "lucide-react-native";
 import { useMutation } from "@tanstack/react-query";
 import { AuthService } from "@/services/auth.service";
+import { PageContainer, ScreenHeader, AppCard } from "@/components/ui/layout";
+import Animated, { FadeInUp } from "react-native-reanimated";
 
 export default function OTPScreen() {
   const router = useRouter();
@@ -18,8 +18,6 @@ export default function OTPScreen() {
   const verifyOtpMutation = useMutation({
     mutationFn: AuthService.verifyOtp,
     onSuccess: (data) => {
-      // Typically we might go straight to (tabs) or to a reset password screen if we are resetting
-      // We will assume they go to reset-password since they came from forgot-password
       router.push({ pathname: "/(auth)/reset-password", params: { token: data.token } });
     },
     onError: (err) => {
@@ -36,30 +34,20 @@ export default function OTPScreen() {
     
     // MOCK OTP VERIFY
     router.push({ pathname: "/(auth)/reset-password", params: { token: "mock-reset-token" } });
-    // verifyOtpMutation.mutate({ phone, otp });
   };
 
   return (
     <KeyboardAvoidingView 
-      className="flex-1 bg-background"
+      className="flex-1 bg-black"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View className="px-6 pt-14 pb-4">
-        <TouchableOpacity onPress={() => router.back()} className="w-10 h-10 items-center justify-center bg-card rounded-full border border-border">
-          <ArrowLeft size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <PageContainer scroll>
+        <ScreenHeader 
+          title="Verify OTP" 
+          subtitle={`We've sent a 6-digit code to ${phone ? `+91 ${phone.substring(0, 5)}...` : "your phone number"}.`}
+        />
 
-      <ScrollView contentContainerClassName="flex-grow px-6 py-6 items-center">
-        
-        <View className="mb-10 w-full">
-          <Text className="text-3xl font-bold text-white mb-2">Verify OTP</Text>
-          <Text className="text-base text-muted">
-            We've sent a 6-digit code to {phone ? `+91 ${phone.substring(0, 5)}...` : "your phone number"}.
-          </Text>
-        </View>
-
-        <View className="w-full gap-8">
+        <Animated.View entering={FadeInUp.duration(600).springify()} className="w-full gap-8 mt-4">
           <OTPInput
             length={6}
             value={otp}
@@ -68,22 +56,21 @@ export default function OTPScreen() {
           />
 
           <Button
-            className="w-full"
+            className="w-full mt-2"
             onPress={onSubmit}
             isLoading={verifyOtpMutation.isPending}
           >
-            Verify
+            Verify Code
           </Button>
 
-          <View className="flex-row justify-center items-center gap-1 mt-2">
-            <Text className="text-muted text-base">Didn't receive the code?</Text>
-            <TouchableOpacity>
-              <Text className="text-primary font-bold text-base">Resend</Text>
+          <View className="flex-row justify-center items-center gap-2 mt-4">
+            <Text className="text-zinc-400 text-base font-medium">Didn't receive the code?</Text>
+            <TouchableOpacity activeOpacity={0.7}>
+              <Text className="text-yellow-500 font-bold text-base">Resend</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-      </ScrollView>
+        </Animated.View>
+      </PageContainer>
     </KeyboardAvoidingView>
   );
 }

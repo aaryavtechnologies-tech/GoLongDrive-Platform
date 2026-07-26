@@ -1,8 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { View, TextInput, Text } from "@/components/tw";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { TextInput as RNTextInput } from "react-native";
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence, interpolateColor } from "react-native-reanimated";
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -24,7 +25,6 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
   };
 
   const handleChange = (text: string) => {
-    // Only allow numbers
     const numericValue = text.replace(/[^0-9]/g, "");
     if (numericValue.length <= length) {
       onChange(numericValue);
@@ -42,23 +42,50 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
           const char = value[index] || "";
           const isCurrentActive = isFocused && value.length === index;
           const isActive = isCurrentActive || (isFocused && index === length - 1 && value.length === length);
+          
+          const scale = useSharedValue(isActive ? 1.05 : 1);
+          const focusAnim = useSharedValue(isActive ? 1 : 0);
+
+          useEffect(() => {
+            scale.value = withTiming(isActive ? 1.05 : 1, { duration: 150 });
+            focusAnim.value = withTiming(isActive ? 1 : 0, { duration: 150 });
+          }, [isActive]);
+
+          const animatedStyle = useAnimatedStyle(() => {
+            return {
+              transform: [{ scale: scale.value }],
+              borderColor: interpolateColor(
+                focusAnim.value,
+                [0, 1],
+                [error ? '#EF4444' : '#262626', error ? '#EF4444' : '#EAB308']
+              ),
+              backgroundColor: interpolateColor(
+                focusAnim.value,
+                [0, 1],
+                ['#111111', '#1A1A1A']
+              )
+            };
+          });
 
           return (
-            <View
+            <Animated.View
               key={index}
+              style={[animatedStyle, { borderWidth: 1 }]}
               className={cn(
-                "w-12 h-14 items-center justify-center rounded-xl border bg-card",
-                isActive ? "border-primary" : "border-border",
-                error && "border-danger"
+                "w-12 h-14 items-center justify-center rounded-xl"
               )}
             >
               <Text className="text-2xl font-bold text-white">{char}</Text>
-            </View>
+              {isCurrentActive && (
+                <Animated.View 
+                  className="absolute bottom-2 w-4 h-0.5 bg-yellow-500 rounded-full"
+                />
+              )}
+            </Animated.View>
           );
         })}
       </View>
 
-      {/* Hidden input to handle keyboard properly */}
       <TextInput
         ref={inputRef}
         value={value}
@@ -72,7 +99,7 @@ export function OTPInput({ length = 6, value, onChange, error }: OTPInputProps) 
         textContentType="oneTimeCode"
       />
 
-      {error && <Text className="text-sm text-danger mt-1">{error}</Text>}
+      {error && <Text className="text-sm text-danger mt-1 font-medium">{error}</Text>}
     </View>
   );
 }

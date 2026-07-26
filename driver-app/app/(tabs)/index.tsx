@@ -1,24 +1,50 @@
 import React from "react";
-import { View, Text } from "react-native";
-import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/store/useAuthStore";
-import { useRouter } from "expo-router";
+import { View, ScrollView, RefreshControl } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { StatusBar } from "react-native";
+import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { StatusToggleCard } from "@/components/dashboard/StatusToggleCard";
+import { StatGrid } from "@/components/dashboard/StatGrid";
+import { CurrentRideCard } from "@/components/dashboard/CurrentRideCard";
+import { UpcomingRideCard } from "@/components/dashboard/UpcomingRideCard";
+import { QuickActionsRow } from "@/components/dashboard/QuickActionsRow";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 
 export default function HomeScreen() {
-  const logout = useAuthStore((state) => state.logout);
-  const router = useRouter();
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  const handleLogout = () => {
-    logout();
-    router.replace("/(auth)/login");
-  };
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    // Mock refresh delay
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1500);
+  }, []);
 
   return (
-    <View className="flex-1 bg-background items-center justify-center px-6">
-      <Text className="text-2xl font-bold text-white mb-6">Home Screen (Phase 2)</Text>
-      <Button onPress={handleLogout} variant="outline" className="w-full">
-        Logout
-      </Button>
+    <View className="flex-1 bg-black">
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+      <ScrollView 
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="pb-24"
+        refreshControl={
+          <RefreshControl 
+            refreshing={refreshing} 
+            onRefresh={onRefresh} 
+            tintColor="#EAB308"
+            colors={['#EAB308']} 
+          />
+        }
+      >
+        <DashboardHeader />
+        <StatusToggleCard />
+        <CurrentRideCard />
+        <StatGrid />
+        <UpcomingRideCard />
+        <QuickActionsRow />
+        <ActivityFeed />
+      </ScrollView>
     </View>
   );
 }
