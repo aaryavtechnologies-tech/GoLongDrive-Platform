@@ -316,7 +316,7 @@ const submitRegistration = asyncHandler(async (req, res) => {
         address,
         vehicle,
         documents,
-        driverStatus: 'Pending', // Move status to pending review
+        driverStatus: 'pending', // Move status to pending review
       },
     },
     { new: true, runValidators: true }
