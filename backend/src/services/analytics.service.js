@@ -12,21 +12,13 @@ const getDashboardOverview = async () => {
   const [
     totalCustomers,
     totalDrivers,
-    approvedDrivers,
     pendingDrivers,
     driversOnline,
-    driversBusy,
-    totalCoupons,
-    activeCoupons
   ] = await Promise.all([
     Customer.countDocuments(),
     Driver.countDocuments(),
-    Driver.countDocuments({ driverStatus: DRIVER_STATUS.APPROVED }),
     Driver.countDocuments({ driverStatus: DRIVER_STATUS.PENDING }),
     Driver.countDocuments({ onlineStatus: ONLINE_STATUS.ONLINE }),
-    Driver.countDocuments({ availabilityStatus: AVAILABILITY_STATUS.BUSY }),
-    Coupon.countDocuments(),
-    Coupon.countDocuments({ isActive: true })
   ]);
 
   const today = new Date();
@@ -34,55 +26,119 @@ const getDashboardOverview = async () => {
 
   const [
     todayBookings,
-    activeTrips,
     completedTrips,
-    cancelledTrips
+    pendingPayments
   ] = await Promise.all([
     Booking.countDocuments({ createdAt: { $gte: today } }),
-    Booking.countDocuments({ rideStatus: { $in: [RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.TRIP_STARTED] } }),
     Booking.countDocuments({ rideStatus: RIDE_STATUS.TRIP_COMPLETED }),
-    Booking.countDocuments({ rideStatus: { $regex: 'Cancelled', $options: 'i' } })
+    Payment.countDocuments({ paymentStatus: PAYMENT_STATUS.PENDING })
   ]);
 
-  const [revenueStats, paymentStats] = await Promise.all([
-    DriverEarning.aggregate([
-      { 
-        $group: { 
-          _id: null, 
-          totalPlatformEarnings: { $sum: '$platformFee' },
-          totalDriverEarnings: { $sum: '$driverEarnings' }
-        } 
-      }
-    ]),
-    Payment.aggregate([
-      {
-        $group: {
-          _id: '$paymentStatus',
-          count: { $sum: 1 },
-          amount: { $sum: '$amount' }
-        }
-      }
-    ])
+  const revenueStats = await DriverEarning.aggregate([
+    { 
+      $match: { createdAt: { $gte: today } }
+    },
+    { 
+      $group: { 
+        _id: null, 
+        totalPlatformEarnings: { $sum: '$platformFee' },
+      } 
+    }
   ]);
+  const todayRevenue = revenueStats[0] ? revenueStats[0].totalPlatformEarnings : 0;
 
-  const platformEarnings = revenueStats[0] ? revenueStats[0].totalPlatformEarnings : 0;
-  
-  let pendingPayments = 0, completedPayments = 0, refundedPayments = 0;
-  paymentStats.forEach(stat => {
-    if (stat._id === PAYMENT_STATUS.PENDING) pendingPayments = stat.count;
-    if (stat._id === PAYMENT_STATUS.PAID || stat._id === PAYMENT_STATUS.ADVANCE_PAID) completedPayments += stat.count;
-    if (stat._id === PAYMENT_STATUS.REFUNDED) refundedPayments = stat.count;
-  });
-
+  // Mocking trends for now
   return {
-    users: { totalCustomers, totalDrivers, approvedDrivers, pendingDrivers, driversOnline, driversBusy },
-    bookings: { todayBookings, activeTrips, completedTrips, cancelledTrips },
-    revenue: { platformEarnings },
-    payments: { pendingPayments, completedPayments, refundedPayments },
-    coupons: { totalCoupons, activeCoupons }
+    totalCustomers,
+    totalCustomersTrend: 12,
+    totalDrivers,
+    totalDriversTrend: 5,
+    activeDrivers: driversOnline,
+    todayBookings,
+    todayBookingsTrend: -2,
+    todayRevenue,
+    todayRevenueTrend: 8,
+    pendingDocuments: pendingDrivers,
+    pendingPayments: pendingPayments,
+    completedTrips: completedTrips,
   };
 };
 
+const getDashboardCharts = async () => {
+  // Returns static mock shapes for phase 1, can be hooked to aggregation pipelines later
+  return {
+    revenue: [
+      { name: 'Jan', total: 12000 }, { name: 'Feb', total: 15000 },
+      { name: 'Mar', total: 18000 }, { name: 'Apr', total: 16000 },
+      { name: 'May', total: 22000 }, { name: 'Jun', total: 24000 },
+      { name: 'Jul', total: 28000 }, { name: 'Aug', total: 25000 },
+      { name: 'Sep', total: 29000 }, { name: 'Oct', total: 32000 },
+      { name: 'Nov', total: 35000 }, { name: 'Dec', total: 40000 },
+    ],
+    bookings: [
+      { name: 'Jan', count: 120 }, { name: 'Feb', count: 150 },
+      { name: 'Mar', count: 180 }, { name: 'Apr', count: 160 },
+      { name: 'May', count: 220 }, { name: 'Jun', count: 240 },
+      { name: 'Jul', count: 280 }, { name: 'Aug', count: 250 },
+      { name: 'Sep', count: 290 }, { name: 'Oct', count: 320 },
+      { name: 'Nov', count: 350 }, { name: 'Dec', count: 400 },
+    ],
+    rideStatus: [
+      { name: 'Completed', value: 400, color: '#22c55e' },
+      { name: 'Running', value: 80, color: '#3b82f6' },
+      { name: 'Pending', value: 50, color: '#eab308' },
+      { name: 'Cancelled', value: 20, color: '#ef4444' },
+    ],
+    driverStatus: [
+      { name: 'Available', value: 100, color: '#22c55e' },
+      { name: 'Busy', value: 45, color: '#3b82f6' },
+      { name: 'Offline', value: 175, color: '#94a3b8' },
+    ],
+  };
+};
+
+const getRecentBookings = async () => {
+  const bookings = await Booking.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate('customer', 'fullName')
+    .populate('driver', 'fullName');
+
+  return bookings.map(b => ({
+    id: b.bookingId || b._id.toString(),
+    customer: b.customer?.fullName || 'Unknown',
+    driver: b.driver?.fullName || 'Unassigned',
+    vehicle: b.vehicleType,
+    trip: `${b.pickupLocation?.address || 'Pickup'} to ${b.dropoffLocation?.address || 'Dropoff'}`,
+    status: b.rideStatus,
+    fare: b.fareDetails?.totalFare || 0,
+  }));
+};
+
+const getRecentDrivers = async () => {
+  const drivers = await Driver.find()
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+  return drivers.map(d => ({
+    id: d._id.toString(),
+    name: d.fullName,
+    vehicle: d.vehicle?.model ? `${d.vehicle.brand} ${d.vehicle.model} (${d.vehicle.registrationNumber})` : 'Not added',
+    status: d.onlineStatus,
+    documents: d.driverStatus,
+  }));
+};
+
+const getActivities = async () => {
+  return [
+    { id: '1', title: 'System Online', description: 'Admin panel connected to live backend.', time: 'Just now', type: 'system' }
+  ];
+};
+
 module.exports = {
-  getDashboardOverview
+  getDashboardOverview,
+  getDashboardCharts,
+  getRecentBookings,
+  getRecentDrivers,
+  getActivities
 };

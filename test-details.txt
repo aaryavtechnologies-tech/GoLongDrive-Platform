@@ -1,0 +1,11 @@
+
+
+
+API_URL=https://api.golongdrive.online/api
+SOCKET_URL=https://api.golongdrive.online
+
+
+Admin Login Details : 
+
+email : admin@golongdrive.com
+password : admin123 

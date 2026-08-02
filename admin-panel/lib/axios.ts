@@ -10,6 +10,12 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
+    if (typeof window !== 'undefined') {
+      const match = document.cookie.match(new RegExp('(^| )admin_token=([^;]+)'));
+      if (match) {
+        config.headers.Authorization = `Bearer ${match[2]}`;
+      }
+    }
     return config;
   },
   (error) => Promise.reject(error)
