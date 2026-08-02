@@ -6,12 +6,14 @@ import '../registration_provider.dart';
 import '../registration_step_scaffold.dart';
 
 const _indianStates = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka',
-  'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
-  'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim',
-  'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand',
-  'West Bengal', 'Delhi', 'Jammu and Kashmir', 'Ladakh',
+  'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam',
+  'Bihar', 'Chandigarh', 'Chhattisgarh',
+  'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa', 'Gujarat',
+  'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka',
+  'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab',
+  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh',
+  'Uttarakhand', 'West Bengal',
 ];
 
 /// Step 2 — Address. Fields: Street, City, State (SelectField, per Phase 2
@@ -40,10 +42,11 @@ class _AddressStepState extends State<AddressStep> {
 
   bool _validate() {
     setState(() {
-      _streetError = _streetController.text.trim().isEmpty ? 'Street address is required' : null;
-      _cityError = _cityController.text.trim().isEmpty ? 'City is required' : null;
+      _streetError = _streetController.text.trim().length < 3 ? 'Street address must be at least 3 characters' : null;
+      _cityError = _cityController.text.trim().length < 3 ? 'City must be at least 3 characters' : null;
       _stateError = _state == null ? 'Please select a state' : null;
-      _pincodeError = _pincodeController.text.trim().length != 6 ? 'Enter a valid 6-digit pincode' : null;
+      final pincode = _pincodeController.text.trim();
+      _pincodeError = pincode.length != 6 || !RegExp(r'^[0-9]+$').hasMatch(pincode) ? 'Enter a valid 6-digit pincode' : null;
     });
     return [_streetError, _cityError, _stateError, _pincodeError].every((e) => e == null);
   }

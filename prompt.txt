@@ -3,5 +3,5 @@ and for the stably for the app in the play store and apple store
 so install that one 
 
 
-EXPO_PUBLIC_API_URL=https://api.golongdrive.online/api
-EXPO_PUBLIC_SOCKET_URL=https://api.golongdrive.online
+API_URL=https://api.golongdrive.online/api
+SOCKET_URL=https://api.golongdrive.online

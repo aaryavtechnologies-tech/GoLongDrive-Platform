@@ -19,12 +19,14 @@ const {
   getProfile,
   updateProfile,
   changePassword,
+  uploadDocument,
+  submitRegistration,
 } = require('../controllers/driver.controller');
 
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { validate } = require('../middleware/validate.middleware');
-const { uploadProfileImage } = require('../middleware/upload.middleware');
+const { uploadProfileImage, uploadDocument: uploadDocumentMiddleware } = require('../middleware/upload.middleware');
 const V = require('../validators/driver.validator');
 const { ROLES } = require('../utils/constants');
 
@@ -274,5 +276,27 @@ router.put('/profile', isDriver, uploadProfileImage, V.updateProfile, validate, 
  *         description: Password changed
  */
 router.patch('/change-password', isDriver, V.changePassword, validate, changePassword);
+
+/**
+ * @swagger
+ * /api/driver/upload-document:
+ *   post:
+ *     summary: Upload a registration document
+ *     tags: [Driver]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/upload-document', isDriver, uploadDocumentMiddleware, uploadDocument);
+
+/**
+ * @swagger
+ * /api/driver/submit-registration:
+ *   post:
+ *     summary: Finalize registration and submit for review
+ *     tags: [Driver]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/submit-registration', isDriver, submitRegistration);
 
 module.exports = router;

@@ -25,6 +25,7 @@ import '../features/profile/documents_screen.dart';
 import '../features/profile/notifications_screen.dart';
 import '../features/profile/help_support_screen.dart';
 import '../features/profile/privacy_policy_screen.dart';
+import '../features/profile/terms_screen.dart';
 
 /// Phase 6 — replaces the plain `Navigator`/`routes:` map that lived in
 /// `main.dart` through Phase 5. Route *paths* are unchanged (every string
@@ -141,5 +142,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: '/profile/notifications', builder: (context, state) => const NotificationsScreen()),
     GoRoute(path: '/profile/help', builder: (context, state) => const HelpSupportScreen()),
     GoRoute(path: '/profile/privacy', builder: (context, state) => const PrivacyPolicyScreen()),
+    GoRoute(path: '/profile/terms', builder: (context, state) => const TermsScreen()),
   ],
 );

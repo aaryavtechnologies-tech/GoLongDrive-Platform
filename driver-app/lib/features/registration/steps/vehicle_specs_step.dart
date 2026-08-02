@@ -31,20 +31,18 @@ class _VehicleSpecsStepState extends State<VehicleSpecsStep> {
   void initState() {
     super.initState();
     _fuelType = widget.registration.fuelType.isEmpty ? null : widget.registration.fuelType;
-    _seatingCapacity =
-        widget.registration.seatingCapacity.isEmpty ? null : widget.registration.seatingCapacity;
     _acAvailable = widget.registration.acAvailable.isEmpty ? null : widget.registration.acAvailable;
   }
 
   bool _validate() {
-    final year = int.tryParse(_yearController.text.trim());
     setState(() {
       _fuelError = _fuelType == null ? 'Please select a fuel type' : null;
-      _yearError = (year == null || year < 1990 || year > DateTime.now().year)
-          ? 'Enter a valid manufacturing year'
-          : null;
+      final yearText = _yearController.text.trim();
+      final year = int.tryParse(yearText);
+      final currentYear = DateTime.now().year;
+      _yearError = year == null || year < 2000 || year > currentYear ? 'Enter a valid year (2000-$currentYear)' : null;
       _seatingError = _seatingCapacity == null ? 'Please select seating capacity' : null;
-      _acError = _acAvailable == null ? 'Please select an option' : null;
+      _acError = _acAvailable == null ? 'Please select AC availability' : null;
     });
     return [_fuelError, _yearError, _seatingError, _acError].every((e) => e == null);
   }

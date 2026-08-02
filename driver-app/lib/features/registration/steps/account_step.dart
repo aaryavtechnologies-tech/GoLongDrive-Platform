@@ -1,6 +1,10 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../../app/theme.dart';
+import '../../../core/config/env_config.dart';
 import '../../../core/widgets/app_checkbox.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../registration_provider.dart';
@@ -21,27 +25,83 @@ class _AccountStepState extends State<AccountStep> {
   late final _passwordController = TextEditingController(text: widget.registration.password);
   late final _confirmController = TextEditingController(text: widget.registration.confirmPassword);
   late bool _acceptedTerms = widget.registration.acceptedTerms;
+  bool _isSubmitting = false;
 
   String? _passwordError, _confirmError;
 
   bool _validate() {
     setState(() {
-      _passwordError =
-          _passwordController.text.length < 6 ? 'Password must be at least 6 characters' : null;
-      _confirmError = _confirmController.text != _passwordController.text ? 'Passwords do not match' : null;
+      final pwd = _passwordController.text;
+      if (pwd.length < 8) {
+        _passwordError = 'Password must be at least 8 characters';
+      } else if (!RegExp(r'[A-Z]').hasMatch(pwd) || !RegExp(r'[a-z]').hasMatch(pwd) || !RegExp(r'[0-9]').hasMatch(pwd)) {
+        _passwordError = 'Include uppercase, lowercase, and number';
+      } else {
+        _passwordError = null;
+      }
+      _confirmError = _confirmController.text != pwd ? 'Passwords do not match' : null;
+      if (!_acceptedTerms) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please accept the Terms and Conditions')));
+      }
     });
     return _passwordError == null && _confirmError == null && _acceptedTerms;
   }
 
-  void _handleNext() {
+  Future<void> _handleNext() async {
     if (!_validate()) return;
+    
+    // Save locally
     widget.registration.update(() {
       widget.registration.password = _passwordController.text;
       widget.registration.confirmPassword = _confirmController.text;
       widget.registration.acceptedTerms = _acceptedTerms;
     });
-    widget.registration.nextStep();
-    context.pushReplacement('/auth/register/vehicle-basic', extra: widget.registration);
+
+    // If already registered in this session, skip API call
+    if (widget.registration.jwtToken != null) {
+      widget.registration.nextStep();
+      context.pushReplacement('/auth/register/vehicle-basic', extra: widget.registration);
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    try {
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/register');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'fullName': widget.registration.fullName,
+          'email': widget.registration.email,
+          'phoneNumber': widget.registration.phone,
+          'password': widget.registration.password,
+        }),
+      );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        widget.registration.jwtToken = data['data']['accessToken'];
+        
+        widget.registration.nextStep();
+        context.pushReplacement('/auth/register/vehicle-basic', extra: widget.registration);
+      } else {
+        final errorData = jsonDecode(response.body);
+        final errorMsg = errorData['message'] ?? 'Registration failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $errorMsg')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error. Please try again.')),
+      );
+    }
   }
 
   void _handleBack() {
@@ -63,6 +123,7 @@ class _AccountStepState extends State<AccountStep> {
       onNext: _handleNext,
       onBack: _handleBack,
       isNextDisabled: !_acceptedTerms,
+      isNextLoading: _isSubmitting,
       children: [
         AppTextField(
           label: 'Password',
@@ -90,9 +151,17 @@ class _AccountStepState extends State<AccountStep> {
               text: 'I agree to the ',
               style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               children: [
-                TextSpan(text: 'Terms of Service', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
-                TextSpan(text: ' and '),
-                TextSpan(text: 'Privacy Policy', style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
+                TextSpan(
+                  text: 'Terms of Service',
+                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/terms'),
+                ),
+                const TextSpan(text: ' and '),
+                TextSpan(
+                  text: 'Privacy Policy',
+                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/privacy'),
+                ),
               ],
             ),
           ),

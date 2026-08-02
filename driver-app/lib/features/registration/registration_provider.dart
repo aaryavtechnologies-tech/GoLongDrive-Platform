@@ -6,6 +6,9 @@ class RegistrationData extends ChangeNotifier {
   int currentStep = 1;
   static const totalSteps = 9;
 
+  // --- Auth Token ---
+  String? jwtToken;
+
   // --- Step 1: Personal ---
   String fullName = '';
   String phone = '';

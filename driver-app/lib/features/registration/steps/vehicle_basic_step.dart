@@ -34,9 +34,10 @@ class _VehicleBasicStepState extends State<VehicleBasicStep> {
 
   bool _validate() {
     setState(() {
-      _brandError = _brandController.text.trim().isEmpty ? 'Vehicle brand is required' : null;
-      _modelError = _modelController.text.trim().isEmpty ? 'Vehicle model is required' : null;
-      _regError = _regController.text.trim().isEmpty ? 'Registration number is required' : null;
+      _brandError = _brandController.text.trim().length < 2 ? 'Enter a valid vehicle brand' : null;
+      _modelError = _modelController.text.trim().length < 2 ? 'Enter a valid vehicle model' : null;
+      final regNum = _regController.text.trim().toUpperCase();
+      _regError = regNum.length < 8 || !RegExp(r'^[A-Z0-9\s]+$').hasMatch(regNum) ? 'Enter a valid registration number (e.g. MH 12 AB 1234)' : null;
       _typeError = _vehicleType == null ? 'Please select a vehicle type' : null;
     });
     return [_brandError, _modelError, _regError, _typeError].every((e) => e == null);

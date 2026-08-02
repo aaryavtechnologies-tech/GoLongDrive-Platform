@@ -285,6 +285,46 @@ const changePassword = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, 'Password changed successfully. Please log in again.');
 });
 
+// ── Upload Document ───────────────────────────────────────────────────────────
+
+/**
+ * @route   POST /api/driver/upload-document
+ * @access  Private (driver)
+ */
+const uploadDocumentHandler = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw ApiError.badRequest('No document file uploaded');
+  }
+  const documentUrl = `uploads/documents/${req.file.filename}`;
+  return sendSuccess(res, 200, 'Document uploaded successfully', { documentUrl });
+});
+
+// ── Submit Registration ───────────────────────────────────────────────────────
+
+/**
+ * @route   POST /api/driver/submit-registration
+ * @access  Private (driver)
+ */
+const submitRegistration = asyncHandler(async (req, res) => {
+  const { dateOfBirth, address, vehicle, documents } = req.body;
+  
+  const driver = await Driver.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        dateOfBirth,
+        address,
+        vehicle,
+        documents,
+        driverStatus: 'Pending', // Move status to pending review
+      },
+    },
+    { new: true, runValidators: true }
+  );
+
+  return sendSuccess(res, 200, 'Registration submitted successfully. Awaiting approval.', { driver });
+});
+
 module.exports = {
   register,
   login,
@@ -296,4 +336,6 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  uploadDocument: uploadDocumentHandler,
+  submitRegistration,
 };

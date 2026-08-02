@@ -24,12 +24,37 @@ class _PersonalStepState extends State<PersonalStep> {
 
   bool _validate() {
     setState(() {
-      _nameError = _nameController.text.trim().isEmpty ? 'Full name is required' : null;
-      _phoneError = _phoneController.text.trim().length < 10 ? 'Enter a valid phone number' : null;
-      _emailError = !_emailController.text.contains('@') ? 'Enter a valid email' : null;
-      _dobController.text.isEmpty
-          ? _dobError = 'Date of birth is required'
-          : _dobError = null;
+      final name = _nameController.text.trim();
+      final phone = _phoneController.text.trim();
+      final email = _emailController.text.trim();
+      final dob = _dobController.text.trim();
+
+      _nameError = name.length < 3 || !RegExp(r'^[a-zA-Z\s]+$').hasMatch(name) ? 'Enter a valid full name' : null;
+      _phoneError = phone.length != 10 || !RegExp(r'^[0-9]+$').hasMatch(phone) ? 'Enter a valid 10-digit phone number' : null;
+      _emailError = !RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+').hasMatch(email) ? 'Enter a valid email' : null;
+      
+      if (dob.isEmpty) {
+        _dobError = 'Date of birth is required';
+      } else if (!RegExp(r'^\d{2}/\d{2}/\d{4}$').hasMatch(dob)) {
+        _dobError = 'Use DD/MM/YYYY format';
+      } else {
+        try {
+          final parts = dob.split('/');
+          final day = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+          final year = int.parse(parts[2]);
+          final date = DateTime(year, month, day);
+          
+          if (date.year != year || date.month != month || date.day != day) {
+            _dobError = 'Invalid date';
+          } else {
+            final age = DateTime.now().difference(date).inDays / 365;
+            _dobError = age < 18 ? 'Must be at least 18 years old' : null;
+          }
+        } catch (e) {
+          _dobError = 'Invalid date';
+        }
+      }
     });
     return [_nameError, _phoneError, _emailError, _dobError].every((e) => e == null);
   }
@@ -74,6 +99,7 @@ class _PersonalStepState extends State<PersonalStep> {
           placeholder: 'Enter your phone number',
           leftIcon: Icons.phone_outlined,
           keyboardType: TextInputType.phone,
+          maxLength: 10,
           controller: _phoneController,
           errorText: _phoneError,
         ),
@@ -92,6 +118,7 @@ class _PersonalStepState extends State<PersonalStep> {
           placeholder: 'DD/MM/YYYY',
           leftIcon: Icons.calendar_today_outlined,
           keyboardType: TextInputType.datetime,
+          maxLength: 10,
           controller: _dobController,
           errorText: _dobError,
         ),

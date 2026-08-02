@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import '../../../app/theme.dart';
+import '../../../core/config/env_config.dart';
 import '../../../core/widgets/card_decoration.dart';
 import '../registration_provider.dart';
 import '../registration_step_scaffold.dart';
@@ -37,18 +40,73 @@ class _ReviewStepState extends State<ReviewStep> {
   }
 
   Future<void> _handleSubmit() async {
-    // TODO: call AuthService.submitRegistration(registration) here — see
-    // BACKEND_API_SPEC.md for the expected multipart/form payload shape.
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    if (!mounted) return;
-    setState(() => _isSubmitting = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Application submitted! We\u2019ll review your documents and get back to you.'),
-      ),
-    );
-    context.go('/login');
+    
+    try {
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/submit-registration');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.registration.jwtToken}',
+        },
+        body: jsonEncode({
+          'dateOfBirth': widget.registration.dateOfBirth,
+          'address': {
+            'street': widget.registration.street,
+            'city': widget.registration.city,
+            'state': widget.registration.state,
+            'pincode': widget.registration.pincode,
+          },
+          'vehicle': {
+            'brand': widget.registration.vehicleBrand,
+            'model': widget.registration.vehicleModel,
+            'registrationNumber': widget.registration.registrationNumber,
+            'type': widget.registration.vehicleType,
+            'fuelType': widget.registration.fuelType,
+            'manufacturingYear': widget.registration.manufacturingYear,
+            'seatingCapacity': widget.registration.seatingCapacity,
+            'acAvailable': widget.registration.acAvailable,
+          },
+          'documents': {
+            'aadhaarFront': widget.registration.aadhaarFront,
+            'aadhaarBack': widget.registration.aadhaarBack,
+            'licenseFront': widget.registration.licenseFront,
+            'licenseBack': widget.registration.licenseBack,
+            'rcFront': widget.registration.rcFront,
+            'rcBack': widget.registration.rcBack,
+            'insuranceCertificate': widget.registration.insuranceCertificate,
+            'pucCertificate': widget.registration.pucCertificate,
+            'selfiePhoto': widget.registration.selfiePhoto,
+            'vehicleFrontPhoto': widget.registration.vehicleFrontPhoto,
+          }
+        }),
+      );
+
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registration successful! Awaiting approval.'),
+          ),
+        );
+        context.go('/login');
+      } else {
+        final errorData = jsonDecode(response.body);
+        final errorMsg = errorData['message'] ?? 'Registration failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $errorMsg')),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error. Please try again.')),
+      );
+    }
   }
 
   @override

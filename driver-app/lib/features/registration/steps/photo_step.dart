@@ -63,6 +63,7 @@ class _PhotoStepState extends State<PhotoStep> {
           subtitle: 'Tap to choose from gallery',
           imagePath: _profilePhoto,
           icon: Icons.account_circle_outlined,
+          jwtToken: widget.registration.jwtToken,
           onChanged: (p) => setState(() => _profilePhoto = p),
         ),
         const SizedBox(height: 14),
@@ -72,6 +73,7 @@ class _PhotoStepState extends State<PhotoStep> {
           imagePath: _selfiePhoto,
           icon: Icons.face_outlined,
           source: ImageSource.camera,
+          jwtToken: widget.registration.jwtToken,
           onChanged: (p) => setState(() => _selfiePhoto = p),
         ),
         const SizedBox(height: 14),
@@ -81,6 +83,7 @@ class _PhotoStepState extends State<PhotoStep> {
           imagePath: _vehicleFrontPhoto,
           icon: Icons.directions_car_outlined,
           source: ImageSource.camera,
+          jwtToken: widget.registration.jwtToken,
           onChanged: (p) => setState(() => _vehicleFrontPhoto = p),
         ),
         if (_error != null) ...[

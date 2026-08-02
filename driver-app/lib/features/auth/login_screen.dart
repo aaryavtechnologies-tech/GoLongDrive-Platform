@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
+import '../../core/config/env_config.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/app_checkbox.dart';
@@ -14,37 +18,64 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _isLoading = false;
 
-  String? _phoneError;
+  String? _emailError;
   String? _passwordError;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
   bool _validate() {
     setState(() {
-      _phoneError = _phoneController.text.trim().length < 10 ? 'Enter a valid phone number' : null;
-      _passwordError = _passwordController.text.length < 6 ? 'Password must be at least 6 characters' : null;
+      final emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
+      _emailError = !emailRegex.hasMatch(_emailController.text.trim()) ? 'Enter a valid email address' : null;
+      _passwordError = _passwordController.text.length < 8 ? 'Password must be at least 8 characters' : null;
     });
-    return _phoneError == null && _passwordError == null;
+    return _emailError == null && _passwordError == null;
   }
 
   Future<void> _handleLogin() async {
     if (!_validate()) return;
     setState(() => _isLoading = true);
-    // TODO: call AuthService / API here.
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    context.go('/tabs');
+    
+    try {
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/login');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.statusCode == 200) {
+        // Optionally save tokens here
+        context.go('/tabs');
+      } else {
+        final errorMsg = jsonDecode(response.body)['message'] ?? 'Login failed';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error. Please try again.')),
+      );
+    }
   }
 
   void _handleDemoLogin() {
@@ -103,12 +134,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AppTextField(
-                    label: 'Phone Number',
-                    placeholder: 'Enter your phone number',
-                    leftIcon: Icons.phone_outlined,
-                    keyboardType: TextInputType.phone,
-                    controller: _phoneController,
-                    errorText: _phoneError,
+                    label: 'Email Address',
+                    placeholder: 'Enter your email',
+                    leftIcon: Icons.email_outlined,
+                    keyboardType: TextInputType.emailAddress,
+                    controller: _emailController,
+                    errorText: _emailError,
                   ),
                   const SizedBox(height: 18),
                   AppTextField(
@@ -143,13 +174,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
                   AppButton(label: 'Log In', onPressed: _handleLogin, isLoading: _isLoading, height: 52),
-                  const SizedBox(height: 10),
-                  AppButton(
-                    label: 'Demo Login (Bypass Backend)',
-                    variant: AppButtonVariant.outline,
-                    onPressed: _handleDemoLogin,
-                    height: 52,
-                  ),
                 ],
               ),
 
@@ -174,6 +198,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     rightIcon: Icon(Icons.person_add_alt, color: AppColors.textPrimary, size: 20),
                     onPressed: () => context.push('/auth/register'),
                     height: 52,
+                  ),
+                  const SizedBox(height: 16),
+                  Text.rich(
+                    TextSpan(
+                      style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      children: [
+                        const TextSpan(text: 'By logging in, you agree to our '),
+                        TextSpan(
+                          text: 'Terms',
+                          style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                          recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/terms'),
+                        ),
+                        const TextSpan(text: ' and '),
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                          recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/privacy'),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                 ],

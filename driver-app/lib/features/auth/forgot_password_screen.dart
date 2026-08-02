@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
+import '../../core/config/env_config.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/screen_header.dart';
@@ -15,27 +18,53 @@ class ForgotPasswordScreen extends StatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _phoneController = TextEditingController();
-  String? _phoneError;
+  final _emailController = TextEditingController();
+  String? _emailError;
   bool _isLoading = false;
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleSendOtp() async {
-    final phone = _phoneController.text.trim();
-    setState(() => _phoneError = phone.length < 10 ? 'Enter a valid phone number' : null);
-    if (_phoneError != null) return;
+  Future<void> _handleSendResetLink() async {
+    final email = _emailController.text.trim();
+    final emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
+    setState(() => _emailError = !emailRegex.hasMatch(email) ? 'Enter a valid email address' : null);
+    if (_emailError != null) return;
 
     setState(() => _isLoading = true);
-    // TODO: call AuthService.sendOtp(phone) here.
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    context.push('/auth/otp', extra: {'phone': phone});
+    
+    try {
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/forgot-password');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email}),
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A password reset link has been sent to your email.')),
+        );
+        context.go('/login');
+      } else {
+        final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to send reset link';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error. Please try again.')),
+      );
+    }
   }
 
   @override
@@ -53,19 +82,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               const SizedBox(height: 24),
               const ScreenHeader(
                 title: 'Reset Password',
-                subtitle: "Enter your registered phone number and we'll send you a one-time code to reset your password.",
+                subtitle: "Enter your registered email address and we'll send you a link to reset your password.",
               ),
               const SizedBox(height: 40),
               AppTextField(
-                label: 'Phone Number',
-                placeholder: 'Enter your phone number',
-                leftIcon: Icons.phone_outlined,
-                keyboardType: TextInputType.phone,
-                controller: _phoneController,
-                errorText: _phoneError,
+                label: 'Email Address',
+                placeholder: 'Enter your email',
+                leftIcon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
+                controller: _emailController,
+                errorText: _emailError,
               ),
               const SizedBox(height: 32),
-              AppButton(label: 'Send OTP', onPressed: _handleSendOtp, isLoading: _isLoading),
+              AppButton(label: 'Send Reset Link', onPressed: _handleSendResetLink, isLoading: _isLoading),
             ],
           ),
         ),

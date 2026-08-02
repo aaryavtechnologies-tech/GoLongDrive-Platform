@@ -30,9 +30,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   bool _validate() {
     setState(() {
-      _passwordError =
-          _passwordController.text.length < 6 ? 'Password must be at least 6 characters' : null;
-      _confirmError = _confirmController.text != _passwordController.text ? 'Passwords do not match' : null;
+      final pwd = _passwordController.text;
+      if (pwd.length < 8) {
+        _passwordError = 'Password must be at least 8 characters';
+      } else if (!RegExp(r'[A-Z]').hasMatch(pwd) || !RegExp(r'[a-z]').hasMatch(pwd) || !RegExp(r'[0-9]').hasMatch(pwd)) {
+        _passwordError = 'Include uppercase, lowercase, and number';
+      } else {
+        _passwordError = null;
+      }
+      _confirmError = _confirmController.text != pwd ? 'Passwords do not match' : null;
     });
     return _passwordError == null && _confirmError == null;
   }

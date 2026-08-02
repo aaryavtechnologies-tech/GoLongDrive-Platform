@@ -43,6 +43,41 @@ const driverSchema = new mongoose.Schema(
       default: null,
     },
 
+    // ── Registration Profile Fields (Phase 2) ─────────────────────────────────
+
+    dateOfBirth: { type: String },
+    
+    address: {
+      street: { type: String },
+      city: { type: String },
+      state: { type: String },
+      pincode: { type: String },
+    },
+
+    vehicle: {
+      brand: { type: String },
+      model: { type: String },
+      registrationNumber: { type: String },
+      type: { type: String, default: 'Sedan' },
+      fuelType: { type: String },
+      manufacturingYear: { type: String },
+      seatingCapacity: { type: String },
+      acAvailable: { type: String },
+    },
+
+    documents: {
+      aadhaarFront: { type: String },
+      aadhaarBack: { type: String },
+      licenseFront: { type: String },
+      licenseBack: { type: String },
+      rcFront: { type: String },
+      rcBack: { type: String },
+      insuranceCertificate: { type: String },
+      pucCertificate: { type: String },
+      selfiePhoto: { type: String },
+      vehicleFrontPhoto: { type: String },
+    },
+
     // ── Driver-specific status fields ─────────────────────────────────────────
 
     driverStatus: {
@@ -61,16 +96,6 @@ const driverSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(AVAILABILITY_STATUS),
       default: AVAILABILITY_STATUS.AVAILABLE,
-    },
-
-    // Used for auto-assignment matching
-    vehicleType: {
-      type: String,
-      default: 'Sedan',
-    },
-    city: {
-      type: String,
-      default: 'Unknown',
     },
 
     // ── Auth / Security fields ────────────────────────────────────────────────
