@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -36,6 +37,8 @@ class _AccountStepState extends State<AccountStep> {
         _passwordError = 'Password must be at least 8 characters';
       } else if (!RegExp(r'[A-Z]').hasMatch(pwd) || !RegExp(r'[a-z]').hasMatch(pwd) || !RegExp(r'[0-9]').hasMatch(pwd)) {
         _passwordError = 'Include uppercase, lowercase, and number';
+      } else if (!RegExp(r'[\W_]').hasMatch(pwd)) {
+        _passwordError = 'Include at least one special character';
       } else {
         _passwordError = null;
       }
@@ -45,6 +48,64 @@ class _AccountStepState extends State<AccountStep> {
       }
     });
     return _passwordError == null && _confirmError == null && _acceptedTerms;
+  }
+
+  Widget _buildPasswordMeter() {
+    final pwd = _passwordController.text;
+    if (pwd.isEmpty) return const SizedBox.shrink();
+
+    int strength = 0;
+    if (pwd.length >= 8) strength++;
+    if (RegExp(r'[A-Z]').hasMatch(pwd) && RegExp(r'[a-z]').hasMatch(pwd)) strength++;
+    if (RegExp(r'[0-9]').hasMatch(pwd)) strength++;
+    if (RegExp(r'[\W_]').hasMatch(pwd)) strength++;
+
+    Color color;
+    String label;
+    if (strength <= 1) {
+      color = AppColors.error;
+      label = 'Weak';
+    } else if (strength == 2) {
+      color = Colors.orange;
+      label = 'Fair';
+    } else if (strength == 3) {
+      color = Colors.amber;
+      label = 'Good';
+    } else {
+      color = AppColors.success;
+      label = 'Strong';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0, bottom: 4.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Password Strength', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: List.generate(4, (index) {
+              return Expanded(
+                child: Container(
+                  height: 4,
+                  margin: EdgeInsets.only(right: index < 3 ? 4 : 0),
+                  decoration: BoxDecoration(
+                    color: index < strength ? color : AppColors.divider,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _handleNext() async {
@@ -68,16 +129,24 @@ class _AccountStepState extends State<AccountStep> {
 
     try {
       final url = Uri.parse('${EnvConfig.apiUrl}/driver/register');
+      final requestBody = {
+        'fullName': widget.registration.fullName,
+        'email': widget.registration.email,
+        'phoneNumber': widget.registration.phone,
+        'password': widget.registration.password,
+      };
+      
+      debugPrint('>>> API REQUEST: POST $url');
+      debugPrint('>>> PAYLOAD: $requestBody');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'fullName': widget.registration.fullName,
-          'email': widget.registration.email,
-          'phoneNumber': widget.registration.phone,
-          'password': widget.registration.password,
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -132,8 +201,10 @@ class _AccountStepState extends State<AccountStep> {
           isPassword: true,
           controller: _passwordController,
           errorText: _passwordError,
+          onChanged: (_) => setState(() {}),
         ),
-        const SizedBox(height: 20),
+        _buildPasswordMeter(),
+        const SizedBox(height: 12),
         AppTextField(
           label: 'Confirm Password',
           placeholder: 'Re-enter your password',

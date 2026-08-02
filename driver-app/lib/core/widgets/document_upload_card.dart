@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
@@ -9,6 +10,7 @@ import '../../app/theme.dart';
 /// preview with a "Retake" affordance.
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../core/config/env_config.dart';
 
 class DocumentUploadCard extends StatefulWidget {
@@ -63,15 +65,34 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
   Future<void> _uploadFile(File file) async {
     setState(() => _isUploading = true);
     try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('${EnvConfig.apiUrl}/driver/upload-document'),
-      );
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/upload-document');
+      final request = http.MultipartRequest('POST', url);
       request.headers['Authorization'] = 'Bearer ${widget.jwtToken}';
-      request.files.add(await http.MultipartFile.fromPath('document', file.path));
+      
+      final ext = file.path.split('.').last.toLowerCase();
+      MediaType? contentType;
+      if (ext == 'jpg' || ext == 'jpeg') {
+        contentType = MediaType('image', 'jpeg');
+      } else if (ext == 'png') {
+        contentType = MediaType('image', 'png');
+      } else if (ext == 'webp') {
+        contentType = MediaType('image', 'webp');
+      }
+
+      request.files.add(await http.MultipartFile.fromPath(
+        'document', 
+        file.path,
+        contentType: contentType,
+      ));
+
+      debugPrint('>>> API REQUEST: MULTIPART POST $url');
+      debugPrint('>>> FILE: ${file.path}');
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);

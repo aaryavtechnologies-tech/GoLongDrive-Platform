@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -48,14 +49,22 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       final url = Uri.parse('${EnvConfig.apiUrl}/driver/login');
+      final requestBody = {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      };
+
+      debugPrint('>>> API REQUEST: POST $url');
+      debugPrint('>>> PAYLOAD: $requestBody');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
 
       if (!mounted) return;
       setState(() => _isLoading = false);

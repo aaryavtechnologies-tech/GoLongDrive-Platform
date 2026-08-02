@@ -5,6 +5,7 @@
 const multer = require('multer');
 const path = require('path');
 const crypto = require('crypto');
+const fs = require('fs');
 const { ALLOWED_IMAGE_TYPES, MAX_FILE_SIZE_MB } = require('../utils/constants');
 const ApiError = require('../utils/ApiError');
 
@@ -13,7 +14,11 @@ const ApiError = require('../utils/ApiError');
 const storage = (destination) =>
   multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, path.join(__dirname, '../../uploads', destination));
+      const destPath = path.join(__dirname, '../../uploads', destination);
+      if (!fs.existsSync(destPath)) {
+        fs.mkdirSync(destPath, { recursive: true });
+      }
+      cb(null, destPath);
     },
     filename: (req, file, cb) => {
       // e.g.  a3f8c1d2-1690000000000.jpg

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
@@ -44,44 +45,52 @@ class _ReviewStepState extends State<ReviewStep> {
     
     try {
       final url = Uri.parse('${EnvConfig.apiUrl}/driver/submit-registration');
+      final requestBody = {
+        'dateOfBirth': widget.registration.dateOfBirth,
+        'address': {
+          'street': widget.registration.street,
+          'city': widget.registration.city,
+          'state': widget.registration.state,
+          'pincode': widget.registration.pincode,
+        },
+        'vehicle': {
+          'brand': widget.registration.vehicleBrand,
+          'model': widget.registration.vehicleModel,
+          'registrationNumber': widget.registration.registrationNumber,
+          'type': widget.registration.vehicleType,
+          'fuelType': widget.registration.fuelType,
+          'manufacturingYear': widget.registration.manufacturingYear,
+          'seatingCapacity': widget.registration.seatingCapacity,
+          'acAvailable': widget.registration.acAvailable,
+        },
+        'documents': {
+          'aadhaarFront': widget.registration.aadhaarFront,
+          'aadhaarBack': widget.registration.aadhaarBack,
+          'licenseFront': widget.registration.licenseFront,
+          'licenseBack': widget.registration.licenseBack,
+          'rcFront': widget.registration.rcFront,
+          'rcBack': widget.registration.rcBack,
+          'insuranceCertificate': widget.registration.insuranceCertificate,
+          'pucCertificate': widget.registration.pucCertificate,
+          'selfiePhoto': widget.registration.selfiePhoto,
+          'vehicleFrontPhoto': widget.registration.vehicleFrontPhoto,
+        }
+      };
+
+      debugPrint('>>> API REQUEST: POST $url');
+      debugPrint('>>> PAYLOAD: $requestBody');
+
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.registration.jwtToken}',
         },
-        body: jsonEncode({
-          'dateOfBirth': widget.registration.dateOfBirth,
-          'address': {
-            'street': widget.registration.street,
-            'city': widget.registration.city,
-            'state': widget.registration.state,
-            'pincode': widget.registration.pincode,
-          },
-          'vehicle': {
-            'brand': widget.registration.vehicleBrand,
-            'model': widget.registration.vehicleModel,
-            'registrationNumber': widget.registration.registrationNumber,
-            'type': widget.registration.vehicleType,
-            'fuelType': widget.registration.fuelType,
-            'manufacturingYear': widget.registration.manufacturingYear,
-            'seatingCapacity': widget.registration.seatingCapacity,
-            'acAvailable': widget.registration.acAvailable,
-          },
-          'documents': {
-            'aadhaarFront': widget.registration.aadhaarFront,
-            'aadhaarBack': widget.registration.aadhaarBack,
-            'licenseFront': widget.registration.licenseFront,
-            'licenseBack': widget.registration.licenseBack,
-            'rcFront': widget.registration.rcFront,
-            'rcBack': widget.registration.rcBack,
-            'insuranceCertificate': widget.registration.insuranceCertificate,
-            'pucCertificate': widget.registration.pucCertificate,
-            'selfiePhoto': widget.registration.selfiePhoto,
-            'vehicleFrontPhoto': widget.registration.vehicleFrontPhoto,
-          }
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
