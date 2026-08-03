@@ -10,4 +10,8 @@ Admin Login Details :
 email : admin@golongdrive.com
 password : admin123 
 
-now make the rides , documents , payment page and remove the invoices, eanring page
+
+Driver Login : 
+
+email : driver@gmail.com
+password : driver123
