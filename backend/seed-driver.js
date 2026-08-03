@@ -33,7 +33,7 @@ async function seedDriver() {
         email: email,
         phoneNumber: phoneNumber,
         password: 'driver123',
-        driverStatus: 'APPROVED' // Need to verify if APPROVED is valid, let's omit if unsure or we can just provide it
+        driverStatus: 'approved' // Need to verify if APPROVED is valid, let's omit if unsure or we can just provide it
       });
       await newDriver.save();
       console.log('Demo driver created successfully.');
