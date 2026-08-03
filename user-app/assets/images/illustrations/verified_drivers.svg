@@ -1,0 +1,40 @@
+<svg width="320" height="320" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+  <!-- soft backdrop -->
+  <circle cx="160" cy="160" r="140" fill="#141414"/>
+  <circle cx="160" cy="160" r="140" fill="none" stroke="#2A2A2A" stroke-width="1"/>
+
+  <!-- ID card -->
+  <g transform="translate(85,95)">
+    <rect x="0" y="0" width="150" height="130" rx="16" fill="#FFFFFF"/>
+    <rect x="0" y="0" width="150" height="34" rx="16" fill="#F5B300"/>
+    <rect x="0" y="18" width="150" height="16" fill="#F5B300"/>
+    <circle cx="24" cy="17" r="9" fill="#000000"/>
+    <rect x="42" y="12" width="60" height="6" rx="3" fill="#000000" opacity="0.6"/>
+
+    <!-- driver silhouette -->
+    <circle cx="40" cy="72" r="18" fill="#0D0D0D"/>
+    <path d="M14 118 C14 96 26 86 40 86 C54 86 66 96 66 118 Z" fill="#0D0D0D"/>
+
+    <!-- detail lines -->
+    <rect x="82" y="58" width="54" height="6" rx="3" fill="#D8D8D8"/>
+    <rect x="82" y="72" width="44" height="6" rx="3" fill="#D8D8D8"/>
+    <rect x="82" y="86" width="50" height="6" rx="3" fill="#D8D8D8"/>
+    <rect x="82" y="100" width="36" height="6" rx="3" fill="#D8D8D8"/>
+  </g>
+
+  <!-- verified badge -->
+  <g transform="translate(205,205)">
+    <circle cx="0" cy="0" r="34" fill="#F5B300"/>
+    <circle cx="0" cy="0" r="34" fill="none" stroke="#000000" stroke-width="4"/>
+    <path d="M-14 0 L-4 11 L16 -13" fill="none" stroke="#000000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <!-- shield outline behind badge -->
+  <path d="M205 150 C222 150 236 156 236 156 C236 190 222 210 205 220 C188 210 174 190 174 156 C174 156 188 150 205 150 Z"
+        fill="none" stroke="#FFFFFF" stroke-width="2.5" opacity="0.35"/>
+
+  <!-- decorative dots -->
+  <circle cx="70" cy="230" r="4" fill="#F5B300" opacity="0.7"/>
+  <circle cx="245" cy="90" r="5" fill="#FFFFFF" opacity="0.5"/>
+  <circle cx="60" cy="70" r="3" fill="#FFFFFF" opacity="0.5"/>
+</svg>

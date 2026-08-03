@@ -23,6 +23,9 @@ const healthRoutes = require('./health.routes');
 const notificationRoutes = require('./notification.routes');
 const reviewRoutes = require('./review.routes');
 const adminUserRoutes = require('./admin.user.routes');
+const adminCustomerRoutes = require('./admin.customer.routes');
+const adminDriverRoutes = require('./admin.driver.routes');
+const adminDocumentRoutes = require('./admin.document.routes');
 const auditRoutes = require('./audit.routes');
 const systemRoutes = require('./system.routes');
 
@@ -52,6 +55,9 @@ router.use('/admin/settings', adminSettingsRoutes);
 router.use('/admin/cms', adminCmsRoutes);
 router.use('/admin/roles', adminRoleRoutes);
 router.use('/admin/admin-users', adminUserRoutes);
+router.use('/admin/customers', adminCustomerRoutes);
+router.use('/admin/drivers', adminDriverRoutes);
+router.use('/admin/documents', adminDocumentRoutes);
 router.use('/admin/audit-logs', auditRoutes);
 
 // Public/Admin Contact Routes

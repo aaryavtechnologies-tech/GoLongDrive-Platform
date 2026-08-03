@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import apiClient from "@/lib/axios";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,7 +17,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -26,16 +26,18 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
 
     try {
       const response = await apiClient.post('/admin/login', { email, password });
       if (response.data.success) {
         document.cookie = `admin_token=${response.data.data.accessToken}; path=/; max-age=86400`;
+        toast.success("Login successful!", { description: "Welcome to the Command Center." });
         router.push("/dashboard");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid credentials. Please verify your access level.");
+      toast.error("Authentication Failed", { 
+        description: err.response?.data?.message || "Invalid credentials. Please verify your access level."
+      });
     } finally {
       setIsLoading(false);
     }
@@ -92,12 +94,6 @@ export default function LoginPage() {
           
           <CardContent className="p-8">
             <form onSubmit={handleLogin} className="space-y-6">
-              {error && (
-                <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 flex items-center gap-3 text-destructive animate-in slide-in-from-top-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-destructive animate-pulse" />
-                  <p className="text-sm font-medium">{error}</p>
-                </div>
-              )}
               
               <div className="space-y-4">
                 <div className="space-y-2 group">

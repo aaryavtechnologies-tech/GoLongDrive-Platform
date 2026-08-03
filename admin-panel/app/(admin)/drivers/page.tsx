@@ -9,6 +9,7 @@ import { EmptyDrivers } from '@/components/drivers/EmptyDrivers';
 import { ErrorBoundary } from '@/components/common/error-boundary';
 import { Button } from '@/components/ui/button';
 import { Download, Plus } from 'lucide-react';
+import Link from 'next/link';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -76,10 +77,12 @@ export default function DriversPage() {
             <Download className="mr-2 h-4 w-4" />
             Export
           </Button>
-          <Button className="bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Driver
-          </Button>
+          <Link href="/drivers/create">
+            <Button className="bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Driver
+            </Button>
+          </Link>
         </div>
       </div>
 
