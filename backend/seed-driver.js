@@ -10,34 +10,22 @@ async function seedDriver() {
     const email = 'driver@gmail.com';
     const phoneNumber = '9876543210';
 
-    // Check if driver already exists
-    let existingDriver = await Driver.findOne({ email });
-    if (!existingDriver) {
-      existingDriver = await Driver.findOne({ phoneNumber });
-    }
+    // Delete existing driver if it exists
+    console.log('Checking for existing demo driver...');
+    await Driver.deleteMany({ $or: [{ email }, { phoneNumber }] });
+    console.log('Deleted any existing demo drivers.');
 
-    if (existingDriver) {
-      console.log('Demo driver already exists. Updating...');
-      existingDriver.password = 'driver123';
-      existingDriver.fullName = 'Demo Driver';
-      existingDriver.email = email;
-      existingDriver.phoneNumber = phoneNumber;
-      existingDriver.driverStatus = 'approved';
-      await existingDriver.save();
-      console.log('Demo driver updated successfully.');
-    } else {
-      console.log('Creating new demo driver...');
-      const newDriver = new Driver({
-
-        fullName: 'Demo Driver',
-        email: email,
-        phoneNumber: phoneNumber,
-        password: 'driver123',
-        driverStatus: 'approved' // Need to verify if APPROVED is valid, let's omit if unsure or we can just provide it
-      });
-      await newDriver.save();
-      console.log('Demo driver created successfully.');
-    }
+    console.log('Creating new demo driver...');
+    const newDriver = new Driver({
+      fullName: 'Demo Driver',
+      email: email,
+      phoneNumber: phoneNumber,
+      password: 'driver123',
+      driverStatus: 'approved',
+      userId: new mongoose.Types.ObjectId() // Bypass duplicate userId index
+    });
+    await newDriver.save();
+    console.log('Demo driver created successfully.');
   } catch (error) {
     console.error('Error seeding driver:', error);
   } finally {
