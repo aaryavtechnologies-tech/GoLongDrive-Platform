@@ -48,6 +48,7 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
   bool _loadingRoute = true;
   CarModel? _selected;
   bool _confirming = false;
+  bool _hideMap = false; // Toggle for testing without API keys
 
   double get _distanceKm {
     if (_route != null) return _route!.distanceMeters / 1000;
@@ -152,94 +153,111 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     final colors = AppColors.of(context);
     return Scaffold(
       backgroundColor: colors.background,
-      appBar: AppBar(title: const Text('Choose your car')),
+      appBar: AppBar(
+        title: const Text('Choose your car'),
+        actions: [
+          IconButton(
+            icon: Icon(_hideMap ? Icons.map : Icons.map_outlined),
+            onPressed: () => setState(() => _hideMap = !_hideMap),
+            tooltip: 'Toggle Map',
+          ),
+        ],
+      ),
       body: Column(
         children: [
-          SizedBox(
-            height: mapHeight,
-            width: double.infinity,
-            child: Stack(
-              children: [
-                GoogleMap(
-                  initialCameraPosition: CameraPosition(target: widget.request.pickupLatLng, zoom: 13),
-                  onMapCreated: (c) {
-                    _mapController = c;
-                    _applyDarkStyle(c);
-                    _fitToRoute();
-                  },
-                  markers: {
-                    Marker(
-                      markerId: const MarkerId('pickup'),
-                      position: widget.request.pickupLatLng,
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-                      infoWindow: InfoWindow(title: 'Pickup', snippet: widget.request.pickupAddress),
-                    ),
-                    Marker(
-                      markerId: const MarkerId('drop'),
-                      position: widget.request.dropLatLng,
-                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                      infoWindow: InfoWindow(title: 'Drop', snippet: widget.request.dropAddress),
-                    ),
-                  },
-                  polylines: {
-                    Polyline(
-                      polylineId: const PolylineId('route'),
-                      points: routeLine,
-                      color: AppColors.primaryGold,
-                      width: 4,
-                      jointType: JointType.round,
-                      startCap: Cap.roundCap,
-                      endCap: Cap.roundCap,
-                    ),
-                  },
-                  myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
-                  mapToolbarEnabled: false,
-                  compassEnabled: false,
-                ),
-                if (_loadingRoute)
-                  const Positioned(
-                    top: 12,
-                    left: 12,
-                    child: _Chip(label: 'Finding best route…', icon: Icons.route),
+          if (!_hideMap)
+            SizedBox(
+              height: mapHeight,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(target: widget.request.pickupLatLng, zoom: 13),
+                    onMapCreated: (c) {
+                      _mapController = c;
+                      _applyDarkStyle(c);
+                      _fitToRoute();
+                    },
+                    markers: {
+                      Marker(
+                        markerId: const MarkerId('pickup'),
+                        position: widget.request.pickupLatLng,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
+                        infoWindow: InfoWindow(title: 'Pickup', snippet: widget.request.pickupAddress),
+                      ),
+                      Marker(
+                        markerId: const MarkerId('drop'),
+                        position: widget.request.dropLatLng,
+                        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                        infoWindow: InfoWindow(title: 'Drop', snippet: widget.request.dropAddress),
+                      ),
+                    },
+                    polylines: {
+                      Polyline(
+                        polylineId: const PolylineId('route'),
+                        points: routeLine,
+                        color: AppColors.primaryGold,
+                        width: 4,
+                        jointType: JointType.round,
+                        startCap: Cap.roundCap,
+                        endCap: Cap.roundCap,
+                      ),
+                    },
+                    myLocationButtonEnabled: false,
+                    zoomControlsEnabled: false,
+                    mapToolbarEnabled: false,
+                    compassEnabled: false,
                   ),
-              ],
+                  if (_loadingRoute)
+                    const Positioned(
+                      top: 12,
+                      left: 12,
+                      child: _Chip(label: 'Finding best route…', icon: Icons.route),
+                    ),
+                ],
+              ),
             ),
-          ),
           Expanded(
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                  child: _TripSummaryCard(
-                    request: widget.request,
-                    distanceLabel: _loadingRoute
-                        ? 'Calculating distance…'
-                        : '${_distanceKm.toStringAsFixed(1)} km'
-                            '${_route != null ? ' · ${_route!.durationText}' : ''}',
-                    days: _numberOfDays,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+                    child: _TripSummaryCard(
+                      request: widget.request,
+                      distanceLabel: _loadingRoute
+                          ? 'Calculating distance…'
+                          : '${_distanceKm.toStringAsFixed(1)} km'
+                              '${_route != null ? ' · ${_route!.durationText}' : ''}',
+                      days: _numberOfDays,
+                    ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('Choose a car', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Choose a car', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+                    ),
                   ),
                 ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                    children: [
-                      for (final entry in _carsByCategory.entries)
-                        _CategorySection(
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final entry = _carsByCategory.entries.elementAt(index);
+                        return _CategorySection(
                           category: entry.key,
                           cars: entry.value,
                           selected: _selected,
                           fareFor: _fareFor,
                           onSelect: (car) => setState(() => _selected = car),
-                        ),
-                    ],
+                        );
+                      },
+                      childCount: _carsByCategory.length,
+                    ),
                   ),
                 ),
               ],
