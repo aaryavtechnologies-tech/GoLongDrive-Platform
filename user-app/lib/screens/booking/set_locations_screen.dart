@@ -182,6 +182,22 @@ class _SetLocationsScreenState extends State<SetLocationsScreen> {
     );
   }
 
+  void _demoBypass() {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    Navigator.of(context).pushNamed(
+      AppRoutes.confirmRide,
+      arguments: RideRequest(
+        pickupAddress: 'Demo Pickup (Mumbai Airport)',
+        pickupLatLng: const LatLng(19.0896, 72.8656),
+        dropAddress: 'Demo Destination (Pune Railway Station)',
+        dropLatLng: const LatLng(18.5289, 73.8744),
+        startDate: today,
+        returnDate: today.add(const Duration(days: 2)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -241,9 +257,25 @@ class _SetLocationsScreenState extends State<SetLocationsScreen> {
             if (_suggestions.isEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: PrimaryButton(
-                  label: 'Confirm Locations',
-                  onPressed: _canContinue ? _continue : null,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PrimaryButton(
+                      label: 'Confirm Locations',
+                      onPressed: _canContinue ? _continue : null,
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: _demoBypass,
+                      child: Text(
+                        'Demo: Skip to Car Selection',
+                        style: TextStyle(
+                          color: colors.textSecondary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
