@@ -12,6 +12,7 @@ import '../../widgets/app_checkbox.dart';
 import '../../widgets/app_divider.dart';
 import '../../widgets/social_login_button.dart';
 import '../../routes/app_routes.dart';
+import '../../core/services/auth_service.dart';
 
 /// Screen 3 from the checklist. Username, password (+eye toggle), remember me,
 /// forgot password, Google login, error/empty states. Mock navigation only —
@@ -53,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return null;
   }
 
-  void _onLoginPressed() {
+  void _onLoginPressed() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _authError = null);
@@ -63,22 +64,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Mock "processing" delay — no backend call, just local UI state.
-    Future.delayed(const Duration(milliseconds: 900), () {
+    try {
+      await AuthService.login(enteredUsername, enteredPassword);
       if (!mounted) return;
-
-      final isValid =
-          enteredUsername == _dummyUsername && enteredPassword == _dummyPassword;
-
+      setState(() => _isLoading = false);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _authError = isValid ? null : 'Invalid username or password';
+        _authError = e.toString().replaceFirst('Exception: ', '');
       });
-
-      if (isValid) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-      }
-    });
+    }
   }
 
   void _onGoogleLoginPressed() {

@@ -30,7 +30,7 @@ export function Sidebar() {
       <div className="flex h-16 items-center border-b border-white/[0.08] px-6 z-10">
         <Link href="/dashboard" className="flex items-center gap-3 font-bold text-lg text-white group">
           <div className="relative h-8 w-8 overflow-hidden rounded bg-white p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.15)] group-hover:shadow-[0_0_20px_rgba(234,179,8,0.3)] transition-shadow duration-300">
-            <Image src="/logo.jpeg" alt="GoLongDrive Logo" fill className="object-cover rounded-sm" />
+            <Image src="/logo.jpeg" alt="GoLongDrive Logo" fill sizes="32px" className="object-cover rounded-sm" />
           </div>
           <span className="tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400 group-hover:to-white transition-colors duration-300">GoLongDrive</span>
         </Link>

@@ -6,7 +6,19 @@ import { Car, CheckCircle2, ShieldAlert, FileText, Snowflake, Users } from 'luci
 import { format } from 'date-fns';
 
 export function VehicleInformationCard({ vehicle }: { vehicle: Vehicle }) {
-  const isExpired = (dateString: string) => new Date(dateString) < new Date();
+  const isExpired = (dateString?: string) => {
+    if (!dateString) return false;
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return false;
+    return d < new Date();
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'Invalid Date';
+    return format(d, 'MMM dd, yyyy');
+  };
 
   return (
     <Card className="bg-zinc-950 border-white/5 text-white shadow-md">
@@ -65,9 +77,9 @@ export function VehicleInformationCard({ vehicle }: { vehicle: Vehicle }) {
             <span className="text-sm text-zinc-500 flex items-center gap-1">
               <ShieldAlert className="h-4 w-4" /> Insurance Expiry
             </span>
-            <div className={`font-medium flex items-center gap-2 mt-1 ${isExpired(vehicle.insuranceExpiry) ? 'text-red-500' : 'text-green-500'}`}>
-              {isExpired(vehicle.insuranceExpiry) ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-              {format(new Date(vehicle.insuranceExpiry), 'MMM dd, yyyy')}
+            <div className={`font-medium flex items-center gap-2 mt-1 ${vehicle.insuranceExpiry && isExpired(vehicle.insuranceExpiry) ? 'text-red-500' : 'text-green-500'}`}>
+              {vehicle.insuranceExpiry && isExpired(vehicle.insuranceExpiry) ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {formatDate(vehicle.insuranceExpiry)}
             </div>
           </div>
 
@@ -75,9 +87,9 @@ export function VehicleInformationCard({ vehicle }: { vehicle: Vehicle }) {
             <span className="text-sm text-zinc-500 flex items-center gap-1">
               <FileText className="h-4 w-4" /> PUC Expiry
             </span>
-            <div className={`font-medium flex items-center gap-2 mt-1 ${isExpired(vehicle.pucExpiry) ? 'text-red-500' : 'text-green-500'}`}>
-              {isExpired(vehicle.pucExpiry) ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-              {format(new Date(vehicle.pucExpiry), 'MMM dd, yyyy')}
+            <div className={`font-medium flex items-center gap-2 mt-1 ${vehicle.pucExpiry && isExpired(vehicle.pucExpiry) ? 'text-red-500' : 'text-green-500'}`}>
+              {vehicle.pucExpiry && isExpired(vehicle.pucExpiry) ? <XCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+              {formatDate(vehicle.pucExpiry)}
             </div>
           </div>
         </div>

@@ -10,7 +10,7 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/app_checkbox.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
-
+import '../../core/services/auth_service.dart';
 /// Screen 4 — Register
 ///
 /// Full name, email, mobile, password, confirm password, T&C checkbox,
@@ -62,17 +62,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isSubmitting = true);
 
-    // Mock registration call — replace with real API integration later.
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      await AuthService.register(
+        _fullNameController.text.trim(),
+        _emailController.text.trim(),
+        _mobileController.text.trim(),
+        _passwordController.text,
+      );
 
-    if (!mounted) return;
+      // Successfully registered, now send OTP for verification
+      await AuthService.sendOtp();
 
-    setState(() => _isSubmitting = false);
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
 
-    Navigator.of(context).pushNamed(
-      AppRoutes.verifyEmail,
-      arguments: _emailController.text.trim(),
-    );
+      Navigator.of(context).pushNamed(
+        AppRoutes.verifyEmail,
+        arguments: _emailController.text.trim(),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   Color _strengthColor(int strength) {

@@ -26,6 +26,8 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== 'undefined') {
+        // Clear the token cookie to prevent middleware redirect loop
+        document.cookie = 'admin_token=; Max-Age=0; path=/';
         window.location.href = '/login';
       }
     }

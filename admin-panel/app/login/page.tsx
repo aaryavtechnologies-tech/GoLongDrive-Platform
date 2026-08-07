@@ -65,6 +65,7 @@ export default function LoginPage() {
                 src="/logo.jpeg" 
                 alt="Logo" 
                 fill 
+                sizes="96px"
                 className="object-cover transition-transform duration-500 group-hover:scale-110" 
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';

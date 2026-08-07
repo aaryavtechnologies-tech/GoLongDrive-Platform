@@ -12,7 +12,7 @@ import '../../widgets/primary_button.dart';
 import '../../widgets/loading_button.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
-
+import '../../core/services/auth_service.dart';
 /// Screen 5 — Verify Email (OTP)
 ///
 /// 6-digit OTP entry via [OtpInput], a 00:30 resend countdown, a "Change
@@ -81,23 +81,30 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     setState(() => _isVerifying = true);
 
-    // Mock verification call — replace with real API integration later.
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      await AuthService.verifyOtp(value);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    setState(() {
-      _isVerifying = false;
-      _verified = true;
-    });
+      setState(() {
+        _isVerifying = false;
+        _verified = true;
+      });
 
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
 
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.login,
-          (route) => false,
-    );
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+            (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isVerifying = false;
+        _errorText = e.toString().replaceFirst('Exception: ', '');
+      });
+    }
   }
 
   Future<void> _handleResend() async {
@@ -105,13 +112,21 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     setState(() => _isResending = true);
 
-    // Mock resend call — replace with real API integration later.
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) return;
-
-    setState(() => _isResending = false);
-    _startCountdown();
+    try {
+      await AuthService.sendOtp();
+      if (!mounted) return;
+      setState(() => _isResending = false);
+      _startCountdown();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('OTP resent successfully')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isResending = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   void _handleChangeEmail() {

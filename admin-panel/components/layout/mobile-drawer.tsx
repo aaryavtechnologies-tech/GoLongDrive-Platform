@@ -45,8 +45,8 @@ export function MobileDrawer() {
         <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/30 to-transparent pointer-events-none" />
         <SheetHeader className="p-6 border-b border-white/5 text-left z-10 relative">
           <SheetTitle className="flex items-center gap-3 font-bold text-lg text-white group">
-            <div className="relative h-8 w-8 overflow-hidden rounded bg-white p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.15)]">
-              <Image src="/logo.jpeg" alt="GoLongDrive Logo" fill className="object-cover rounded-sm" />
+            <div className="relative h-8 w-8 overflow-hidden rounded bg-white mr-3 shrink-0">
+              <Image src="/logo.jpeg" alt="GoLongDrive Logo" fill sizes="32px" className="object-cover rounded-sm" />
             </div>
             <span className="tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-zinc-400">GoLongDrive</span>
           </SheetTitle>

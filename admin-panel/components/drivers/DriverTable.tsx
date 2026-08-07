@@ -22,6 +22,9 @@ import { DriverActions } from './DriverActions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { FileCheck2 } from 'lucide-react';
+import { useUpdateDriverStatus } from '@/hooks/useDriverActions';
 
 interface DriverTableProps {
   data: Driver[];
@@ -29,6 +32,8 @@ interface DriverTableProps {
 }
 
 export function DriverTable({ data, isLoading }: DriverTableProps) {
+  const updateStatus = useUpdateDriverStatus();
+
   const columns: ColumnDef<Driver>[] = [
     {
       accessorKey: 'name',
@@ -93,7 +98,23 @@ export function DriverTable({ data, isLoading }: DriverTableProps) {
     },
     {
       id: 'actions',
-      cell: ({ row }) => <DriverActions driver={row.original} />,
+      cell: ({ row }) => (
+        <div className="flex items-center justify-end gap-2">
+          {row.original.status === 'Pending' && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20 hover:text-green-400"
+              onClick={() => updateStatus.mutate({ id: row.original.id, status: 'Approved' })}
+              disabled={updateStatus.isPending}
+            >
+              <FileCheck2 className="mr-1.5 h-3.5 w-3.5" />
+              Approve
+            </Button>
+          )}
+          <DriverActions driver={row.original} />
+        </div>
+      ),
     },
   ];
 
