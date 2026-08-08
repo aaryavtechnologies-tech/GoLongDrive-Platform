@@ -85,8 +85,8 @@ export default function DriverDetailsPage() {
             </h4>
             <p className="text-sm text-zinc-300 mt-1">
               {allDocsApproved 
-                ? 'All documents are approved. You can now approve the driver to allow them on the platform.'
-                : 'Please review and approve all uploaded documents before approving the driver.'}
+                ? 'All uploaded documents are approved. You can now approve the driver to allow them on the platform.'
+                : 'Warning: Not all documents are verified yet. You can still force-approve this driver for testing purposes.'}
             </p>
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -100,11 +100,11 @@ export default function DriverDetailsPage() {
               Reject Driver
             </Button>
             <Button 
-              className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-600/20"
+              className="bg-green-600 hover:bg-green-500 text-white shadow-[0_0_15px_rgba(22,163,74,0.3)] hover:shadow-[0_0_25px_rgba(22,163,74,0.5)] transition-all duration-300 border border-green-500/50"
               onClick={handleApproveDriver}
-              disabled={!allDocsApproved || updateStatus.isPending}
+              disabled={updateStatus.isPending}
             >
-              <FileCheck2 className="mr-2 h-4 w-4" />
+              <FileCheck2 className={`mr-2 h-4 w-4 ${updateStatus.isPending ? 'animate-pulse' : ''}`} />
               {updateStatus.isPending ? 'Approving...' : 'Approve Driver'}
             </Button>
           </div>

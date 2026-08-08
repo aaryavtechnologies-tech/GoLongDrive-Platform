@@ -71,7 +71,7 @@ const getAllDrivers = asyncHandler(async (req, res) => {
       pincode: d.address?.pincode || 'N/A',
       emergencyContact: 'N/A',
       experience: 'N/A',
-      status: d.driverStatus || 'Pending',
+      status: d.driverStatus ? d.driverStatus.charAt(0).toUpperCase() + d.driverStatus.slice(1) : 'Pending',
       availability: d.onlineStatus === ONLINE_STATUS.ONLINE ? d.availabilityStatus : 'Offline',
       joinedDate: d.createdAt,
       vehicle: {
@@ -126,7 +126,7 @@ const getDriverById = asyncHandler(async (req, res) => {
     pincode: d.address?.pincode || 'N/A',
     emergencyContact: 'N/A',
     experience: 'N/A',
-    status: d.driverStatus || 'Pending',
+    status: d.driverStatus ? d.driverStatus.charAt(0).toUpperCase() + d.driverStatus.slice(1) : 'Pending',
     availability: d.onlineStatus === ONLINE_STATUS.ONLINE ? d.availabilityStatus : 'Offline',
     joinedDate: d.createdAt,
     vehicle: {
@@ -201,8 +201,8 @@ const updateDriverStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ success: false, message: 'Driver not found' });
   }
 
-  // Update status
-  driver.driverStatus = status;
+  // Update status (ensure lowercase for DB enum)
+  driver.driverStatus = status.toLowerCase();
   
   // If approved, you might want to also set isActive to true or similar logic
   // if (status === 'Approved') driver.isActive = true;
@@ -211,7 +211,7 @@ const updateDriverStatus = asyncHandler(async (req, res) => {
 
   return sendSuccess(res, 200, 'Driver status updated successfully', {
     id: driver._id,
-    status: driver.driverStatus
+    status: driver.driverStatus.charAt(0).toUpperCase() + driver.driverStatus.slice(1)
   });
 });
 
