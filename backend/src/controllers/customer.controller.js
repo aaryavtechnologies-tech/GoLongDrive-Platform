@@ -129,16 +129,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, 'If that email is registered, a reset link has been sent.');
   }
 
-  const { rawToken, hashedToken, expiry } = generatePasswordResetToken();
+  const otp = generateOTP();
+  const hashedToken = hashOTP(otp);
+  const expiry = getOTPExpiry();
 
   customer.passwordResetToken = hashedToken;
   customer.passwordResetExpiry = expiry;
   await customer.save({ validateBeforeSave: false });
 
-  const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}&role=customer`;
-
   try {
-    await sendPasswordResetEmail(email, customer.fullName, resetLink);
+    await sendOTPEmail(email, customer.fullName, otp, 15);
   } catch {
     // Rollback token if email fails
     customer.passwordResetToken = undefined;
@@ -157,16 +157,22 @@ const forgotPassword = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { email, otp, newPassword } = req.body;
 
-  const hashedToken = hashToken(token);
+  const customer = await Customer.findOne({ email }).select('+passwordResetToken +passwordResetExpiry');
 
-  const customer = await Customer.findOne({
-    passwordResetToken: hashedToken,
-    passwordResetExpiry: { $gt: Date.now() },
-  }).select('+passwordResetToken +passwordResetExpiry');
+  if (!customer || !customer.passwordResetToken || !customer.passwordResetExpiry) {
+    throw ApiError.badRequest('Invalid or expired password reset token');
+  }
 
-  if (!customer) throw ApiError.badRequest('Password reset token is invalid or has expired');
+  const verification = verifyOTP(otp, customer.passwordResetToken, customer.passwordResetExpiry);
+  
+  if (!verification.valid) {
+    if (verification.expired) {
+      throw ApiError.badRequest('OTP has expired. Please request a new one.');
+    }
+    throw ApiError.badRequest('Invalid OTP');
+  }
 
   customer.password = newPassword;
   customer.passwordResetToken = undefined;

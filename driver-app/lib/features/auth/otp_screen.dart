@@ -7,8 +7,8 @@ import '../../core/widgets/otp_input.dart';
 import '../../core/widgets/screen_header.dart';
 
 /// Matches app/(auth)/otp.tsx — reached from Forgot Password with
-/// {'phone': String} as route arguments. On success, routes to
-/// /auth/reset-password with the same phone forwarded.
+/// {'email': String} (or phone) as route arguments. On success, routes to
+/// /auth/reset-password with the same arguments plus 'otp'.
 class OtpScreen extends StatefulWidget {
   const OtpScreen({super.key});
 
@@ -54,7 +54,7 @@ class _OtpScreenState extends State<OtpScreen> {
     _startResendTimer();
   }
 
-  Future<void> _handleVerify(String phone) async {
+  Future<void> _handleVerify(Map<String, dynamic>? args) async {
     if (_code.length != 6) {
       setState(() => _errorText = 'Enter the 6-digit code');
       return;
@@ -63,17 +63,22 @@ class _OtpScreenState extends State<OtpScreen> {
       _isLoading = true;
       _errorText = null;
     });
-    // TODO: call AuthService.verifyOtp(phone, _code) here.
-    await Future.delayed(const Duration(milliseconds: 600));
+    // Verification happens on the next screen for password resets
+    await Future.delayed(const Duration(milliseconds: 300));
     if (!mounted) return;
     setState(() => _isLoading = false);
-    context.pushReplacement('/auth/reset-password', extra: {'phone': phone});
+    
+    final extraArgs = Map<String, dynamic>.from(args ?? {});
+    extraArgs['otp'] = _code;
+    context.pushReplacement('/auth/reset-password', extra: extraArgs);
   }
 
   @override
   Widget build(BuildContext context) {
     final args = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final phone = (args?['phone'] as String?) ?? '';
+    final email = (args?['email'] as String?) ?? '';
+    final identifier = phone.isNotEmpty ? phone : email;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -88,16 +93,16 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 24),
               ScreenHeader(
                 title: 'Verify OTP',
-                subtitle: phone.isEmpty
-                    ? 'Enter the 6-digit code sent to your phone.'
-                    : 'Enter the 6-digit code sent to $phone.',
+                subtitle: identifier.isEmpty
+                    ? 'Enter the 6-digit code we sent you.'
+                    : 'Enter the 6-digit code sent to $identifier.',
               ),
               const SizedBox(height: 40),
               OtpInput(
                 key: _otpKey,
                 hasError: _errorText != null,
                 onChanged: (code) => setState(() => _code = code),
-                onCompleted: (code) => _handleVerify(phone),
+                onCompleted: (code) => _handleVerify(args),
               ),
               if (_errorText != null) ...[
                 const SizedBox(height: 12),
@@ -106,7 +111,7 @@ class _OtpScreenState extends State<OtpScreen> {
               const SizedBox(height: 32),
               AppButton(
                 label: 'Verify',
-                onPressed: () => _handleVerify(phone),
+                onPressed: () => _handleVerify(args),
                 isLoading: _isLoading,
               ),
               const SizedBox(height: 20),
@@ -116,7 +121,7 @@ class _OtpScreenState extends State<OtpScreen> {
                       style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                     )
                   : TextButton(
-                      onPressed: () => _handleResend(phone),
+                      onPressed: () => _handleResend(identifier),
                       child: const Text(
                         'Resend OTP',
                         style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),

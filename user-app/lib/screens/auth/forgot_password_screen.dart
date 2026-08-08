@@ -2,9 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
+import '../../core/utils/app_toast.dart';
+import '../../core/services/auth_service.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/otp_input.dart';
 import '../../widgets/password_field.dart';
@@ -67,15 +71,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isSendingOtp = true);
 
-    // Mock send-OTP call — replace with real API integration later.
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      final url = Uri.parse('${AuthService.baseUrl}/customer/forgot-password');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': _emailController.text}),
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
+      setState(() => _isSendingOtp = false);
 
-    setState(() {
-      _isSendingOtp = false;
-      _step = _ForgotPasswordStep.resetPassword;
-    });
+      if (response.statusCode == 200) {
+        AppToast.success(context, 'A 6-digit OTP has been sent to your email.');
+        setState(() {
+          _step = _ForgotPasswordStep.resetPassword;
+        });
+      } else {
+        final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to send OTP';
+        AppToast.error(context, errorMsg);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSendingOtp = false);
+      AppToast.error(context, 'Network error. Please try again.');
+    }
   }
 
   Future<void> _handleResetPassword() async {
@@ -87,15 +107,34 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     setState(() => _isSubmitting = true);
 
-    // Mock reset call — replace with real API integration later.
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final url = Uri.parse('${AuthService.baseUrl}/customer/reset-password');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text,
+          'otp': _otpController.text,
+          'newPassword': _newPasswordController.text,
+        }),
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
 
-    setState(() {
-      _isSubmitting = false;
-      _step = _ForgotPasswordStep.success;
-    });
+      if (response.statusCode == 200) {
+        setState(() {
+          _step = _ForgotPasswordStep.success;
+        });
+      } else {
+        final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to reset password';
+        AppToast.error(context, errorMsg);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSubmitting = false);
+      AppToast.error(context, 'Network error. Please try again.');
+    }
   }
 
   void _handleBackToLogin() {

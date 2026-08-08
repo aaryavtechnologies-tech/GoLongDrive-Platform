@@ -49,9 +49,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('A password reset link has been sent to your email.')),
+          const SnackBar(content: Text('A 6-digit OTP has been sent to your email.')),
         );
-        context.go('/login');
+        context.push('/auth/otp', extra: {'email': email});
       } else {
         final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to send reset link';
         ScaffoldMessenger.of(context).showSnackBar(

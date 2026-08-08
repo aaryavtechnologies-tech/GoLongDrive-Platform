@@ -127,16 +127,16 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return sendSuccess(res, 200, 'If that email is registered, a reset link has been sent.');
   }
 
-  const { rawToken, hashedToken, expiry } = generatePasswordResetToken();
+  const otp = generateOTP();
+  const hashedToken = hashOTP(otp);
+  const expiry = getOTPExpiry();
 
   driver.passwordResetToken = hashedToken;
   driver.passwordResetExpiry = expiry;
   await driver.save({ validateBeforeSave: false });
 
-  const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${rawToken}&role=driver`;
-
   try {
-    await sendPasswordResetEmail(email, driver.fullName, resetLink);
+    await sendOTPEmail(email, driver.fullName, otp, 15);
   } catch {
     driver.passwordResetToken = undefined;
     driver.passwordResetExpiry = undefined;
@@ -154,16 +154,22 @@ const forgotPassword = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { email, otp, newPassword } = req.body;
 
-  const hashedToken = hashToken(token);
+  const driver = await Driver.findOne({ email }).select('+passwordResetToken +passwordResetExpiry');
 
-  const driver = await Driver.findOne({
-    passwordResetToken: hashedToken,
-    passwordResetExpiry: { $gt: Date.now() },
-  }).select('+passwordResetToken +passwordResetExpiry');
+  if (!driver || !driver.passwordResetToken || !driver.passwordResetExpiry) {
+    throw ApiError.badRequest('Invalid or expired password reset token');
+  }
 
-  if (!driver) throw ApiError.badRequest('Password reset token is invalid or has expired');
+  const verification = verifyOTP(otp, driver.passwordResetToken, driver.passwordResetExpiry);
+  
+  if (!verification.valid) {
+    if (verification.expired) {
+      throw ApiError.badRequest('OTP has expired. Please request a new one.');
+    }
+    throw ApiError.badRequest('Invalid OTP');
+  }
 
   driver.password = newPassword;
   driver.passwordResetToken = undefined;

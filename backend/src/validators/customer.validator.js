@@ -27,7 +27,8 @@ const loginCustomer = [emailRule, body('password').notEmpty().withMessage('Passw
 const forgotPassword = [emailRule];
 
 const resetPassword = [
-  tokenRule,
+  emailRule,
+  otpRule,
   body('newPassword')
     .notEmpty().withMessage('New password is required')
     .isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
