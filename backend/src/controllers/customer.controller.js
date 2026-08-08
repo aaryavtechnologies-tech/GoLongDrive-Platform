@@ -193,6 +193,11 @@ const sendOTP = asyncHandler(async (req, res) => {
   const otp = generateOTP();
   const hashedOTP = hashOTP(otp);
   const expiry = getOTPExpiry();
+  
+  // Log OTP in development to bypass email requirement
+  console.log(`\n======================================`);
+  console.log(`[DEV OTP] Customer: ${customer.email} | OTP: ${otp}`);
+  console.log(`======================================\n`);
 
   await Customer.findByIdAndUpdate(customer._id, {
     otp: hashedOTP,

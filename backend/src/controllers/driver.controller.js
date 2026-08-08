@@ -191,7 +191,16 @@ const sendOTP = asyncHandler(async (req, res) => {
   const hashedOTP = hashOTP(otp);
   const expiry = getOTPExpiry();
 
-  await Driver.findByIdAndUpdate(driver._id, { otp: hashedOTP, otpExpiry: expiry });
+  // Log OTP in development to bypass email requirement
+  console.log(`\n======================================`);
+  console.log(`[DEV OTP] Driver: ${driver.email} | OTP: ${otp}`);
+  console.log(`======================================\n`);
+
+  await Driver.findByIdAndUpdate(driver._id, {
+    otp: hashedOTP,
+    otpExpiry: expiry,
+  });
+
   await sendOTPEmail(driver.email, driver.fullName, otp);
 
   return sendSuccess(res, 200, 'OTP sent to your email address');

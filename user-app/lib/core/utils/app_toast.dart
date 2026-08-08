@@ -1,4 +1,5 @@
 // lib/core/utils/app_toast.dart
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:toastification/toastification.dart';
 import '../theme/app_colors.dart';
@@ -6,7 +7,8 @@ import '../theme/app_text_styles.dart';
 
 class AppToast {
   static void showSuccess(BuildContext context, String message, {String? title}) {
-    final colors = AppColors.of(context);
+    developer.log('[SUCCESS] ${title ?? ''}: $message', name: 'AppToast');
+    final colors = AppColorPalette.dark;
     toastification.show(
       context: context,
       type: ToastificationType.success,
@@ -26,7 +28,8 @@ class AppToast {
   }
 
   static void showError(BuildContext context, String message, {String? title}) {
-    final colors = AppColors.of(context);
+    developer.log('[ERROR] ${title ?? ''}: $message', name: 'AppToast', error: message);
+    final colors = AppColorPalette.dark;
     toastification.show(
       context: context,
       type: ToastificationType.error,
@@ -46,7 +49,8 @@ class AppToast {
   }
 
   static void showInfo(BuildContext context, String message, {String? title}) {
-    final colors = AppColors.of(context);
+    developer.log('[INFO] ${title ?? ''}: $message', name: 'AppToast');
+    final colors = AppColorPalette.dark;
     toastification.show(
       context: context,
       type: ToastificationType.info,

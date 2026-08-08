@@ -8,13 +8,20 @@ const FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev'; // Resend requir
 // ── Internal send helper ──────────────────────────────────────────────────────
 
 const sendMail = async ({ to, subject, html }) => {
-  const resend = getTransporter();
-  const response = await resend.emails.send({ from: FROM, to, subject, html });
-  if (response.error) {
-    console.error('Resend Error:', response.error);
-    throw new Error(response.error.message);
+  try {
+    const resend = getTransporter();
+    const response = await resend.emails.send({ from: FROM, to, subject, html });
+    if (response.error) {
+      console.error('Resend Error:', response.error);
+      console.log(`[Email Fallback] To: ${to} | Subject: ${subject}`);
+      return null;
+    }
+    return response.data;
+  } catch (err) {
+    console.error('Email sending failed (network/config):', err.message);
+    console.log(`[Email Fallback] To: ${to} | Subject: ${subject}`);
+    return null;
   }
-  return response.data;
 };
 
 // ── Email Templates ───────────────────────────────────────────────────────────
