@@ -1,14 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../core/data/mock_data.dart';
+import '../../core/data/api_service.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/skeleton_loader.dart';
 
 /// Dashboard Screen - Main hub for the driver.
-/// Wiring this to MockData for now since backend is still under dev.
-/// AI/Backend: once the real API is ready, we'll swap MockData with a proper 
-/// DashboardProvider or Repository call here.
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -20,40 +20,120 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _online = false;
   bool _refreshing = false;
   bool _loading = true;
+  String _errorMsg = '';
+  
+  String _driverName = 'Driver';
+  String? _profileImg;
+  int _todayEarnings = 0;
+  int _tripsToday = 0;
+  dynamic _ongoingRide;
+  dynamic _nextRide;
+  List<dynamic> _recentTxns = [];
 
   @override
   void initState() {
     super.initState();
-    _simulateInitialLoad();
+    _fetchData();
   }
 
-  // Simulates the first data fetch so the skeleton loading state has
-  // something to show. Swap for a real "await repository.load()" once the
-  // Dashboard API exists.
-  Future<void> _simulateInitialLoad() async {
-    await Future.delayed(const Duration(milliseconds: 700));
-    if (mounted) setState(() => _loading = false);
+  Future<void> _fetchData() async {
+    if (!mounted) return;
+    setState(() {
+      if (!_refreshing) _loading = true;
+      _errorMsg = '';
+    });
+
+    try {
+      final futures = await Future.wait([
+        ApiService.get('/driver/profile'),
+        ApiService.get('/driver/bookings/dashboard'),
+        ApiService.get('/earnings/driver/dashboard'),
+        ApiService.get('/driver/bookings/rides/current'), // Optional: to get active ride
+      ]);
+
+      final profileRes = futures[0];
+      final dashboardRes = futures[1];
+      final earningsRes = futures[2];
+      final currentRideRes = futures[3];
+
+      if (profileRes.statusCode == 200) {
+        final rawData = jsonDecode(profileRes.body)['data'];
+        final d = rawData['driver'] ?? rawData;
+        _driverName = d['fullName'] ?? 'Driver';
+        _profileImg = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
+        _online = d['onlineStatus'] == 'online';
+      }
+      
+      if (dashboardRes.statusCode == 200) {
+        final d = jsonDecode(dashboardRes.body)['data'];
+        _tripsToday = d['stats']?['todayTrips'] ?? 0;
+      }
+      
+      if (earningsRes.statusCode == 200) {
+        final d = jsonDecode(earningsRes.body)['data'];
+        _todayEarnings = (d['todayEarnings'] ?? 0).toInt();
+        _recentTxns = d['recentTransactions'] ?? [];
+      }
+      
+      if (currentRideRes.statusCode == 200) {
+        final d = jsonDecode(currentRideRes.body)['data'];
+        if (d != null && d['ride'] != null) {
+          _ongoingRide = d['ride'];
+        } else {
+          _ongoingRide = null;
+        }
+      }
+
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMsg = 'Failed to load dashboard data. Check connection.');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _refreshing = false;
+        });
+      }
+    }
   }
 
-  // Simulate a pull-to-refresh. In production, this should re-fetch 
-  // from the Dashboard API endpoint.
+  Future<void> _toggleStatus(bool val) async {
+    final original = _online;
+    setState(() => _online = val);
+    try {
+      final res = await ApiService.patch('/driver/bookings/status');
+      if (res.statusCode != 200) throw Exception();
+    } catch (e) {
+      setState(() => _online = original);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to update status')),
+        );
+      }
+    }
+  }
+
   Future<void> _onRefresh() async {
-    setState(() => _refreshing = true);
-    await Future.delayed(const Duration(milliseconds: 1000));
-    if (mounted) setState(() => _refreshing = false);
+    _refreshing = true;
+    await _fetchData();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
+    if (_loading && !_refreshing) {
       return SafeArea(child: _dashboardSkeleton());
     }
 
-    // Grabbing data from MockData for UI rendering
-    final profile = MockData.driverProfile;
-    final ongoingRide = MockData.currentRide;
-    final nextRide = MockData.upcomingRides.isNotEmpty ? MockData.upcomingRides.first : null;
-    final recentTxns = MockData.transactions.take(3).toList();
+    if (_errorMsg.isNotEmpty && !_refreshing) {
+      return Scaffold(
+        body: ErrorStateWidget(
+          title: 'Oops!',
+          message: _errorMsg,
+          onRetry: _onRefresh,
+        ),
+      );
+    }
 
     return SafeArea(
       child: RefreshIndicator(
@@ -75,21 +155,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text('Good Morning', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
                       const SizedBox(height: 4),
-                      Text(profile.name, style: AppText.cardHeadline),
+                      Text(_driverName, style: AppText.cardHeadline),
                     ],
                   ),
-                  InkWell(
-                    onTap: () => context.push('/tabs?tab=3'),
-                    borderRadius: BorderRadius.circular(22),
-                    child: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.gold, width: 2),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.refresh, color: AppColors.textSecondary),
+                        onPressed: _onRefresh,
                       ),
-                      child: const Icon(Icons.person, color: AppColors.gold),
-                    ),
+                      InkWell(
+                        onTap: () => context.push('/tabs?tab=3'),
+                        borderRadius: BorderRadius.circular(22),
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.gold, width: 2),
+                            image: _profileImg != null
+                                ? DecorationImage(image: NetworkImage(_profileImg!), fit: BoxFit.cover)
+                                : null,
+                          ),
+                          child: _profileImg == null ? const Icon(Icons.person, color: AppColors.gold) : null,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -125,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       activeColor: Colors.black,
                       activeTrackColor: AppColors.gold,
                       inactiveTrackColor: AppColors.divider,
-                      onChanged: (v) => setState(() => _online = v),
+                      onChanged: _toggleStatus,
                     ),
                   ],
                 ),
@@ -140,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Icons.trending_up, 
                       AppColors.gold, 
                       "Today's Earnings", 
-                      '₹${MockData.todayEarnings.toInt()}',
+                      '₹$_todayEarnings',
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -149,26 +240,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       Icons.local_taxi, 
                       AppColors.info, 
                       'Trips Today', 
-                      '${MockData.tripsToday}',
+                      '$_tripsToday',
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
 
-              // --- Active/Next Ride Card ---
-              if (ongoingRide != null || nextRide != null) ...[
+              if (_ongoingRide != null || _nextRide != null) ...[
                 Text(
-                  ongoingRide != null ? 'Active Ride' : 'Upcoming Ride', 
+                  _ongoingRide != null ? 'Active Ride' : 'Upcoming Ride', 
                   style: AppText.sectionTitle,
                 ),
                 const SizedBox(height: 12),
                 InkWell(
                   onTap: () {
-                    if (ongoingRide != null) {
+                    if (_ongoingRide != null) {
                       context.push('/rides/current');
                     } else {
-                      context.push('/rides/details', extra: {'rideId': nextRide!.id});
+                      context.push('/rides/details', extra: {'rideId': _nextRide!['_id']});
                     }
                   },
                   child: Container(
@@ -179,24 +269,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Row(children: [
                           Icon(
-                            ongoingRide != null ? Icons.directions_car : Icons.access_time, 
+                            _ongoingRide != null ? Icons.directions_car : Icons.access_time, 
                             size: 16, 
                             color: AppColors.gold,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            ongoingRide != null ? 'Trip in progress' : 'Pickup expected soon', 
+                            _ongoingRide != null ? 'Trip in progress' : 'Pickup expected soon', 
                             style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                           ),
                         ]),
                         const SizedBox(height: 12),
                         Text(
-                          (ongoingRide ?? nextRide)!.pickupAddress, 
+                          (_ongoingRide ?? _nextRide)!['pickupLocation']?['address'] ?? 'Unknown', 
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '→  ${(ongoingRide ?? nextRide)!.dropAddress}', 
+                          '→  ${(_ongoingRide ?? _nextRide)!['dropoffLocation']?['address'] ?? 'Unknown'}', 
                           style: TextStyle(color: AppColors.textMuted, fontSize: 13),
                         ),
                       ],
@@ -225,41 +315,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // --- Recent Activity Feed ---
               const Text('Recent Activity', style: AppText.sectionTitle),
               const SizedBox(height: 12),
-              Container(
-                decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
-                padding: const EdgeInsets.all(8),
-                child: Column(
-                  children: List.generate(recentTxns.length, (i) {
-                    final txn = recentTxns[i];
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: i < recentTxns.length - 1
-                            ? Border(bottom: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderSubtle : AppColors.borderSubtleLight))
-                            : null,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(color: AppColors.goldTint, shape: BoxShape.circle),
-                            child: const Icon(Icons.check, color: AppColors.gold, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(txn.title, style: const TextStyle(fontSize: 14)),
-                          ),
-                          Text(
-                            '₹${txn.amount.toInt()}', 
-                            style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    );
-                  }),
+              if (_recentTxns.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24.0),
+                  child: Text('No recent activity', style: TextStyle(color: Colors.grey)),
+                )
+              else
+                Container(
+                  decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: List.generate(_recentTxns.length, (i) {
+                      final txn = _recentTxns[i];
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: i < _recentTxns.length - 1
+                              ? Border(bottom: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderSubtle : AppColors.borderSubtleLight))
+                              : null,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: const BoxDecoration(color: AppColors.goldTint, shape: BoxShape.circle),
+                              child: const Icon(Icons.check, color: AppColors.gold, size: 18),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(txn['type'] ?? 'Ride Payment', style: const TextStyle(fontSize: 14)),
+                            ),
+                            Text(
+                              '₹${(txn['amount'] ?? 0).toInt()}', 
+                              style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -271,14 +367,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // as a stand-in for a real incoming-request push (no dispatch/matching
   // backend exists yet — see BACKEND_API_SPEC.md).
   void _simulateIncomingRequest(BuildContext context) {
-    final nextRide = MockData.upcomingRides.isNotEmpty ? MockData.upcomingRides.first : null;
-    if (nextRide == null) {
+    if (_nextRide == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('No incoming requests right now')),
       );
       return;
     }
-    context.push('/rides/incoming', extra: {'rideId': nextRide.id});
+    context.push('/rides/incoming', extra: {'rideId': _nextRide!['_id']});
   }
 
   Widget _dashboardSkeleton() {

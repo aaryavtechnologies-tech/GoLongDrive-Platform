@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
+import '../../core/data/auth_service.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/app_checkbox.dart';
@@ -70,8 +71,17 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (response.statusCode == 200) {
-        // Optionally save tokens here
-        context.go('/tabs');
+        final data = jsonDecode(response.body);
+        final token = data['data']['accessToken'];
+        final userId = data['data']['driver']['id'];
+        
+        if (token != null) {
+          await AuthService.saveToken(token);
+          await AuthService.saveUserId(userId);
+          if (mounted) context.go('/tabs');
+        } else {
+          throw Exception('No token received');
+        }
       } else {
         final errorMsg = jsonDecode(response.body)['message'] ?? 'Login failed';
         ScaffoldMessenger.of(context).showSnackBar(

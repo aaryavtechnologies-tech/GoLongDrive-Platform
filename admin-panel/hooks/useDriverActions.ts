@@ -12,6 +12,7 @@ export function useUpdateDriverStatus() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['drivers'] });
       queryClient.invalidateQueries({ queryKey: ['driver', data.id] });
+      queryClient.invalidateQueries({ queryKey: ['driver-documents', data.id] });
       toast.success(`Driver status updated to ${data.status}`);
     },
     onError: () => {

@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/document_upload_card.dart';
+import '../../core/data/api_service.dart';
+import 'dart:convert';
+import '../../core/widgets/error_state.dart';
 
 /// Settings → My Documents.
 /// Reuses `DocumentUploadCard` (the same widget the registration wizard's
@@ -18,15 +21,61 @@ class DocumentsScreen extends StatefulWidget {
 }
 
 class _DocumentsScreenState extends State<DocumentsScreen> {
-  // Pretend these are already-approved documents on file — no thumbnail
-  // paths yet since we don't have real uploaded files, just status badges.
+  bool _loading = true;
+  String _errorMsg = '';
   final Map<String, bool> _uploaded = {
-    'Driving License': true,
-    'Vehicle RC': true,
-    'Insurance': true,
-    'Profile Photo': true,
+    'Driving License': false,
+    'Vehicle RC': false,
+    'Insurance': false,
+    'Profile Photo': false,
   };
   final Map<String, String?> _newImagePath = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDocuments();
+  }
+
+  Future<void> _fetchDocuments() async {
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _errorMsg = '';
+    });
+    try {
+      final res = await ApiService.get('/driver/profile');
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body)['data'];
+        final driver = decoded['driver'] ?? decoded;
+        final docs = driver['documents'] ?? {};
+        
+        if (mounted) {
+          setState(() {
+            _newImagePath['Driving License'] = docs['licenseFront'];
+            _newImagePath['Vehicle RC'] = docs['rcFront'];
+            _newImagePath['Insurance'] = docs['insuranceCertificate'];
+            _newImagePath['Profile Photo'] = docs['selfiePhoto'];
+
+            _uploaded['Driving License'] = docs['licenseFront'] != null;
+            _uploaded['Vehicle RC'] = docs['rcFront'] != null;
+            _uploaded['Insurance'] = docs['insuranceCertificate'] != null;
+            _uploaded['Profile Photo'] = docs['selfiePhoto'] != null;
+            _loading = false;
+          });
+        }
+      } else {
+        throw Exception();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _errorMsg = 'Failed to load documents. Check your connection.';
+          _loading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,24 +97,35 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 ],
               ),
             ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: cardDecoration(radius: 20, bg: AppColors.surfaceAlt),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.verified_outlined, color: AppColors.success, size: 20),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text('All documents verified',
-                              style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+            if (_loading)
+              const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.gold)))
+            else if (_errorMsg.isNotEmpty)
+              Expanded(
+                child: ErrorStateWidget(
+                  title: 'Oops!',
+                  message: _errorMsg,
+                  onRetry: _fetchDocuments,
+                ),
+              )
+            else
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: cardDecoration(radius: 20, bg: AppColors.surfaceAlt),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.verified_outlined, color: AppColors.success, size: 20),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text('All documents verified',
+                                style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 20),
                   DocumentUploadCard(
                     title: 'Driving License',

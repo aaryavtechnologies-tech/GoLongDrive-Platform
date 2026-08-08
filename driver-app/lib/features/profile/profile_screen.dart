@@ -1,24 +1,148 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../core/data/mock_data.dart';
+import '../../core/data/api_service.dart';
+import '../../core/data/auth_service.dart';
 import '../../core/widgets/card_decoration.dart';
+import '../../core/widgets/error_state.dart';
+import '../../core/widgets/skeleton_loader.dart';
 
 /// Matches app/(tabs)/profile.tsx (§5.11) — Profile tab.
 /// Avatar + name/rating header, stat row, and a settings-style menu list.
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  bool _loading = true;
+  bool _refreshing = false;
+  String _errorMsg = '';
+  
+  Map<String, dynamic>? _profileData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchData();
+  }
+
+  Future<void> _fetchData() async {
+    if (!mounted) return;
+    setState(() {
+      if (!_refreshing) _loading = true;
+      _errorMsg = '';
+    });
+
+    try {
+      final res = await ApiService.get('/driver/profile');
+      if (res.statusCode == 200) {
+        final bodyData = jsonDecode(res.body);
+        final decoded = bodyData['data'] ?? {};
+        _profileData = decoded['driver'] ?? decoded;
+      } else {
+        throw Exception('Failed to load profile');
+      }
+    } catch (e) {
+      print('Profile fetch error: $e');
+      if (mounted) setState(() => _errorMsg = 'Failed to load profile: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _refreshing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onRefresh() async {
+    _refreshing = true;
+    await _fetchData();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final profile = MockData.driverProfile;
+    if (_loading && !_refreshing) {
+      return const SafeArea(
+        child: Center(child: CircularProgressIndicator(color: AppColors.gold)),
+      );
+    }
+
+    if (_errorMsg.isNotEmpty && !_refreshing) {
+      return Scaffold(
+        body: Column(
+          children: [
+            Expanded(
+              child: ErrorStateWidget(
+                title: 'Oops!',
+                message: _errorMsg,
+                onRetry: _onRefresh,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error.withOpacity(0.1),
+                    foregroundColor: AppColors.error,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () async {
+                    await AuthService.clearAuth();
+                    if (context.mounted) context.go('/login');
+                  },
+                  child: const Text('Force Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final p = _profileData ?? {};
+    final name = p['fullName'] ?? 'Driver';
+    final rating = p['rating'] ?? 5.0;
+    final totalTrips = p['totalTrips'] ?? 0;
+    final phone = p['phoneNumber'] ?? 'N/A';
+    final email = p['email'] ?? 'N/A';
+    
+    // Safely extract vehicle data
+    final vehicle = p['vehicle'] as Map<String, dynamic>? ?? {};
+    final vehicleModel = vehicle['model'] ?? vehicle['type'] ?? 'N/A';
+    final vehicleNumber = vehicle['registrationNumber'] ?? vehicle['rcNumber'] ?? 'N/A';
+    
+    // Safely extract documents data
+    final docs = p['documents'] as Map<String, dynamic>? ?? {};
+    final profileImg = p['profileImage'] ?? docs['selfiePhoto'];
 
     return SafeArea(
-      child: ListView(
+      child: RefreshIndicator(
+        color: AppColors.gold,
+        backgroundColor: AppColors.surface,
+        onRefresh: _onRefresh,
+        child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
         children: [
-          const Text('Profile', style: AppText.cardHeadline),
-          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Profile', style: AppText.cardHeadline),
+              IconButton(
+                icon: Icon(Icons.refresh, color: AppColors.textSecondary),
+                onPressed: _onRefresh,
+              )
+            ],
+          ),
+          const SizedBox(height: 10),
 
           // --- Header card ---
           Container(
@@ -32,25 +156,28 @@ class ProfileScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(color: AppColors.gold, width: 2),
+                    image: profileImg != null
+                        ? DecorationImage(image: NetworkImage(profileImg), fit: BoxFit.cover)
+                        : null,
                   ),
-                  child: const Icon(Icons.person, color: AppColors.gold, size: 30),
+                  child: profileImg == null ? const Icon(Icons.person, color: AppColors.gold, size: 30) : null,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(profile.name,
+                      Text(name,
                           style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 4),
                       Row(
                         children: [
                           const Icon(Icons.star, color: AppColors.gold, size: 16),
                           const SizedBox(width: 4),
-                          Text('${profile.rating}',
+                          Text('${rating is num ? rating.toStringAsFixed(1) : rating}',
                               style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
                           const SizedBox(width: 8),
-                          Text('· ${profile.totalTrips} trips',
+                          Text('· $totalTrips trips',
                               style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
                         ],
                       ),
@@ -68,13 +195,13 @@ class ProfileScreen extends StatelessWidget {
             decoration: cardDecoration(radius: 24),
             child: Column(
               children: [
-                _infoRow(Icons.phone_outlined, 'Phone', profile.phone),
+                _infoRow(Icons.phone_outlined, 'Phone', phone),
                 Divider(color: AppColors.borderSubtle2, height: 24),
-                _infoRow(Icons.mail_outline, 'Email', profile.email),
+                _infoRow(Icons.mail_outline, 'Email', email),
                 Divider(color: AppColors.borderSubtle2, height: 24),
-                _infoRow(Icons.directions_car_outlined, 'Vehicle', profile.vehicleModel),
+                _infoRow(Icons.directions_car_outlined, 'Vehicle', vehicleModel),
                 Divider(color: AppColors.borderSubtle2, height: 24),
-                _infoRow(Icons.confirmation_number_outlined, 'Vehicle Number', profile.vehicleNumber),
+                _infoRow(Icons.confirmation_number_outlined, 'Vehicle Number', vehicleNumber),
               ],
             ),
           ),
@@ -111,6 +238,7 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -194,9 +322,10 @@ class ProfileScreen extends StatelessWidget {
             child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(dialogContext).pop();
-              context.go('/login');
+              await AuthService.clearAuth();
+              if (context.mounted) context.go('/login');
             },
             child: const Text('Log Out', style: TextStyle(color: AppColors.error)),
           ),

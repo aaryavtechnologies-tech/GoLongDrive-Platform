@@ -1,17 +1,43 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../core/data/mock_data.dart';
+import '../../core/data/api_service.dart';
 import '../../core/widgets/card_decoration.dart';
 
 /// Settings → Help & Support.
-/// Contact card (phone/email — display only; no `url_launcher` dependency
-/// exists in this project yet, so tapping copies to clipboard instead of
-/// dialing/emailing directly) plus an FAQ list. Static content, no backend
-/// dependency.
-class HelpSupportScreen extends StatelessWidget {
+/// Contact card (phone/email) plus an FAQ list.
+class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
+
+  @override
+  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+}
+
+class _HelpSupportScreenState extends State<HelpSupportScreen> {
+  String _driverPhone = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final res = await ApiService.get('/driver/profile');
+      if (res.statusCode == 200) {
+        final rawData = jsonDecode(res.body)['data'];
+        final data = rawData['driver'] ?? rawData;
+        if (mounted) setState(() => _driverPhone = data['phoneNumber'] ?? 'N/A');
+      } else {
+        if (mounted) setState(() => _driverPhone = 'N/A');
+      }
+    } catch (e) {
+      if (mounted) setState(() => _driverPhone = 'N/A');
+    }
+  }
 
   static const _faqs = [
     (
@@ -34,7 +60,6 @@ class HelpSupportScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final profile = MockData.driverProfile;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -60,7 +85,7 @@ class HelpSupportScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: rideCardDecoration(),
+                    decoration: rideCardDecoration(context: context),
                     child: Row(
                       children: [
                         const Icon(Icons.support_agent, color: AppColors.gold, size: 28),
@@ -84,7 +109,7 @@ class HelpSupportScreen extends StatelessWidget {
                   const Text('Contact Us', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   Container(
-                    decoration: cardDecoration(bg: AppColors.surfaceAlt, radius: 24),
+                    decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Column(
                       children: [
@@ -115,7 +140,7 @@ class HelpSupportScreen extends StatelessWidget {
                   const Text('Frequently Asked Questions', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   Container(
-                    decoration: cardDecoration(bg: AppColors.surfaceAlt, radius: 24),
+                    decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
                     padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
                     child: Column(
                       children: [
@@ -128,7 +153,7 @@ class HelpSupportScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text('Driver ID: ${profile.phone}',
+                  Text('Driver ID: $_driverPhone',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
                 ],

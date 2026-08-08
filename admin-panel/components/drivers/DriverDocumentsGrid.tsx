@@ -90,27 +90,28 @@ export function DriverDocumentsGrid({
             <CardContent className="p-3 flex flex-col flex-1">
               <div className="text-sm font-medium text-zinc-200 mb-1">{doc.type}</div>
               <div className="text-xs text-zinc-500 mb-3 truncate">ID: {doc.id}</div>
-              
-              <div className="mt-auto flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 bg-green-500/5 hover:bg-green-500/10 text-green-500 border-green-500/20 h-8 text-xs"
-                  onClick={() => handleStatusUpdate(doc.id, 'Approved')}
-                  disabled={doc.status === 'Approved' || updateStatus.isPending}
-                >
-                  <Check className="h-3 w-3 mr-1" /> Approve
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1 bg-red-500/5 hover:bg-red-500/10 text-red-500 border-red-500/20 h-8 text-xs"
-                  onClick={() => handleStatusUpdate(doc.id, 'Rejected')}
-                  disabled={doc.status === 'Rejected' || updateStatus.isPending}
-                >
-                  <X className="h-3 w-3 mr-1" /> Reject
-                </Button>
-              </div>
+              {doc.status === 'Pending' && (
+                <div className="mt-auto flex items-center gap-2 pt-2 border-t border-white/5">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 bg-green-500/5 hover:bg-green-500/10 text-green-500 border-green-500/20 h-8 text-xs"
+                    onClick={() => handleStatusUpdate(doc.id, 'Approved')}
+                    disabled={updateStatus.isPending}
+                  >
+                    <Check className="h-3 w-3 mr-1" /> Approve
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1 bg-red-500/5 hover:bg-red-500/10 text-red-500 border-red-500/20 h-8 text-xs"
+                    onClick={() => handleStatusUpdate(doc.id, 'Rejected')}
+                    disabled={updateStatus.isPending}
+                  >
+                    <X className="h-3 w-3 mr-1" /> Reject
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

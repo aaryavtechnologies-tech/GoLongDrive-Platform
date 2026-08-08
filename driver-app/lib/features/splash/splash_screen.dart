@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../core/data/auth_service.dart';
 
 /// Matches app/index.tsx: renders LoadingScreen while the root layout's
 /// auth effect decides where to redirect (onboarding vs login vs tabs).
@@ -71,9 +72,19 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _decideNext() async {
-    await Future.delayed(const Duration(milliseconds: 3000));
+    final results = await Future.wait([
+      Future.delayed(const Duration(milliseconds: 3000)),
+      AuthService.isLoggedIn(),
+    ]);
+    final bool loggedIn = results[1] as bool;
+
     if (!mounted) return;
-    context.pushReplacement('/onboarding');
+    
+    if (loggedIn) {
+      context.pushReplacement('/tabs');
+    } else {
+      context.pushReplacement('/onboarding');
+    }
   }
 
   @override
