@@ -38,9 +38,9 @@ const resetPassword = [
     .matches(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/).withMessage('Must contain at least one special character'),
 ];
 
-const sendOTP = [emailRule];
+const sendOTP = [];
 
-const verifyOTP = [emailRule, otpRule];
+const verifyOTP = [otpRule];
 
 const updateProfile = [
   body('fullName')
