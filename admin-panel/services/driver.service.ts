@@ -40,8 +40,8 @@ export const driverService = {
   },
 
   deleteDriver: async (id: string) => {
-    await delay(600);
-    return { success: true, id };
+    const response = await apiClient.delete(`/admin/drivers/${id}`);
+    return response.data;
   },
 
   getDriverDocuments: async (id: string) => {

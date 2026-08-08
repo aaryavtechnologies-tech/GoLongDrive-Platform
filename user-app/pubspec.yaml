@@ -47,6 +47,7 @@ dependencies:
   geolocator: ^13.0.0            # GPS fix for auto-filling pickup on Set Locations
   http: ^1.2.0                   # Directions/Places/Geocoding API calls
   shared_preferences: ^2.5.5
+  toastification: ^3.2.0
 
 dev_dependencies:
   flutter_test:

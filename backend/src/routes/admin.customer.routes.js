@@ -1,7 +1,7 @@
 // src/routes/admin.customer.routes.js
 
 const router = require('express').Router();
-const { getAllCustomers } = require('../controllers/admin.customer.controller');
+const { getAllCustomers, deleteCustomer } = require('../controllers/admin.customer.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { ROLES } = require('../utils/constants');
@@ -21,5 +21,19 @@ const isAdmin = [authenticate, requireRole(ROLES.ADMIN)];
  *         description: List of customers
  */
 router.get('/', isAdmin, getAllCustomers);
+
+/**
+ * @swagger
+ * /api/admin/customers/{id}:
+ *   delete:
+ *     summary: Delete a customer
+ *     tags: [Admin Customers]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Customer deleted successfully
+ */
+router.delete('/:id', isAdmin, deleteCustomer);
 
 module.exports = router;

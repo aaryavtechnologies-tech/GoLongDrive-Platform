@@ -51,8 +51,8 @@ export const customerService = {
   },
 
   deleteCustomer: async (id: string) => {
-    await delay(600);
-    return { success: true, id };
+    const response = await apiClient.delete(`/admin/customers/${id}`);
+    return response.data;
   },
 
   getCustomerBookings: async (id: string) => {

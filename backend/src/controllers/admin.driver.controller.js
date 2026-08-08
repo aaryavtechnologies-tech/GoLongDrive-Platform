@@ -371,6 +371,22 @@ const getDriverTimeline = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, 'Driver timeline fetched successfully', timeline);
 });
 
+/**
+ * @route   DELETE /api/admin/drivers/:id
+ * @desc    Delete a driver
+ * @access  Private (Admin)
+ */
+const deleteDriver = asyncHandler(async (req, res) => {
+  const driver = await Driver.findById(req.params.id);
+  if (!driver) {
+    return res.status(404).json({ success: false, message: 'Driver not found' });
+  }
+
+  await Driver.findByIdAndDelete(req.params.id);
+
+  return sendSuccess(res, 200, 'Driver deleted successfully', { id: req.params.id });
+});
+
 module.exports = {
   getAllDrivers,
   getDriverById,
@@ -380,5 +396,6 @@ module.exports = {
   getDriverRides,
   getDriverEarnings,
   getDriverStatistics,
-  getDriverTimeline
+  getDriverTimeline,
+  deleteDriver
 };

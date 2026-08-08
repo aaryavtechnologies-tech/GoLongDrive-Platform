@@ -84,6 +84,23 @@ const getAllCustomers = asyncHandler(async (req, res) => {
   });
 });
 
+/**
+ * @route   DELETE /api/admin/customers/:id
+ * @desc    Delete a customer
+ * @access  Private (Admin)
+ */
+const deleteCustomer = asyncHandler(async (req, res) => {
+  const customer = await Customer.findById(req.params.id);
+  if (!customer) {
+    return res.status(404).json({ success: false, message: 'Customer not found' });
+  }
+  
+  await Customer.findByIdAndDelete(req.params.id);
+  
+  return sendSuccess(res, 200, 'Customer deleted successfully', { id: req.params.id });
+});
+
 module.exports = {
-  getAllCustomers
+  getAllCustomers,
+  deleteCustomer
 };

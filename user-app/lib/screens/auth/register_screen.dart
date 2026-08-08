@@ -1,5 +1,6 @@
 // lib/screens/auth/register_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -11,11 +12,13 @@ import '../../widgets/app_checkbox.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/utils/app_toast.dart';
+
 /// Screen 4 — Register
 ///
-/// Full name, email, mobile, password, confirm password, T&C checkbox,
-/// and a live password-strength meter driven by [Validators.passwordStrength].
-/// On successful (mock) submit, navigates to [VerifyEmailScreen].
+/// 2-Step Registration:
+/// Step 1: Full name, email, mobile
+/// Step 2: Password, confirm password, T&C checkbox
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -24,11 +27,15 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _step1FormKey = GlobalKey<FormState>();
+  final _step2FormKey = GlobalKey<FormState>();
+
+  int _currentStep = 0;
 
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
+  
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
@@ -53,8 +60,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
+  void _handleNext() {
+    if (_step1FormKey.currentState?.validate() ?? false) {
+      setState(() => _currentStep = 1);
+    }
+  }
+
   Future<void> _handleRegister() async {
-    final formValid = _formKey.currentState?.validate() ?? false;
+    final formValid = _step2FormKey.currentState?.validate() ?? false;
 
     setState(() => _showTermsError = !_agreedToTerms);
 
@@ -83,8 +96,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      AppToast.showError(
+        context,
+        e.toString().replaceFirst('Exception: ', ''),
       );
     }
   }
@@ -138,9 +152,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
                   height: 4,
                   decoration: BoxDecoration(
-                    // Unfilled track: divider reads as a muted line in both
-                    // modes (dark-mode nearBlack was the same idea — a
-                    // subtle track, not a card surface).
                     color: filled ? color : colors.divider,
                     borderRadius: BorderRadius.circular(2),
                   ),
@@ -158,132 +169,174 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _onBackPressed() {
+    if (_currentStep == 1) {
+      setState(() => _currentStep = 0);
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Widget _buildStep1() {
+    return Form(
+      key: _step1FormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppTextField(
+            label: 'Full Name',
+            controller: _fullNameController,
+            hint: 'Enter your full name',
+            validator: Validators.fullName,
+            prefixIcon: Icons.person_outline,
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            label: 'Email',
+            controller: _emailController,
+            hint: 'Enter your email',
+            keyboardType: TextInputType.emailAddress,
+            validator: Validators.email,
+            prefixIcon: Icons.email_outlined,
+          ),
+          const SizedBox(height: 16),
+          AppTextField(
+            label: 'Mobile Number',
+            controller: _mobileController,
+            hint: 'Enter your 10-digit mobile number',
+            keyboardType: TextInputType.phone,
+            validator: Validators.mobile,
+            prefixIcon: Icons.phone_outlined,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(10),
+            ],
+          ),
+          const SizedBox(height: 28),
+          PrimaryButton(
+            label: 'Next',
+            onPressed: _handleNext,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStep2(AppColorPalette colors) {
+    return Form(
+      key: _step2FormKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          PasswordField(
+            label: 'Password',
+            controller: _passwordController,
+            hint: 'Create a password',
+            validator: Validators.password,
+            onChanged: _onPasswordChanged,
+          ),
+          _buildStrengthMeter(colors),
+          const SizedBox(height: 16),
+          PasswordField(
+            label: 'Confirm Password',
+            controller: _confirmPasswordController,
+            hint: 'Re-enter your password',
+            validator: (value) => Validators.confirmPassword(
+              value,
+              _passwordController.text,
+            ),
+          ),
+          const SizedBox(height: 20),
+          AppCheckbox(
+            value: _agreedToTerms,
+            onChanged: (value) {
+              setState(() {
+                _agreedToTerms = value;
+                if (_agreedToTerms) _showTermsError = false;
+              });
+            },
+            label: Text.rich(
+              TextSpan(
+                children: [
+                  const TextSpan(text: 'I agree to the '),
+                  TextSpan(text: 'Terms & Conditions', style: AppTextStyles.link),
+                  const TextSpan(text: ' and '),
+                  TextSpan(text: 'Privacy Policy', style: AppTextStyles.link),
+                ],
+              ),
+            ),
+          ),
+          if (_showTermsError)
+            Padding(
+              padding: const EdgeInsets.only(top: 6, left: 4),
+              child: Text(
+                'You must accept the terms to continue',
+                style: AppTextStyles.errorText,
+              ),
+            ),
+          const SizedBox(height: 28),
+          PrimaryButton(
+            label: 'Register',
+            isLoading: _isSubmitting,
+            onPressed: _handleRegister,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     return Scaffold(
       backgroundColor: colors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Form(
-            key: _formKey,
+      body: PopScope(
+        canPop: _currentStep == 0,
+        onPopInvoked: (didPop) {
+          if (didPop) return;
+          setState(() => _currentStep = 0);
+        },
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: ListView(
               children: [
                 const SizedBox(height: 8),
-                AppBackButton(onPressed: () => Navigator.of(context).pop()),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: AppBackButton(onPressed: _onBackPressed),
+                ),
                 const SizedBox(height: 24),
                 Text(
-                  'Create Account',
+                  _currentStep == 0 ? 'Create Account' : 'Secure Account',
                   style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Sign up to start booking your rides',
+                  _currentStep == 0
+                      ? 'Sign up to start booking your rides'
+                      : 'Set a password to secure your account',
                   style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
                 ),
                 const SizedBox(height: 32),
 
-                AppTextField(
-                  label: 'Full Name',
-                  controller: _fullNameController,
-                  hint: 'Enter your full name',
-                  validator: Validators.fullName,
-                  prefixIcon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16),
+                if (_currentStep == 0) _buildStep1() else _buildStep2(colors),
 
-                AppTextField(
-                  label: 'Email',
-                  controller: _emailController,
-                  hint: 'Enter your email',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: Validators.email,
-                  prefixIcon: Icons.email_outlined,
-                ),
-                const SizedBox(height: 16),
-
-                AppTextField(
-                  label: 'Mobile Number',
-                  controller: _mobileController,
-                  hint: 'Enter your 10-digit mobile number',
-                  keyboardType: TextInputType.phone,
-                  validator: Validators.mobile,
-                  prefixIcon: Icons.phone_outlined,
-                ),
-                const SizedBox(height: 16),
-
-                PasswordField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  hint: 'Create a password',
-                  validator: Validators.password,
-                  onChanged: _onPasswordChanged,
-                ),
-                _buildStrengthMeter(colors),
-                const SizedBox(height: 16),
-
-                PasswordField(
-                  label: 'Confirm Password',
-                  controller: _confirmPasswordController,
-                  hint: 'Re-enter your password',
-                  validator: (value) => Validators.confirmPassword(
-                    value,
-                    _passwordController.text,
-                  ),
-                ),
                 const SizedBox(height: 20),
-
-                AppCheckbox(
-                  value: _agreedToTerms,
-                  onChanged: (value) {
-                    setState(() {
-                      _agreedToTerms = value;
-                      if (_agreedToTerms) _showTermsError = false;
-                    });
-                  },
-                  label: Text.rich(
-                    TextSpan(
-                      children: [
-                        const TextSpan(text: 'I agree to the '),
-                        TextSpan(text: 'Terms & Conditions', style: AppTextStyles.link),
-                        const TextSpan(text: ' and '),
-                        TextSpan(text: 'Privacy Policy', style: AppTextStyles.link),
-                      ],
-                    ),
+                if (_currentStep == 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Already have an account? ',
+                        style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Text('Log In', style: AppTextStyles.link),
+                      ),
+                    ],
                   ),
-                ),
-                if (_showTermsError)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6, left: 4),
-                    child: Text(
-                      'You must accept the terms to continue',
-                      style: AppTextStyles.errorText,
-                    ),
-                  ),
-
-                const SizedBox(height: 28),
-
-                PrimaryButton(
-                  label: 'Register',
-                  isLoading: _isSubmitting,
-                  onPressed: _handleRegister,
-                ),
-                const SizedBox(height: 20),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Already have an account? ',
-                      style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-                    ),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Text('Log In', style: AppTextStyles.link),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
               ],
             ),

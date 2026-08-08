@@ -1,5 +1,6 @@
 // lib/widgets/app_text_field.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
@@ -20,6 +21,8 @@ class AppTextField extends StatelessWidget {
   final AutovalidateMode autovalidateMode;
   final int maxLines;
   final bool enabled;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
 
   const AppTextField({
     super.key,
@@ -32,6 +35,8 @@ class AppTextField extends StatelessWidget {
     this.autovalidateMode = AutovalidateMode.onUserInteraction,
     this.maxLines = 1,
     this.enabled = true,
+    this.maxLength,
+    this.inputFormatters,
   });
 
   @override
@@ -49,6 +54,8 @@ class AppTextField extends StatelessWidget {
             controller: controller,
             keyboardType: keyboardType,
             maxLines: maxLines,
+            maxLength: maxLength,
+            inputFormatters: inputFormatters,
             enabled: enabled,
             validator: validator,
             autovalidateMode: autovalidateMode,

@@ -10,7 +10,8 @@ const {
   getDriverRides,
   getDriverEarnings,
   getDriverStatistics,
-  getDriverTimeline
+  getDriverTimeline,
+  deleteDriver
 } = require('../controllers/admin.driver.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
@@ -128,5 +129,16 @@ router.get('/:id/statistics', isAdmin, getDriverStatistics);
  *       - bearerAuth: []
  */
 router.get('/:id/timeline', isAdmin, getDriverTimeline);
+
+/**
+ * @swagger
+ * /api/admin/drivers/{id}:
+ *   delete:
+ *     summary: Delete a driver
+ *     tags: [Admin Drivers]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete('/:id', isAdmin, deleteDriver);
 
 module.exports = router;

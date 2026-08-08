@@ -9,8 +9,6 @@ import '../../widgets/app_text_field.dart';
 import '../../widgets/password_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/app_checkbox.dart';
-import '../../widgets/app_divider.dart';
-import '../../widgets/social_login_button.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
 
@@ -76,13 +74,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _authError = e.toString().replaceFirst('Exception: ', '');
       });
     }
-  }
-
-  void _onGoogleLoginPressed() {
-    // TODO: mock only — replace with real Google Sign-In once backend is wired.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Google login tapped — backend integration pending')),
-    );
   }
 
   void _goToRegister() {
@@ -163,27 +154,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   label: 'Log In',
                   isLoading: _isLoading,
                   onPressed: _onLoginPressed,
-                ),
-                const SizedBox(height: 28),
-
-                const AppDivider(),
-                const SizedBox(height: 20),
-
-                SocialLoginButton(
-                  label: 'Continue with Google',
-                  icon: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Image.asset(
-                      AppAssets.googleLogo,
-                      width: 18,
-                      height: 18,
-                    ),
-                  ),
-                  onPressed: _onGoogleLoginPressed,
                 ),
                 const SizedBox(height: 28),
 
