@@ -100,13 +100,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     final item = _items[i];
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 180,
-                            height: 180,
-                            margin: const EdgeInsets.only(bottom: 64),
+                      child: Center(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 160,
+                                height: 160,
+                                margin: const EdgeInsets.only(bottom: 48),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: AppGradients.iconHalo(),
@@ -117,22 +119,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               children: [
                                 // two concentric "halo" rings
                                 Container(
-                                  width: 180 * 1.2,
-                                  height: 180 * 1.2,
+                                  width: 160 * 1.2,
+                                  height: 160 * 1.2,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: AppColors.gold.withOpacity(0.08)),
                                   ),
                                 ),
                                 Container(
-                                  width: 180 * 1.4,
-                                  height: 180 * 1.4,
+                                  width: 160 * 1.4,
+                                  height: 160 * 1.4,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     border: Border.all(color: AppColors.gold.withOpacity(0.05)),
                                   ),
                                 ),
-                                Icon(item.icon, size: 72, color: AppColors.gold),
+                                Icon(item.icon, size: 64, color: AppColors.gold),
                               ],
                             ),
                           ),
@@ -149,7 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                         ],
                       ),
-                    );
+                    )));
                   },
                 ),
               ),

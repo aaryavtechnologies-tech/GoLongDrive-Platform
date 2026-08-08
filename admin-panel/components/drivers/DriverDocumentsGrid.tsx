@@ -55,6 +55,13 @@ export function DriverDocumentsGrid({
     );
   }
 
+  const getImageUrl = (path: string) => {
+    if (path.startsWith('http')) return path;
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5051/api/v1').replace(/\/api\/v1\/?$/, '');
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${baseUrl}/${cleanPath}`;
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -62,7 +69,7 @@ export function DriverDocumentsGrid({
           <Card key={doc.id} className="bg-zinc-950 border-white/5 overflow-hidden group hover:border-white/10 transition-all duration-300 shadow-md flex flex-col">
             <div className="relative h-40 w-full bg-zinc-900">
               <Image 
-                src={doc.url} 
+                src={getImageUrl(doc.url)} 
                 alt={doc.type} 
                 fill 
                 className="object-cover transition-transform duration-500 group-hover:scale-105" 
@@ -73,7 +80,7 @@ export function DriverDocumentsGrid({
                   variant="secondary" 
                   size="sm" 
                   className="bg-white/10 hover:bg-white/20 text-white backdrop-blur-md"
-                  onClick={() => setPreviewDoc({ url: doc.url, title: doc.type })}
+                  onClick={() => setPreviewDoc({ url: getImageUrl(doc.url), title: doc.type })}
                 >
                   <ZoomIn className="h-4 w-4 mr-2" /> Preview
                 </Button>
