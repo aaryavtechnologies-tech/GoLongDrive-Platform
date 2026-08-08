@@ -44,8 +44,8 @@ const xssSanitize = (req, res, next) => {
 
 const app = express();
 
-// Trust proxies (like Cloudflare + Nginx) so express-rate-limit works
-app.set('trust proxy', true);
+// Trust the first proxy (like Nginx) so express-rate-limit works securely
+app.set('trust proxy', 1);
 
 // ── Security ──────────────────────────────────────────────────────────────────
 
