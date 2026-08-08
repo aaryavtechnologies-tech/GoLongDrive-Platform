@@ -19,6 +19,7 @@ dependencies:
   flutter_background_service: ^5.0.5
   flutter_local_notifications: ^17.1.2
   audioplayers: ^6.0.0
+  toastification: ^3.2.0
 
 dev_dependencies:
   flutter_test:

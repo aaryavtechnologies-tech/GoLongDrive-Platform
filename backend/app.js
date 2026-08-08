@@ -44,6 +44,9 @@ const xssSanitize = (req, res, next) => {
 
 const app = express();
 
+// Trust the first proxy so express-rate-limit works behind Nginx/Cloudflare
+app.set('trust proxy', 1);
+
 // ── Security ──────────────────────────────────────────────────────────────────
 
 // Helmet sets secure HTTP headers
