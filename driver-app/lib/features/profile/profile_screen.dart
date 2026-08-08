@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../core/config/env_config.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/auth_service.dart';
 import '../../core/widgets/card_decoration.dart';
@@ -122,7 +123,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     // Safely extract documents data
     final docs = p['documents'] as Map<String, dynamic>? ?? {};
-    final profileImg = p['profileImage'] ?? docs['selfiePhoto'];
+    String? rawProfileImg = p['profileImage'] ?? docs['selfiePhoto'];
+    final profileImg = (rawProfileImg != null && rawProfileImg.isNotEmpty) 
+        ? (rawProfileImg.startsWith('http') ? rawProfileImg : '${EnvConfig.socketUrl}/$rawProfileImg') 
+        : null;
 
     return SafeArea(
       child: RefreshIndicator(

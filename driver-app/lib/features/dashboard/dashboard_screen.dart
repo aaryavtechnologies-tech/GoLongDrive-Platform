@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../core/config/env_config.dart';
 import '../../core/data/api_service.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_state.dart';
@@ -60,7 +61,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final rawData = jsonDecode(profileRes.body)['data'];
         final d = rawData['driver'] ?? rawData;
         _driverName = d['fullName'] ?? 'Driver';
-        _profileImg = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
+        
+        String? imgPath = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
+        if (imgPath != null && imgPath.isNotEmpty) {
+          _profileImg = imgPath.startsWith('http') ? imgPath : '${EnvConfig.socketUrl}/$imgPath';
+        } else {
+          _profileImg = null;
+        }
+        
         _online = d['onlineStatus'] == 'online';
       }
       
