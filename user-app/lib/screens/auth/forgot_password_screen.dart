@@ -83,18 +83,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() => _isSendingOtp = false);
 
       if (response.statusCode == 200) {
-        AppToast.success(context, 'A 6-digit OTP has been sent to your email.');
+        AppToast.showSuccess(context, 'A 6-digit OTP has been sent to your email.');
         setState(() {
           _step = _ForgotPasswordStep.resetPassword;
         });
       } else {
         final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to send OTP';
-        AppToast.error(context, errorMsg);
+        AppToast.showError(context, errorMsg);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSendingOtp = false);
-      AppToast.error(context, 'Network error. Please try again.');
+      AppToast.showError(context, 'Network error. Please try again.');
     }
   }
 
@@ -128,12 +128,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         });
       } else {
         final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to reset password';
-        AppToast.error(context, errorMsg);
+        AppToast.showError(context, errorMsg);
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isSubmitting = false);
-      AppToast.error(context, 'Network error. Please try again.');
+      AppToast.showError(context, 'Network error. Please try again.');
     }
   }
 

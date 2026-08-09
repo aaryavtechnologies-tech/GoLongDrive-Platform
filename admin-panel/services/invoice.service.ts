@@ -31,7 +31,7 @@ export const invoiceService = {
     
     if (params?.search) {
       const s = params.search.toLowerCase();
-      filtered = filtered.filter(i => 
+      filtered = filtered.filter((i: any) => 
         i.invoiceNumber.toLowerCase().includes(s) || 
         i.bookingNumber.toLowerCase().includes(s) ||
         i.customerName.toLowerCase().includes(s)
@@ -39,7 +39,7 @@ export const invoiceService = {
     }
     
     if (params?.status && params.status !== 'All') {
-      filtered = filtered.filter(i => i.status === params.status);
+      filtered = filtered.filter((i: any) => i.status === params.status);
     }
     
     const page = params?.page || 1;

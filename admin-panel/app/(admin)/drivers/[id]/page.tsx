@@ -67,7 +67,7 @@ export default function DriverDetailsPage() {
     );
   }
 
-  const allDocsApproved = documents?.length && documents.every(d => d.status === 'Approved');
+  const allDocsApproved = documents?.length && documents.every((d: any) => d.status === 'Approved');
 
   const handleApproveDriver = () => {
     updateStatus.mutate({ id, status: 'Approved' });
@@ -184,7 +184,7 @@ export default function DriverDetailsPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">Document Verification</h2>
-              {documents && documents.some(d => d.status === 'Pending') && (
+              {documents && documents.some((d: any) => d.status === 'Pending') && (
                 <span className="text-sm text-yellow-500 bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/20">
                   Pending Review
                 </span>

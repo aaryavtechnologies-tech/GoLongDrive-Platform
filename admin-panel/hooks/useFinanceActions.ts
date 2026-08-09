@@ -9,7 +9,7 @@ export function useRefundPayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => paymentService.refundPayment(id),
+    mutationFn: (id: string) => paymentService.processRefund(id, 0, 'Requested via Admin'),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['payment', data.id] });

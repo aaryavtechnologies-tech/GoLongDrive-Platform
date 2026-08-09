@@ -43,14 +43,14 @@ export const couponService = {
     
     if (params?.search) {
       const s = params.search.toLowerCase();
-      filtered = filtered.filter(c => 
+      filtered = filtered.filter((c: any) => 
         c.code.toLowerCase().includes(s) || 
         c.title.toLowerCase().includes(s)
       );
     }
     
     if (params?.status && params.status !== 'All') {
-      filtered = filtered.filter(c => c.status === params.status);
+      filtered = filtered.filter((c: any) => c.status === params.status);
     }
     
     const page = params?.page || 1;
@@ -89,7 +89,7 @@ export const couponService = {
   
   deleteCoupon: async (id: string) => {
     await delay(600);
-    mutableMockCoupons = mutableMockCoupons.filter(c => c.id !== id);
+    mutableMockCoupons = mutableMockCoupons.filter((c: any) => c.id !== id);
     return { success: true };
   }
 };

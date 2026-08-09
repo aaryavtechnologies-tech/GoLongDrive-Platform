@@ -31,7 +31,7 @@ export function AssignDriverDialog({ isOpen, onClose, rideId }: AssignDriverDial
 
   const drivers = driversData?.data || [];
 
-  const filteredDrivers = drivers.filter(d => 
+  const filteredDrivers = drivers.filter((d: any) => 
     d.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     d.vehicle.vehicleType.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.city.toLowerCase().includes(searchTerm.toLowerCase())
@@ -96,7 +96,7 @@ export function AssignDriverDialog({ isOpen, onClose, rideId }: AssignDriverDial
               </div>
             ))
           ) : filteredDrivers.length > 0 ? (
-            filteredDrivers.map(driver => (
+            filteredDrivers.map((driver: any) => (
               <div key={driver.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border border-white/5 bg-zinc-900/50 hover:bg-zinc-900 hover:border-white/10 transition-colors gap-4">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border border-white/10">

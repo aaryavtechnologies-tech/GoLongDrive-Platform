@@ -135,7 +135,7 @@ export function AdminUserDialog({ open, onOpenChange, user, onSave, isLoading }:
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">None</SelectItem>
-                {roles.map(r => (
+                {roles.map((r: any) => (
                   <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
                 ))}
               </SelectContent>

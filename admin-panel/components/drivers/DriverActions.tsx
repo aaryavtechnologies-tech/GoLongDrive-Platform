@@ -56,7 +56,7 @@ export function DriverActions({ driver }: DriverActionsProps) {
           <MoreHorizontal className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="bg-zinc-950 border-white/10 text-zinc-300">
-          <DropdownMenuItem asChild className="hover:bg-zinc-800 cursor-pointer text-zinc-200 transition-colors">
+          <DropdownMenuItem className="hover:bg-zinc-800 cursor-pointer text-zinc-200 transition-colors">
             <Link href={`/drivers/${driver.id}`} className="w-full flex items-center">
               <Eye className="mr-2 h-4 w-4 text-blue-400" />
               View Profile

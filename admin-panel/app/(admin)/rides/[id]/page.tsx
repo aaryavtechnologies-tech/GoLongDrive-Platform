@@ -101,7 +101,7 @@ export default function RideDetailsPage() {
           {isRideLoading ? (
             <Skeleton className="h-[200px] w-full bg-zinc-950 rounded-lg border border-white/5" />
           ) : ride ? (
-            <BookingInformationCard ride={ride} />
+            <BookingInformationCard ride={ride as any} />
           ) : null}
 
           {isRideLoading ? (
@@ -110,13 +110,13 @@ export default function RideDetailsPage() {
               <Skeleton className="h-[150px] w-full bg-zinc-950 rounded-lg border border-white/5" />
             </div>
           ) : ride ? (
-            <CustomerDriverCards ride={ride} />
+            <CustomerDriverCards ride={ride as any} />
           ) : null}
 
           {isRideLoading ? (
             <Skeleton className="h-[150px] w-full bg-zinc-950 rounded-lg border border-white/5" />
           ) : ride ? (
-            <LocationCards ride={ride} />
+            <LocationCards ride={ride as any} />
           ) : null}
         </div>
 
@@ -124,7 +124,7 @@ export default function RideDetailsPage() {
           {isRideLoading ? (
             <Skeleton className="h-[300px] w-full bg-zinc-950 rounded-lg border border-white/5" />
           ) : ride ? (
-            <FareBreakdownCard ride={ride} />
+            <FareBreakdownCard ride={ride as any} />
           ) : null}
 
           <RideTimeline data={timeline} isLoading={isTimelineLoading} />

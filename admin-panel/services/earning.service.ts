@@ -48,14 +48,14 @@ export const earningService = {
     
     if (params?.search) {
       const s = params.search.toLowerCase();
-      filtered = filtered.filter(e => 
+      filtered = filtered.filter((e: any) => 
         e.driverName.toLowerCase().includes(s) || 
         e.driverId.toLowerCase().includes(s)
       );
     }
     
     if (params?.status && params.status !== 'All') {
-      filtered = filtered.filter(e => e.settlementStatus === params.status);
+      filtered = filtered.filter((e: any) => e.settlementStatus === params.status);
     }
     
     const page = params?.page || 1;

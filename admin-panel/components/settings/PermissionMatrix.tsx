@@ -16,12 +16,12 @@ interface PermissionMatrixProps {
 
 export function PermissionMatrix({ permissions, selectedPermissionIds, onChange, disabled }: PermissionMatrixProps) {
   // Group permissions by module
-  const modules = Array.from(new Set(permissions.map(p => p.module)));
+  const modules = Array.from(new Set(permissions.map((p: any) => p.module)));
   
   const handleToggle = (permissionId: string) => {
     if (disabled) return;
     if (selectedPermissionIds.includes(permissionId)) {
-      onChange(selectedPermissionIds.filter(id => id !== permissionId));
+      onChange(selectedPermissionIds.filter((id: any) => id !== permissionId));
     } else {
       onChange([...selectedPermissionIds, permissionId]);
     }
@@ -29,14 +29,14 @@ export function PermissionMatrix({ permissions, selectedPermissionIds, onChange,
 
   const handleToggleModuleRow = (module: string, checked: boolean) => {
     if (disabled) return;
-    const modulePermissions = permissions.filter(p => p.module === module).map(p => p._id);
+    const modulePermissions = permissions.filter((p: any) => p.module === module).map((p: any) => p._id);
     if (checked) {
       // Add all missing permissions for this module
       const newSelections = new Set([...selectedPermissionIds, ...modulePermissions]);
       onChange(Array.from(newSelections));
     } else {
       // Remove all permissions for this module
-      onChange(selectedPermissionIds.filter(id => !modulePermissions.includes(id)));
+      onChange(selectedPermissionIds.filter((id: any) => !modulePermissions.includes(id)));
     }
   };
 
@@ -55,16 +55,16 @@ export function PermissionMatrix({ permissions, selectedPermissionIds, onChange,
               <TableRow>
                 <TableHead className="w-[200px]">Module</TableHead>
                 <TableHead className="text-center">Select All</TableHead>
-                {actions.map(action => (
+                {actions.map((action: any) => (
                   <TableHead key={action} className="text-center capitalize">{action}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {modules.map(module => {
-                const modulePerms = permissions.filter(p => p.module === module);
-                const isAllSelected = modulePerms.every(p => selectedPermissionIds.includes(p._id));
-                const isIndeterminate = !isAllSelected && modulePerms.some(p => selectedPermissionIds.includes(p._id));
+              {modules.map((module: any) => {
+                const modulePerms = permissions.filter((p: any) => p.module === module);
+                const isAllSelected = modulePerms.every((p: any) => selectedPermissionIds.includes(p._id));
+                const isIndeterminate = !isAllSelected && modulePerms.some((p: any) => selectedPermissionIds.includes(p._id));
 
                 return (
                   <TableRow key={module}>
@@ -76,7 +76,7 @@ export function PermissionMatrix({ permissions, selectedPermissionIds, onChange,
                         disabled={disabled}
                       />
                     </TableCell>
-                    {actions.map(action => {
+                    {actions.map((action: any) => {
                       const perm = modulePerms.find(p => p.action === action);
                       return (
                         <TableCell key={action} className="text-center">
