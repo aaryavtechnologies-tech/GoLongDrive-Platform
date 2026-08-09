@@ -9,6 +9,8 @@ const driverRoutes   = require('./driver.routes');
 const driverBookingRoutes = require('./driver.booking.routes');
 const adminRoutes    = require('./admin.routes');
 const adminBookingRoutes = require('./admin.booking.routes');
+const adminVehicleRoutes = require('./admin.vehicle.routes');
+const customerVehicleRoutes = require('./customer.vehicle.routes');
 const authRoutes     = require('./auth.routes');
 const paymentRoutes  = require('./payment.routes');
 const couponRoutes   = require('./coupon.routes');
@@ -37,6 +39,7 @@ router.use('/admin',    adminRoutes);
 router.use('/admin/bookings', adminBookingRoutes);
 router.use('/customer', customerRoutes);
 router.use('/customer/bookings', customerBookingRoutes);
+router.use('/customer/vehicles', customerVehicleRoutes);
 router.use('/driver',   driverRoutes);
 router.use('/driver/bookings', driverBookingRoutes);
 router.use('/auth',     authRoutes);
@@ -59,6 +62,7 @@ router.use('/admin/customers', adminCustomerRoutes);
 router.use('/admin/drivers', adminDriverRoutes);
 router.use('/admin/documents', adminDocumentRoutes);
 router.use('/admin/audit-logs', auditRoutes);
+router.use('/admin/vehicles', adminVehicleRoutes);
 
 // Public/Admin Contact Routes
 router.use('/contact', adminContactRoutes);

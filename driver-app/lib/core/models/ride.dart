@@ -69,6 +69,37 @@ class Ride {
     this.isGeocoded = false,
   });
 
+  factory Ride.fromJson(Map<String, dynamic> json) {
+    RideStatus parseStatus(String? s) {
+      if (s == 'Confirmed' || s == 'Driver Assigned' || s == 'Driver Arriving' || s == 'Driver Accepted') return RideStatus.upcoming;
+      if (s == 'Trip Started') return RideStatus.ongoing;
+      if (s == 'Trip Completed') return RideStatus.completed;
+      if (s == 'Cancelled') return RideStatus.cancelled;
+      return RideStatus.upcoming; // fallback
+    }
+
+    return Ride(
+      id: json['_id'] ?? '',
+      status: parseStatus(json['rideStatus']),
+      pickupAddress: json['pickupLocation']?['address'] ?? 'Unknown Pickup',
+      dropAddress: json['dropoffLocation']?['address'] ?? 'Unknown Drop',
+      customerName: json['customer']?['fullName'] ?? 'Customer',
+      customerPhone: json['customer']?['phoneNumber'] ?? '',
+      customerRating: 4.8, // Fallback if no rating provided
+      fare: (json['estimatedFare'] ?? 0).toDouble(),
+      distanceKm: (json['estimatedDistance'] ?? 0) / 1000.0,
+      durationMin: ((json['estimatedDuration'] ?? 0) / 60.0).round(), // backend gives seconds
+      dateTime: json['pickupDate'] != null ? DateTime.parse(json['pickupDate']) : DateTime.now(),
+      vehicleModel: json['vehicleType'] ?? '',
+      vehicleNumber: '', // usually from driver, but we only have driver-side here
+      paymentMethod: json['paymentMethod'] ?? 'Online',
+      pickupLat: json['pickupLocation']?['coordinates']?[1],
+      pickupLng: json['pickupLocation']?['coordinates']?[0],
+      dropLat: json['dropoffLocation']?['coordinates']?[1],
+      dropLng: json['dropoffLocation']?['coordinates']?[0],
+    );
+  }
+
   /// True only when both pickup and drop coordinates are present — the
   /// single check every map-rendering widget should gate on.
   bool get hasRouteCoordinates =>

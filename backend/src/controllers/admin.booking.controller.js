@@ -3,7 +3,7 @@
 const Booking = require('../models/Booking.model');
 const Driver = require('../models/Driver.model');
 const { calculateEstimatedFare } = require('../services/fare.service');
-const { addTimelineEntry, emitBookingEvent, autoAssign: triggerAutoAssign } = require('../services/booking.service');
+const { addTimelineEntry, emitBookingEvent, broadcastRideRequest } = require('../services/booking.service');
 const { generateEarningRecord } = require('../services/earning.service');
 const Payment = require('../models/Payment.model');
 const { sendSuccess } = require('../helpers/response.helper');
@@ -150,7 +150,7 @@ const autoAssignDriver = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id);
   if (!booking) throw ApiError.notFound('Booking not found');
   
-  await triggerAutoAssign(booking._id);
+  await broadcastRideRequest(booking._id);
   return sendSuccess(res, 200, 'Auto-assign triggered. Check status shortly.');
 });
 

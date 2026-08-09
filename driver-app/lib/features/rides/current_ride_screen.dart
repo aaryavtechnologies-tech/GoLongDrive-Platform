@@ -1,9 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../app/theme.dart';
+import '../../core/data/api_service.dart';
 import '../../core/data/geocoding_service.dart';
-import '../../core/data/mock_data.dart';
 import '../../core/models/ride.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/app_button.dart';
@@ -41,30 +42,83 @@ extension on _TripStage {
 
 class _CurrentRideScreenState extends State<CurrentRideScreen> {
   _TripStage _stage = _TripStage.arriving;
+  Ride? _ride;
+  bool _loading = true;
+  bool _actionLoading = false;
 
-  // Advance the trip status locally.
-  // TODO: Backend - Replace with a call to PATCH /rides/:id/status
-  void _advance() {
-    final previousStage = _stage;
-    setState(() {
-      _stage = switch (_stage) {
-        _TripStage.arriving => _TripStage.arrived,
-        _TripStage.arrived => _TripStage.inProgress,
-        _TripStage.inProgress => _TripStage.completed,
-        _TripStage.completed => _TripStage.completed,
-      };
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentRide();
+  }
 
-    // The moment the driver taps "Start Trip" (arrived -> inProgress), jump
-    // straight into full-screen turn-by-turn navigation to the drop — no
-    // extra tap on the map card needed, same as Uber/Ola/Rapido.
-    if (previousStage == _TripStage.arrived && _stage == _TripStage.inProgress) {
-      _startAutoNavigationToDrop();
+  Future<void> _fetchCurrentRide() async {
+    try {
+      final res = await ApiService.get('/driver/rides/current');
+      if (res.statusCode == 200) {
+        final d = jsonDecode(res.body)['data'];
+        if (d != null && d['ride'] != null) {
+          final rideData = d['ride'];
+          if (mounted) {
+            setState(() {
+              _ride = Ride.fromJson(rideData);
+              final status = rideData['rideStatus'];
+              if (status == 'Trip Started') {
+                _stage = _TripStage.inProgress;
+              } else if (status == 'Trip Completed') {
+                _stage = _TripStage.completed;
+              } else if (status == 'Driver Arriving' || status == 'Confirmed') {
+                _stage = _TripStage.arriving;
+              } else {
+                _stage = _TripStage.arriving; // fallback
+              }
+            });
+          }
+        }
+      }
+    } catch (e) {
+      print('Error fetching current ride: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
+  }
 
-    if (_stage == _TripStage.completed) {
-      // In a real app, we might navigate to a 'Trip Summary' screen first
-      context.pop();
+  Future<void> _advance() async {
+    if (_ride == null || _actionLoading) return;
+
+    setState(() => _actionLoading = true);
+
+    try {
+      final previousStage = _stage;
+      
+      if (_stage == _TripStage.arriving) {
+        // Just local state transition, no API for "arrived" in the current backend
+        setState(() => _stage = _TripStage.arrived);
+      } else if (_stage == _TripStage.arrived) {
+        // Start Trip
+        final res = await ApiService.post('/driver/rides/${_ride!.id}/start');
+        if (res.statusCode == 200) {
+          setState(() => _stage = _TripStage.inProgress);
+          _startAutoNavigationToDrop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to start trip')));
+        }
+      } else if (_stage == _TripStage.inProgress) {
+        // Complete Trip
+        final res = await ApiService.post('/driver/rides/${_ride!.id}/complete');
+        if (res.statusCode == 200) {
+          setState(() => _stage = _TripStage.completed);
+          context.pop();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to complete trip')));
+        }
+      } else if (_stage == _TripStage.completed) {
+        context.pop();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error')));
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
     }
   }
 
@@ -73,7 +127,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   /// navigation screen automatically. Shows a snackbar instead of silently
   /// doing nothing if no route could be determined at all.
   Future<void> _startAutoNavigationToDrop() async {
-    final ride = MockData.currentRide;
+    final ride = _ride;
     if (ride == null) return;
 
     final resolved = await GeocodingService.geocodeRide(ride);
@@ -104,7 +158,15 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final ride = MockData.currentRide;
+    if (_loading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Current Ride')),
+        body: const Center(child: CircularProgressIndicator(color: AppColors.gold)),
+      );
+    }
+
+    final ride = _ride;
 
     if (ride == null) {
       return Scaffold(
@@ -296,8 +358,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                   ],
                 ),
                 child: AppButton(
-                  label: _stage.actionLabel,
-                  onPressed: _advance,
+                  label: _actionLoading ? 'Loading...' : _stage.actionLabel,
+                  onPressed: _actionLoading ? null : _advance,
                 ),
               ),
             ),

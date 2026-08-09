@@ -26,6 +26,14 @@ class AppTextStyles {
     height: 1.25,
   );
 
+  static TextStyle priceLarge = const TextStyle(
+    fontFamily: 'Poppins',
+    fontSize: 24,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    height: 1.2,
+  );
+
   static TextStyle subtitle = const TextStyle(
     fontFamily: 'Poppins',
     fontSize: 16,

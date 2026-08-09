@@ -2,7 +2,7 @@
 
 const Booking = require('../models/Booking.model');
 const { calculateEstimatedFare } = require('../services/fare.service');
-const { generateBookingId, addTimelineEntry, emitBookingEvent } = require('../services/booking.service');
+const { generateBookingId, addTimelineEntry, emitBookingEvent, broadcastRideRequest } = require('../services/booking.service');
 const { sendBookingConfirmationEmail, sendBookingCancelledEmail } = require('../services/email.service');
 const { sendSuccess } = require('../helpers/response.helper');
 const ApiError = require('../utils/ApiError');
@@ -39,6 +39,9 @@ const createBooking = asyncHandler(async (req, res) => {
 
   // Send email (fire and forget)
   sendBookingConfirmationEmail(req.user.email, req.user.fullName, newBooking).catch(err => console.error(err));
+
+  // Trigger real-time driver broadcast (fire and forget)
+  broadcastRideRequest(newBooking._id).catch(err => console.error('Broadcast failed:', err));
 
   return sendSuccess(res, 201, 'Booking created successfully', { booking: newBooking });
 });

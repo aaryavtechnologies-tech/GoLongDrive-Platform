@@ -15,6 +15,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Drivers', href: '/drivers', icon: UserCircle },
+  { name: 'Vehicles', href: '/vehicles', icon: Car },
   { name: 'Rides', href: '/rides', icon: Car },
   { name: 'Payments', href: '/payments', icon: CreditCard },
   { name: 'Coupons', href: '/coupons', icon: Ticket },

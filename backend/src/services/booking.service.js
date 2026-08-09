@@ -2,7 +2,9 @@
 
 const Booking = require('../models/Booking.model');
 const BookingTimeline = require('../models/BookingTimeline.model');
-const { getIO } = require('../config/socket');
+const { getIO, getDriverSocket } = require('../config/socket');
+
+const assignmentTimers = new Map();
 
 /**
  * Generate an auto-increment booking ID: CAB-YYYYMMDD-XXXX
@@ -97,10 +99,10 @@ const handleDriverRejection = async (bookingId, driverId, reason) => {
 };
 
 /**
- * Auto-assign a driver to a booking
+ * Broadcast ride request to all online eligible drivers
  * @param {string} bookingId 
  */
-const autoAssign = async (bookingId) => {
+const broadcastRideRequest = async (bookingId) => {
   try {
     const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS, ONLINE_STATUS } = require('../utils/constants');
     const Driver = require('../models/Driver.model');
@@ -108,7 +110,6 @@ const autoAssign = async (bookingId) => {
     const booking = await Booking.findById(bookingId);
     if (!booking) return;
 
-    // Only assign if currently searching or pending
     if (![RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER].includes(booking.rideStatus)) {
       return;
     }
@@ -116,50 +117,110 @@ const autoAssign = async (bookingId) => {
     booking.rideStatus = RIDE_STATUS.SEARCHING_DRIVER;
     await booking.save();
 
-    // Match logic: Approved, Online, Available, matching vehicle type
     const query = {
       driverStatus: DRIVER_STATUS.APPROVED,
       onlineStatus: ONLINE_STATUS.ONLINE,
       availabilityStatus: AVAILABILITY_STATUS.AVAILABLE,
-      vehicleType: booking.vehicleType
+      'vehicle.type': booking.vehicleType
     };
 
-    // Find all matching drivers (ideally we would sort by least bookings/oldest assigned)
     const availableDrivers = await Driver.find(query);
 
     if (availableDrivers.length === 0) {
-      await addTimelineEntry(booking._id, 'Auto Assign Failed', 'System', 'No available drivers found matching criteria');
+      await addTimelineEntry(booking._id, 'Broadcast Failed', 'System', 'No online drivers found matching criteria. Falling back to random assignment.');
+      return randomFallbackAssign(booking._id);
+    }
+
+    await addTimelineEntry(booking._id, 'Ride Broadcasted', 'System', `Broadcasted to ${availableDrivers.length} online drivers`);
+    
+    const io = getIO();
+    availableDrivers.forEach(driver => {
+      const socketId = getDriverSocket(driver._id);
+      if (socketId) {
+        io.to(socketId).emit('ride:request', { booking });
+      }
+    });
+
+    // 2 Minute Timer
+    const timer = setTimeout(async () => {
+      assignmentTimers.delete(booking._id.toString());
+      const b = await Booking.findById(booking._id);
+      if (b && b.rideStatus === RIDE_STATUS.SEARCHING_DRIVER) {
+        await addTimelineEntry(b._id, 'Broadcast Timeout', 'System', 'No driver accepted in 2 minutes. Falling back to random assignment.');
+        randomFallbackAssign(b._id);
+      }
+    }, 120000);
+
+    assignmentTimers.set(booking._id.toString(), timer);
+
+  } catch (error) {
+    console.error('Broadcast error:', error);
+  }
+};
+
+/**
+ * Fallback to assigning a random eligible driver (even offline), checking date conflicts
+ */
+const randomFallbackAssign = async (bookingId) => {
+  try {
+    const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS } = require('../utils/constants');
+    const Driver = require('../models/Driver.model');
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking || booking.rideStatus !== RIDE_STATUS.SEARCHING_DRIVER) return;
+
+    const startOfDay = new Date(booking.pickupDate);
+    startOfDay.setHours(0,0,0,0);
+    const endOfDay = new Date(booking.pickupDate);
+    endOfDay.setHours(23,59,59,999);
+
+    const conflictingBookings = await Booking.find({
+      pickupDate: { $gte: startOfDay, $lte: endOfDay },
+      rideStatus: { $nin: [RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN] },
+      driver: { $ne: null }
+    }).select('driver');
+
+    const busyDriverIds = conflictingBookings.map(b => b.driver);
+
+    const query = {
+      _id: { $nin: busyDriverIds },
+      driverStatus: DRIVER_STATUS.APPROVED,
+      'vehicle.type': booking.vehicleType
+    };
+
+    const eligibleDrivers = await Driver.find(query);
+
+    if (eligibleDrivers.length === 0) {
+      await addTimelineEntry(booking._id, 'Fallback Assign Failed', 'System', 'No eligible drivers (even offline) found for this date.');
       return;
     }
 
-    // Sort preference: same city first
-    availableDrivers.sort((a, b) => {
-      if (a.city === booking.pickupCity && b.city !== booking.pickupCity) return -1;
-      if (a.city !== booking.pickupCity && b.city === booking.pickupCity) return 1;
-      return 0;
-    });
+    const randomIndex = Math.floor(Math.random() * eligibleDrivers.length);
+    const selectedDriver = eligibleDrivers[randomIndex];
 
-    const selectedDriver = availableDrivers[0];
-
-    // Assign
     booking.driver = selectedDriver._id;
     booking.rideStatus = RIDE_STATUS.DRIVER_ASSIGNED;
     booking.assignedAt = new Date();
     await booking.save();
 
-    selectedDriver.availabilityStatus = AVAILABILITY_STATUS.BUSY;
-    await selectedDriver.save();
+    if (selectedDriver.onlineStatus === 'Online') {
+      selectedDriver.availabilityStatus = AVAILABILITY_STATUS.BUSY;
+      await selectedDriver.save();
+    }
 
-    await addTimelineEntry(booking._id, 'Driver Assigned', 'System', `Auto-assigned driver ${selectedDriver.fullName}`);
+    await addTimelineEntry(booking._id, 'Driver Assigned', 'System', `Fallback random assigned to driver ${selectedDriver.fullName}`);
     emitBookingEvent('driver:assigned', { bookingId: booking.bookingId, driverId: selectedDriver._id });
 
-    // Background Timeout: 2 minutes (120,000 ms)
-    setTimeout(() => {
-      handleDriverRejection(booking._id, selectedDriver._id, 'Timeout: Driver did not respond in 2 minutes');
-    }, 120000);
-
   } catch (error) {
-    console.error('Auto Assign error:', error);
+    console.error('Random Assign error:', error);
+  }
+};
+
+const clearAssignmentTimer = (bookingId) => {
+  const timer = assignmentTimers.get(bookingId.toString());
+  if (timer) {
+    clearTimeout(timer);
+    assignmentTimers.delete(bookingId.toString());
   }
 };
 
@@ -167,6 +228,8 @@ module.exports = {
   generateBookingId,
   addTimelineEntry,
   emitBookingEvent,
-  autoAssign,
+  broadcastRideRequest,
+  randomFallbackAssign,
+  clearAssignmentTimer,
   handleDriverRejection
 };

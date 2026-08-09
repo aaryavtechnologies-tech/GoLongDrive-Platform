@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'dart:async';
 import '../../app/theme.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../rides/rides_screen.dart';
 import '../earnings/earnings_screen.dart';
 import '../profile/profile_screen.dart';
+import '../../core/data/socket_service.dart';
 
 /// Bottom tab shell matching app/(tabs)/_layout.tsx.
 /// Navigation rule: this is the ONLY screen reachable after login/register
@@ -24,6 +27,29 @@ class TabShell extends StatefulWidget {
 
 class _TabShellState extends State<TabShell> {
   late int _tabIndex = widget.initialTab;
+  StreamSubscription? _rideReqSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initSocket();
+  }
+
+  Future<void> _initSocket() async {
+    await SocketService.init();
+    
+    _rideReqSub = SocketService.onRideRequest.listen((bookingData) {
+      if (!mounted) return;
+      context.push('/rides/incoming', extra: {'booking': bookingData});
+    });
+  }
+
+  @override
+  void dispose() {
+    _rideReqSub?.cancel();
+    // Do NOT disconnect socket here because TabShell is the root of the app.
+    super.dispose();
+  }
 
   static const _tabs = [
     (icon: Icons.home_outlined, activeIcon: Icons.home, label: 'Home'),

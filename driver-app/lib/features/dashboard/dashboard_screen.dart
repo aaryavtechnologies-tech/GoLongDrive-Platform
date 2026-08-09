@@ -47,9 +47,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     try {
       final futures = await Future.wait([
         ApiService.get('/driver/profile'),
-        ApiService.get('/driver/bookings/dashboard'),
+        ApiService.get('/driver/dashboard'),
         ApiService.get('/earnings/driver/dashboard'),
-        ApiService.get('/driver/bookings/rides/current'), // Optional: to get active ride
+        ApiService.get('/driver/rides/current'),
       ]);
 
       final profileRes = futures[0];
@@ -110,7 +110,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final original = _online;
     setState(() => _online = val);
     try {
-      final res = await ApiService.patch('/driver/bookings/status');
+      final res = await ApiService.patch('/driver/status', body: {
+        'onlineStatus': val ? 'Online' : 'Offline'
+      });
       if (res.statusCode != 200) throw Exception();
     } catch (e) {
       setState(() => _online = original);

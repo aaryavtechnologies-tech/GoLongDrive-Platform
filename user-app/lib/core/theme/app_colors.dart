@@ -38,6 +38,9 @@ class AppColors {
   static const Color primaryGoldDark = Color(0xFFD99A00); // darker shade for gradients/pressed states
   static const Color black = Color(0xFF000000); // logo background / app background
   static const Color nearBlack = Color(0xFF121212); // surfaces slightly lighter than pure black (cards, sheets)
+  static const Color surfaceSecondary = Color(0xFF111111);
+  static const Color surfaceCard = Color(0xFF171717);
+  static const Color surfaceElevated = Color(0xFF1F1F1F);
 
   // Text colors
   static const Color textPrimary = Color(0xFFFFFFFF); // headings, primary text on dark bg
@@ -80,7 +83,10 @@ class AppColors {
 /// white background and the gold card surface.
 class AppColorPalette {
   final Color background;
-  final Color surface; // card background
+  final Color surface; // legacy card background
+  final Color surfaceSecondary;
+  final Color surfaceCard;
+  final Color surfaceElevated;
   final Color textPrimary;
   final Color textSecondary;
   final Color divider;
@@ -99,6 +105,9 @@ class AppColorPalette {
   const AppColorPalette({
     required this.background,
     required this.surface,
+    required this.surfaceSecondary,
+    required this.surfaceCard,
+    required this.surfaceElevated,
     required this.textPrimary,
     required this.textSecondary,
     required this.divider,
@@ -112,6 +121,9 @@ class AppColorPalette {
   static const dark = AppColorPalette(
     background: AppColors.black,
     surface: AppColors.nearBlack,
+    surfaceSecondary: AppColors.surfaceSecondary,
+    surfaceCard: AppColors.surfaceCard,
+    surfaceElevated: AppColors.surfaceElevated,
     textPrimary: AppColors.textPrimary,
     textSecondary: AppColors.textSecondary,
     divider: AppColors.divider,
@@ -130,6 +142,9 @@ class AppColorPalette {
     // (matches the reference screenshot). Accent gold itself (buttons,
     // primaryGold) is unchanged — only the card *surface* color moved.
     surface: Color(0xFFFBF0D6),
+    surfaceSecondary: Color(0xFFFFF9ED),
+    surfaceCard: Color(0xFFFBF0D6),
+    surfaceElevated: Color(0xFFF2E6CA),
     textPrimary: Colors.black,
     textSecondary: Color(0xFF3D3D3D),
     // Softened to match the gentler card tone above.

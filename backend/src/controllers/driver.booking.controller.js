@@ -2,7 +2,7 @@
 
 const Booking = require('../models/Booking.model');
 const Driver = require('../models/Driver.model');
-const { addTimelineEntry, emitBookingEvent, handleDriverRejection, autoAssign } = require('../services/booking.service');
+const { addTimelineEntry, emitBookingEvent, handleDriverRejection, clearAssignmentTimer } = require('../services/booking.service');
 const { generateEarningRecord } = require('../services/earning.service');
 const Payment = require('../models/Payment.model');
 const { sendSuccess } = require('../helpers/response.helper');
@@ -59,34 +59,73 @@ const getCurrentRide = asyncHandler(async (req, res) => {
  */
 const acceptRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId });
+  const booking = await Booking.findById(req.params.id);
 
-  if (!booking) throw ApiError.notFound('Booking not found or not assigned to you');
-  if (booking.rideStatus !== RIDE_STATUS.DRIVER_ASSIGNED) {
-    throw ApiError.badRequest(`Cannot accept. Ride is currently ${booking.rideStatus}`);
+  if (!booking) throw ApiError.notFound('Booking not found');
+
+  // If it's a broadcast request
+  if (booking.rideStatus === RIDE_STATUS.SEARCHING_DRIVER) {
+    const activeRideCount = await Booking.countDocuments({
+      driver: driverId,
+      rideStatus: { $in: [RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.TRIP_STARTED] }
+    });
+
+    if (activeRideCount > 0) throw ApiError.badRequest('You already have an active ride');
+
+    // Atomically update to prevent race conditions when multiple drivers accept simultaneously
+    const updatedBooking = await Booking.findOneAndUpdate(
+      { _id: booking._id, rideStatus: RIDE_STATUS.SEARCHING_DRIVER },
+      { 
+        $set: { 
+          driver: driverId, 
+          rideStatus: RIDE_STATUS.DRIVER_ACCEPTED, 
+          acceptedAt: new Date(), 
+          assignedAt: new Date() 
+        } 
+      },
+      { new: true }
+    );
+
+    if (!updatedBooking) {
+       throw ApiError.badRequest('Ride is no longer available. Another driver accepted it first.');
+    }
+
+    await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.BUSY });
+
+    await addTimelineEntry(updatedBooking._id, 'Driver Accepted', driverId, 'Driver accepted the broadcasted ride');
+    emitBookingEvent('driver:accepted', { bookingId: updatedBooking.bookingId, driverId });
+    
+    // Stop the 2-minute fallback timer
+    clearAssignmentTimer(updatedBooking._id);
+
+    return sendSuccess(res, 200, 'Ride accepted successfully', { booking: updatedBooking });
   }
 
-  // Prevent multiple active rides
-  const activeRideCount = await Booking.countDocuments({
-    driver: driverId,
-    rideStatus: { $in: [RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.TRIP_STARTED] }
-  });
+  // Fallback for manually assigned rides by admin
+  if (booking.driver?.toString() === driverId.toString() && booking.rideStatus === RIDE_STATUS.DRIVER_ASSIGNED) {
+    const activeRideCount = await Booking.countDocuments({
+      driver: driverId,
+      rideStatus: { $in: [RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.TRIP_STARTED] }
+    });
 
-  if (activeRideCount > 0) throw ApiError.badRequest('You already have an active ride');
+    if (activeRideCount > 0) throw ApiError.badRequest('You already have an active ride');
 
-  // Accept the ride
-  booking.rideStatus = RIDE_STATUS.DRIVER_ACCEPTED;
-  booking.acceptedAt = new Date();
-  booking.driverResponseTime = booking.acceptedAt.getTime() - booking.assignedAt.getTime();
-  await booking.save();
+    booking.rideStatus = RIDE_STATUS.DRIVER_ACCEPTED;
+    booking.acceptedAt = new Date();
+    if (booking.assignedAt) {
+      booking.driverResponseTime = booking.acceptedAt.getTime() - booking.assignedAt.getTime();
+    }
+    await booking.save();
 
-  // Mark driver busy
-  await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.BUSY });
+    await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.BUSY });
 
-  await addTimelineEntry(booking._id, 'Driver Accepted', driverId, 'Driver accepted the ride');
-  emitBookingEvent('driver:accepted', { bookingId: booking.bookingId, driverId });
+    await addTimelineEntry(booking._id, 'Driver Accepted', driverId, 'Driver accepted the ride');
+    emitBookingEvent('driver:accepted', { bookingId: booking.bookingId, driverId });
 
-  return sendSuccess(res, 200, 'Ride accepted successfully', { booking });
+    return sendSuccess(res, 200, 'Ride accepted successfully', { booking });
+  }
+
+  throw ApiError.badRequest(`Cannot accept. Ride is currently ${booking.rideStatus} or not assigned to you`);
 });
 
 /**

@@ -35,6 +35,34 @@ class AuthService {
     }
   }
 
+  /// Get the current user's profile
+  static Future<Map<String, dynamic>> getUserProfile() async {
+    final token = await getToken();
+    if (token == null) throw Exception('No authentication token found');
+
+    final url = Uri.parse('$baseUrl/customer/profile');
+    developer.log('>>> API REQUEST: GET $url', name: 'AuthService');
+    
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    
+    developer.log('<<< API RESPONSE: ${response.statusCode}', name: 'AuthService');
+    
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      return body['data'] ?? body;
+    } else {
+      final errorMsg = _extractErrorMessage(response);
+      developer.log('getUserProfile failed: $errorMsg', name: 'AuthService');
+      throw Exception(errorMsg);
+    }
+  }
+
   /// Login a user
   static Future<void> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/customer/login');

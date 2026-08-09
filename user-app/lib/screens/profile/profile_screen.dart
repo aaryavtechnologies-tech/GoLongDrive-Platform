@@ -6,44 +6,38 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/theme_scope.dart';
 import '../../routes/app_routes.dart';
+import '../../core/services/auth_service.dart';
 
-/// Profile screen — reached from the avatar icon on Home.
-///
-/// Menu rows navigate to their real (UI-only) screens — Account Details,
-/// Payment Methods, Ride History, Notifications, Help & Support — each of
-/// which has its own BACKEND HOOKUP notes for wiring real data in. Logout
-/// shows a confirmation dialog; confirming pops back to the app root and
-/// shows a mock "Logged out" SnackBar (no auth wiring yet).
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  static const List<_ProfileMenuItem> _menuItems = [
-    _ProfileMenuItem(
-      icon: Icons.person_outline,
-      label: 'Account Details',
-      route: AppRoutes.accountDetails,
-    ),
-    _ProfileMenuItem(
-      icon: Icons.payment_outlined,
-      label: 'Payment Methods',
-      route: AppRoutes.paymentMethods,
-    ),
-    _ProfileMenuItem(
-      icon: Icons.history,
-      label: 'Ride History',
-      route: AppRoutes.rideHistory,
-    ),
-    _ProfileMenuItem(
-      icon: Icons.notifications_none,
-      label: 'Notifications',
-      route: AppRoutes.notifications,
-    ),
-    _ProfileMenuItem(
-      icon: Icons.help_outline,
-      label: 'Help & Support',
-      route: AppRoutes.helpSupport,
-    ),
-  ];
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic>? _userProfile;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final profile = await AuthService.getUserProfile();
+      if (!mounted) return;
+      setState(() {
+        _userProfile = profile;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+    }
+  }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final colors = AppColors.of(context);
@@ -77,7 +71,6 @@ class ProfileScreen extends StatelessWidget {
     );
 
     if (confirmed == true && context.mounted) {
-      // TODO: wire to real auth/session teardown when backend lands.
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRoutes.login,
         (route) => false,
@@ -86,6 +79,12 @@ class ProfileScreen extends StatelessWidget {
         const SnackBar(content: Text('Logged out')),
       );
     }
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$feature — coming soon')),
+    );
   }
 
   @override
@@ -98,13 +97,44 @@ class ProfileScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
           children: [
             _buildTopBar(context),
+            const SizedBox(height: 32),
+            _buildProfileCard(context),
+            const SizedBox(height: 32),
+            _buildSectionTitle(context, 'Account'),
+            _buildMenuCard(
+              context: context,
+              items: [
+                _MenuItem(icon: Icons.history, label: 'My Bookings', route: AppRoutes.myRides),
+                _MenuItem(icon: Icons.person_outline, label: 'Personal Information', route: AppRoutes.accountDetails),
+                _MenuItem(icon: Icons.location_on_outlined, label: 'Saved Locations', onTap: () => _showComingSoon(context, 'Saved Locations')),
+                _MenuItem(icon: Icons.payment_outlined, label: 'Payment History', route: AppRoutes.paymentMethods),
+              ],
+            ),
             const SizedBox(height: 24),
-            _buildProfileHeader(context),
+            _buildSectionTitle(context, 'Preferences'),
+            _buildMenuCard(
+              context: context,
+              items: [
+                _MenuItem(
+                  icon: ThemeScope.of(context).isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                  label: 'Dark Mode',
+                  isToggle: true,
+                  toggleValue: ThemeScope.of(context).isDark,
+                  onToggle: (_) => ThemeScope.of(context).toggle(),
+                ),
+              ],
+            ),
             const SizedBox(height: 24),
-            _buildThemeToggle(context),
-            const SizedBox(height: 28),
-            _buildMenuList(context),
-            const SizedBox(height: 28),
+            _buildSectionTitle(context, 'About'),
+            _buildMenuCard(
+              context: context,
+              items: [
+                _MenuItem(icon: Icons.help_outline, label: 'Help & Support', route: AppRoutes.helpSupport),
+                _MenuItem(icon: Icons.description_outlined, label: 'Terms & Conditions', onTap: () => _showComingSoon(context, 'Terms & Conditions')),
+                _MenuItem(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () => _showComingSoon(context, 'Privacy Policy')),
+              ],
+            ),
+            const SizedBox(height: 32),
             _buildLogoutButton(context),
           ],
         ),
@@ -116,115 +146,165 @@ class ProfileScreen extends StatelessWidget {
     final colors = AppColors.of(context);
     return Row(
       children: [
-        Semantics(
-          button: true,
-          label: 'Back',
-          child: ExcludeSemantics(
-            child: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            height: 40,
-            width: 40,
-            decoration: BoxDecoration(
-              color: colors.surface,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.arrow_back, color: colors.textPrimary, size: 20),
-          ),
+        if (Navigator.canPop(context)) ...[
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              height: 40,
+              width: 40,
+              decoration: BoxDecoration(
+                color: colors.surface,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_back, color: colors.textPrimary, size: 20),
             ),
           ),
-        ),
-        const SizedBox(width: 16),
+          const SizedBox(width: 16),
+        ],
         Text('Profile', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary)),
       ],
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildProfileHeader(BuildContext context) {
+  Widget _buildProfileCard(BuildContext context) {
     final colors = AppColors.of(context);
-    return Row(
-      children: [
-        Container(
-          height: 64,
-          width: 64,
-          decoration: BoxDecoration(
-            color: colors.surface,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.person, color: colors.accentIcon, size: 32),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final String fullName = _userProfile?['fullName'] ?? 'Guest User';
+    final String phone = _userProfile?['phoneNumber'] ?? 'N/A';
+    final String email = _userProfile?['email'] ?? 'N/A';
+    final String imageUrl = _userProfile?['profileImage'] ?? '';
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colors.inputBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
+      child: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+        : Column(
             children: [
-              Text(
-                'Guest User',
-                style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              Container(
+                height: 80,
+                width: 80,
+                decoration: BoxDecoration(
+                  color: colors.surfaceElevated,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primaryGold, width: 2),
+                  image: imageUrl.isNotEmpty
+                      ? DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                ),
+                child: imageUrl.isEmpty ? Icon(Icons.person, color: colors.accentIcon, size: 40) : null,
               ),
+              const SizedBox(height: 16),
+              Text(fullName, style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary, fontSize: 24)),
+              const SizedBox(height: 8),
+              Text(phone, style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 4),
-              Text(
-                '+91 00000 00000',
-                style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              Text(email, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.accountDetails),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppColors.primaryGold),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                child: Text('Edit Profile', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.w600)),
               ),
             ],
           ),
-        ),
-      ],
-    ).animate().fadeIn(delay: 100.ms, duration: 300.ms);
+    ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildThemeToggle(BuildContext context) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     final colors = AppColors.of(context);
-    final controller = ThemeScope.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            controller.isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-            color: controller.isDark ? AppColors.primaryGold : colors.textPrimary,
-            size: 20,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Dark Mode',
-              style: AppTextStyles.body.copyWith(color: colors.textPrimary),
-            ),
-          ),
-          Switch(
-            value: controller.isDark,
-            onChanged: (_) => controller.toggle(),
-            activeColor: AppColors.primaryGold,
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 120.ms, duration: 300.ms);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, left: 4),
+      child: Text(title, style: AppTextStyles.subtitle.copyWith(color: colors.textSecondary)),
+    ).animate().fadeIn(delay: 150.ms, duration: 300.ms);
   }
 
-  Widget _buildMenuList(BuildContext context) {
-    return Column(
-      children: _menuItems
-          .map(
-            (item) => Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _ProfileMenuTile(
-            item: item,
-            onTap: () => Navigator.of(context).pushNamed(item.route),
-          ),
-        ),
-      )
-          .toList(),
-    ).animate().fadeIn(delay: 150.ms, duration: 300.ms);
+  Widget _buildMenuCard({required BuildContext context, required List<_MenuItem> items}) {
+    final colors = AppColors.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colors.inputBorder),
+      ),
+      child: Column(
+        children: List.generate(items.length, (index) {
+          final item = items[index];
+          return Column(
+            children: [
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: item.isToggle
+                      ? null
+                      : () {
+                          if (item.onTap != null) {
+                            item.onTap!();
+                          } else if (item.route != null) {
+                            Navigator.of(context).pushNamed(item.route!);
+                          }
+                        },
+                  borderRadius: index == 0
+                      ? const BorderRadius.vertical(top: Radius.circular(20))
+                      : index == items.length - 1
+                          ? const BorderRadius.vertical(bottom: Radius.circular(20))
+                          : BorderRadius.zero,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: colors.surfaceElevated,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(item.icon, color: AppColors.primaryGold, size: 20),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(item.label, style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                        ),
+                        if (item.isToggle)
+                          Switch(
+                            value: item.toggleValue ?? false,
+                            onChanged: item.onToggle,
+                            activeColor: AppColors.primaryGold,
+                          )
+                        else
+                          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              if (index < items.length - 1)
+                Padding(
+                  padding: const EdgeInsets.only(left: 60),
+                  child: Container(height: 1, color: colors.divider),
+                ),
+            ],
+          );
+        }),
+      ),
+    ).animate().fadeIn(delay: 200.ms, duration: 400.ms);
   }
 
   Widget _buildLogoutButton(BuildContext context) {
@@ -232,13 +312,13 @@ class ProfileScreen extends StatelessWidget {
     return GestureDetector(
       onTap: () => _confirmLogout(context),
       child: Container(
-        height: 52,
+        height: 56,
         width: double.infinity,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: colors.surface,
+          color: colors.surfaceCard,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -255,63 +335,26 @@ class ProfileScreen extends StatelessWidget {
           ],
         ),
       ),
-    ).animate().fadeIn(delay: 200.ms, duration: 300.ms);
+    ).animate().fadeIn(delay: 300.ms, duration: 300.ms);
   }
 }
 
-class _ProfileMenuItem {
+class _MenuItem {
   final IconData icon;
   final String label;
-  final String route;
+  final String? route;
+  final VoidCallback? onTap;
+  final bool isToggle;
+  final bool? toggleValue;
+  final ValueChanged<bool>? onToggle;
 
-  const _ProfileMenuItem({
+  const _MenuItem({
     required this.icon,
     required this.label,
-    required this.route,
+    this.route,
+    this.onTap,
+    this.isToggle = false,
+    this.toggleValue,
+    this.onToggle,
   });
-}
-
-class _ProfileMenuTile extends StatelessWidget {
-  final _ProfileMenuItem item;
-  final VoidCallback onTap;
-
-  const _ProfileMenuTile({required this.item, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Material(
-      color: colors.surface,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: colors.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(item.icon, color: AppColors.primaryGold, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  item.label,
-                  style: AppTextStyles.body.copyWith(color: colors.textPrimary),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
