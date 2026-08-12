@@ -16,6 +16,13 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# 1.5 Check for .env file
+if [ ! -f ".env" ]; then
+  echo "❌ Error: .env file not found!"
+  echo "Please create the .env file in the admin-panel directory before deploying."
+  exit 1
+fi
+
 # 2. Build the Next.js app (run as the original user who invoked sudo)
 ORIGINAL_USER=${SUDO_USER:-$USER}
 
