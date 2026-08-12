@@ -27,22 +27,22 @@ fi
 ORIGINAL_USER=${SUDO_USER:-$USER}
 
 echo "📦 Installing NPM dependencies..."
-sudo -u $ORIGINAL_USER npm install
+npm install
 
 echo "🏗️ Building the Next.js application..."
-sudo -u $ORIGINAL_USER npm run build
+npm run build
 
 # 3. Start/Restart PM2
 echo "🔄 Managing PM2 process..."
-# Ensure PM2 is running for the original user
-if sudo -u $ORIGINAL_USER pm2 show $APP_NAME > /dev/null 2>&1; then
+# Ensure PM2 is running
+if pm2 show $APP_NAME > /dev/null 2>&1; then
   echo "Restarting existing PM2 process..."
-  sudo -u $ORIGINAL_USER pm2 restart $APP_NAME
+  pm2 restart $APP_NAME
 else
   echo "Starting new PM2 process..."
-  sudo -u $ORIGINAL_USER pm2 start npm --name "$APP_NAME" -- start -- -p $PORT
+  pm2 start npm --name "$APP_NAME" -- start -- -p $PORT
 fi
-sudo -u $ORIGINAL_USER pm2 save
+pm2 save
 
 # 4. Configure Nginx
 NGINX_CONF="/etc/nginx/sites-available/$DOMAIN"
