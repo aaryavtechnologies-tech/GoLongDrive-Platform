@@ -68,5 +68,10 @@ export const customerService = {
   getCustomerTimeline: async (id: string) => {
     await delay(600);
     return mockTimeline;
+  },
+
+  createCustomer: async (data: any) => {
+    const response = await apiClient.post('/admin/customers', data);
+    return response.data;
   }
 };

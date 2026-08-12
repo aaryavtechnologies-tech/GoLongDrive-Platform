@@ -100,7 +100,42 @@ const deleteCustomer = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, 'Customer deleted successfully', { id: req.params.id });
 });
 
+/**
+ * @route   POST /api/admin/customers
+ * @desc    Create a new customer manually
+ * @access  Private (Admin)
+ */
+const createCustomer = asyncHandler(async (req, res) => {
+  const { fullName, email, phoneNumber, password } = req.body;
+
+  if (!fullName || !email || !phoneNumber || !password) {
+    return res.status(400).json({ success: false, message: 'Please provide all required fields' });
+  }
+
+  // Check if customer exists
+  const existingCustomer = await Customer.findOne({ $or: [{ email }, { phoneNumber }] });
+  if (existingCustomer) {
+    return res.status(400).json({ success: false, message: 'Customer with this email or phone already exists' });
+  }
+
+  const newCustomer = await Customer.create({
+    fullName,
+    email,
+    phoneNumber,
+    password,
+    profileImage: `https://ui-avatars.com/api/?name=${encodeURIComponent(fullName)}&background=random`,
+    emailVerified: true
+  });
+
+  return sendSuccess(res, 201, 'Customer created successfully', {
+    id: newCustomer._id,
+    name: newCustomer.fullName,
+    email: newCustomer.email,
+  });
+});
+
 module.exports = {
   getAllCustomers,
-  deleteCustomer
+  deleteCustomer,
+  createCustomer
 };

@@ -8,7 +8,8 @@ import { CustomerFilters } from '@/components/customers/CustomerFilters';
 import { EmptyCustomers } from '@/components/customers/EmptyCustomers';
 import { ErrorBoundary } from '@/components/common/error-boundary';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
+import Link from 'next/link';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -64,10 +65,18 @@ export default function CustomersPage() {
           <h1 className="text-2xl font-bold text-white tracking-tight">Customers Management</h1>
           <p className="text-sm text-zinc-400 mt-1">Manage and view all customer profiles and activities.</p>
         </div>
-        <Button className="bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
-          <Download className="mr-2 h-4 w-4" />
-          Export CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="border-white/10 text-white bg-transparent hover:bg-zinc-900">
+            <Download className="mr-2 h-4 w-4" />
+            Export CSV
+          </Button>
+          <Link href="/customers/create">
+            <Button className="bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg shadow-yellow-400/20">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Customer
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <CustomerFilters 
