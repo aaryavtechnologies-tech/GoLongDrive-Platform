@@ -6,7 +6,7 @@ set -e
 
 DOMAIN="admin.golongdrive.online"
 PORT=3001
-APP_NAME="admin-panel"
+APP_NAME="golongdrive-admin-panel"
 
 echo "🚀 Starting deployment for $DOMAIN on port $PORT..."
 
