@@ -3,6 +3,30 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../registration_provider.dart';
 import '../registration_step_scaffold.dart';
+import 'package:flutter/services.dart';
+
+class DateInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.length < oldValue.text.length) {
+      return newValue;
+    }
+    final text = newValue.text.replaceAll('/', '');
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      if ((i == 1 || i == 3) && i != text.length - 1) {
+        buffer.write('/');
+      }
+    }
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
 
 /// Step 1 — Personal details. No icon header on this step (per guide table).
 /// Fields: Full Name, Phone, Email, Date of Birth — one card.
@@ -121,6 +145,7 @@ class _PersonalStepState extends State<PersonalStep> {
           maxLength: 10,
           controller: _dobController,
           errorText: _dobError,
+          inputFormatters: [DateInputFormatter()],
         ),
       ],
     );

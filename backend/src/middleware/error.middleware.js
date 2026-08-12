@@ -39,9 +39,15 @@ const globalErrorHandler = (err, req, res, next) => {
   // Mongoose duplicate key
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue || {})[0];
-    const value = err.keyValue?.[field];
+    let friendlyField = field || 'record';
+    
+    // Map common database fields to user-friendly terms
+    if (field === 'email') friendlyField = 'email address';
+    if (field === 'phoneNumber') friendlyField = 'phone number';
+    if (field === 'userId' || field === 'driverId' || field === 'customerId') friendlyField = 'account details';
+
     error = ApiError.conflict(
-      field ? `Duplicate value: "${value}" already exists for field "${field}".` : 'Duplicate key error.'
+      `An account or record with this ${friendlyField} already exists.`
     );
   }
 

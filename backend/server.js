@@ -29,6 +29,9 @@ const start = async () => {
     // 1. Connect to MongoDB
     await connectDB();
 
+    // Drop orphaned userId index from drivers collection if it exists
+    await mongoose.connection.collection('drivers').dropIndex('userId_1').catch(() => {});
+
     // Auto-seed RBAC and defaults
     await initializeSystem();
 

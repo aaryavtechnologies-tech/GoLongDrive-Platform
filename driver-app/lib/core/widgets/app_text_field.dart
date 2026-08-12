@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../app/theme.dart';
 
 /// Reconstructed from `@/components/ui/input` usage across every screen.
@@ -12,6 +13,7 @@ class AppTextField extends StatefulWidget {
   final TextEditingController? controller;
   final int? maxLength;
   final TextCapitalization textCapitalization;
+  final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
 
   const AppTextField({
@@ -25,6 +27,7 @@ class AppTextField extends StatefulWidget {
     this.controller,
     this.maxLength,
     this.textCapitalization = TextCapitalization.none,
+    this.inputFormatters,
     this.onChanged,
   });
 
@@ -58,6 +61,7 @@ class _AppTextFieldState extends State<AppTextField> {
             keyboardType: widget.keyboardType,
             maxLength: widget.maxLength,
             textCapitalization: widget.textCapitalization,
+            inputFormatters: widget.inputFormatters,
             onChanged: widget.onChanged,
             style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
             decoration: InputDecoration(
