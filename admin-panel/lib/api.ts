@@ -9,14 +9,18 @@ export const adminApi = {
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error);
       return {
-        totalRevenue: 0,
-        totalBookings: 0,
+        totalCustomers: 0,
+        totalCustomersTrend: 0,
+        totalDrivers: 0,
+        totalDriversTrend: 0,
         activeDrivers: 0,
-        activeCustomers: 0,
-        revenueChange: 0,
-        bookingsChange: 0,
-        driversChange: 0,
-        customersChange: 0
+        todayBookings: 0,
+        todayBookingsTrend: 0,
+        todayRevenue: 0,
+        todayRevenueTrend: 0,
+        pendingDocuments: 0,
+        pendingPayments: 0,
+        completedTrips: 0,
       } as DashboardStats;
     }
   },

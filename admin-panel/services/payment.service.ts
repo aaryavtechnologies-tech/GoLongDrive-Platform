@@ -1,5 +1,5 @@
 import apiClient from '@/lib/axios';
-import { PaymentDetails, PaymentFilters, RefundStatus, RevenueStats, PaymentStatus } from '@/types/payment';
+import { PaymentFilters, RefundStatus, RevenueStats, PaymentStatus } from '@/types/payment';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
