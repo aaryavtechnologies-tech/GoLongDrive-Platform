@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { customerService } from '@/services/customer.service';
 import { toast } from 'sonner';
-import { ChevronLeft, Save, Loader2 } from 'lucide-react';
+import { ChevronLeft, Save, Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CreateCustomerPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
   
   const [formData, setFormData] = React.useState({
     fullName: '',
@@ -89,11 +90,14 @@ export default function CreateCustomerPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="phoneNumber" className="text-zinc-300">Phone Number</Label>
+              <Label htmlFor="phoneNumber" className="text-zinc-300">Phone Number (10 digits)</Label>
               <Input 
                 id="phoneNumber" 
                 name="phoneNumber"
                 required
+                pattern="[6-9][0-9]{9}"
+                title="Please enter a valid 10-digit Indian mobile number starting with 6-9"
+                maxLength={10}
                 value={formData.phoneNumber}
                 onChange={handleChange}
                 placeholder="e.g. 9876543210" 
@@ -102,16 +106,27 @@ export default function CreateCustomerPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password" className="text-zinc-300">Initial Password</Label>
-              <Input 
-                id="password" 
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••" 
-                className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-400/50"
-              />
+              <div className="relative">
+                <Input 
+                  id="password" 
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••" 
+                  className="bg-zinc-900 border-white/10 text-white placeholder:text-zinc-600 focus-visible:ring-yellow-400/50 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
           </div>
 
