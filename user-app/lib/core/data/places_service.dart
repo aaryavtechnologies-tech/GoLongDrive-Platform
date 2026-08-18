@@ -3,9 +3,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../config/maps_config.dart';
-
-/// One row in the destination-search suggestion list.
 class PlaceSuggestion {
   final String placeId;
   final String mainText;
@@ -37,23 +34,14 @@ class ResolvedPlace {
 /// screen — but failures are logged via [debugPrint] so they're
 /// diagnosable instead of silently vanishing.
 class PlacesService {
+  static const String baseUrl = 'https://api.golongdrive.online/api/v1';
+
   /// Debounced by the caller (the search screen), not here — this fires
   /// one request per call.
   static Future<List<PlaceSuggestion>> autocomplete(String input) async {
-    final apiKey = MapsConfig.directionsApiKey;
-    if (apiKey.isEmpty || input.trim().isEmpty) return const [];
+    if (input.trim().isEmpty) return const [];
 
-    final uri = Uri.https(
-      'maps.googleapis.com',
-      '/maps/api/place/autocomplete/json',
-      {
-        'input': input,
-        'key': apiKey,
-        // Bias toward India-style driving trips; harmless if the rider is
-        // elsewhere since it's a bias, not a hard filter.
-        'components': 'country:in',
-      },
-    );
+    final uri = Uri.parse('$baseUrl/maps/autocomplete?input=${Uri.encodeComponent(input)}');
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 8));
@@ -61,22 +49,15 @@ class PlacesService {
         debugPrint('PlacesService.autocomplete: HTTP ${response.statusCode}');
         return const [];
       }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['status'] != 'OK') {
-        if (data['status'] != 'ZERO_RESULTS') {
-          debugPrint('PlacesService.autocomplete: status=${data['status']} '
-              'error_message=${data['error_message']}');
-        }
-        return const [];
-      }
-      final predictions = data['predictions'] as List? ?? const [];
-      return predictions.map((p) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>?;
+      final suggestions = data?['suggestions'] as List? ?? const [];
+      return suggestions.map((p) {
         final item = p as Map<String, dynamic>;
-        final structured = item['structured_formatting'] as Map<String, dynamic>?;
         return PlaceSuggestion(
-          placeId: item['place_id'] as String? ?? '',
-          mainText: structured?['main_text'] as String? ?? (item['description'] as String? ?? ''),
-          secondaryText: structured?['secondary_text'] as String? ?? '',
+          placeId: item['placeId'] as String? ?? '',
+          mainText: item['mainText'] as String? ?? '',
+          secondaryText: item['secondaryText'] as String? ?? '',
         );
       }).where((s) => s.placeId.isNotEmpty).toList();
     } catch (e) {
@@ -86,14 +67,9 @@ class PlacesService {
   }
 
   static Future<ResolvedPlace?> placeDetails(String placeId) async {
-    final apiKey = MapsConfig.directionsApiKey;
-    if (apiKey.isEmpty) return null;
+    if (placeId.isEmpty) return null;
 
-    final uri = Uri.https('maps.googleapis.com', '/maps/api/place/details/json', {
-      'place_id': placeId,
-      'fields': 'formatted_address,geometry',
-      'key': apiKey,
-    });
+    final uri = Uri.parse('$baseUrl/maps/details?placeId=${Uri.encodeComponent(placeId)}');
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 8));
@@ -101,18 +77,12 @@ class PlacesService {
         debugPrint('PlacesService.placeDetails: HTTP ${response.statusCode}');
         return null;
       }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['status'] != 'OK') {
-        debugPrint('PlacesService.placeDetails: status=${data['status']} '
-            'error_message=${data['error_message']}');
-        return null;
-      }
-      final result = data['result'] as Map<String, dynamic>?;
-      final location = result?['geometry']?['location'] as Map<String, dynamic>?;
-      if (result == null || location == null) return null;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final result = body['data'] as Map<String, dynamic>?;
+      if (result == null || result['lat'] == null || result['lng'] == null) return null;
       return ResolvedPlace(
-        address: result['formatted_address'] as String? ?? '',
-        latLng: LatLng((location['lat'] as num).toDouble(), (location['lng'] as num).toDouble()),
+        address: result['address'] as String? ?? '',
+        latLng: LatLng((result['lat'] as num).toDouble(), (result['lng'] as num).toDouble()),
       );
     } catch (e) {
       debugPrint('PlacesService.placeDetails: request failed: $e');
@@ -123,25 +93,15 @@ class PlacesService {
   /// Turns a raw GPS fix into a human-readable address for the pickup field
   /// (e.g. "MG Road, Bengaluru" instead of raw coordinates).
   static Future<String?> reverseGeocode(LatLng latLng) async {
-    final apiKey = MapsConfig.directionsApiKey;
-    if (apiKey.isEmpty) return null;
-
-    final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
-      'latlng': '${latLng.latitude},${latLng.longitude}',
-      'key': apiKey,
-    });
+    final uri = Uri.parse('$baseUrl/maps/reverse-geocode?lat=${latLng.latitude}&lng=${latLng.longitude}');
 
     try {
       final response = await http.get(uri).timeout(const Duration(seconds: 8));
       if (response.statusCode != 200) return null;
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      if (data['status'] != 'OK') {
-        debugPrint('PlacesService.reverseGeocode: status=${data['status']}');
-        return null;
-      }
-      final results = data['results'] as List?;
-      if (results == null || results.isEmpty) return null;
-      return (results.first as Map<String, dynamic>)['formatted_address'] as String?;
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = body['data'] as Map<String, dynamic>?;
+      if (data == null || data['address'] == null) return null;
+      return data['address'] as String;
     } catch (e) {
       debugPrint('PlacesService.reverseGeocode: request failed: $e');
       return null;

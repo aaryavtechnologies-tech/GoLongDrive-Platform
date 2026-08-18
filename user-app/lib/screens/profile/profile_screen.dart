@@ -18,6 +18,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userProfile;
   bool _isLoading = true;
+  bool _showPin = false;
 
   @override
   void initState() {
@@ -213,7 +214,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(phone, style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 4),
               Text(email, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-              const SizedBox(height: 24),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: colors.surfaceSecondary,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.inputBorder.withOpacity(0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.pin, color: AppColors.primaryGold, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Ride PIN: ${_showPin ? (_userProfile?['ridePin'] ?? 'N/A') : '••••'}',
+                      style: AppTextStyles.body.copyWith(
+                        color: colors.textPrimary, 
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: _showPin ? 2 : 1.2,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () => setState(() => _showPin = !_showPin),
+                      child: Icon(
+                        _showPin ? Icons.visibility_off : Icons.visibility,
+                        color: colors.textSecondary,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
               OutlinedButton(
                 onPressed: () => Navigator.of(context).pushNamed(AppRoutes.accountDetails),
                 style: OutlinedButton.styleFrom(

@@ -96,4 +96,107 @@ class BookingService {
       return [];
     }
   }
+
+  /// Fetches boarding pass details
+  static Future<Map<String, dynamic>> getBoardingPass(String bookingId) async {
+    final url = Uri.parse('$baseUrl/rides/$bookingId/boarding-pass');
+    try {
+      final token = await AuthService.getToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      } else {
+        throw Exception('Failed to get boarding pass: ${response.body}');
+      }
+    } catch (e) {
+      developer.log('getBoardingPass error: $e', name: 'BookingService');
+      rethrow;
+    }
+  }
+
+  /// Initiates payment for a booking
+  static Future<Map<String, dynamic>> initiatePayment({
+    required String bookingId,
+    required String paymentMethod,
+  }) async {
+    final url = Uri.parse('$baseUrl/rides/$bookingId/payment');
+    try {
+      final token = await AuthService.getToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode({'paymentMethod': paymentMethod}),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      } else {
+        throw Exception('Failed to initiate payment: ${response.body}');
+      }
+    } catch (e) {
+      developer.log('initiatePayment error: $e', name: 'BookingService');
+      rethrow;
+    }
+  }
+
+  /// Verifies a payment signature
+  static Future<Map<String, dynamic>> verifyPayment(Map<String, dynamic> payload) async {
+    final url = Uri.parse('$baseUrl/payments/verify');
+    try {
+      final token = await AuthService.getToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: jsonEncode(payload),
+      );
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'];
+      } else {
+        throw Exception('Failed to verify payment: ${response.body}');
+      }
+    } catch (e) {
+      developer.log('verifyPayment error: $e', name: 'BookingService');
+      rethrow;
+    }
+  }
+
+  /// Fetches ride/booking details
+  static Future<Map<String, dynamic>> getRideDetails(String bookingId) async {
+    final url = Uri.parse('$baseUrl/rides/$bookingId');
+    try {
+      final token = await AuthService.getToken();
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data']['booking'];
+      } else {
+        throw Exception('Failed to get ride details: ${response.body}');
+      }
+    } catch (e) {
+      developer.log('getRideDetails error: $e', name: 'BookingService');
+      rethrow;
+    }
+  }
 }

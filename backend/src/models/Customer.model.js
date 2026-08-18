@@ -83,6 +83,18 @@ const customerSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    ridePin: {
+      type: String,
+      unique: true,
+      sparse: true,
+      match: [/^\d{4}$/, 'Ride PIN must be exactly 4 digits'],
+    },
+
+    ridePinCreatedAt: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

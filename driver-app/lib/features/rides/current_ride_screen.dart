@@ -95,13 +95,34 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         // Just local state transition, no API for "arrived" in the current backend
         setState(() => _stage = _TripStage.arrived);
       } else if (_stage == _TripStage.arrived) {
+        // Prompt for passenger 4-digit PIN
+        setState(() => _actionLoading = false);
+        final pin = await _showPinDialog();
+        if (pin == null) return; // Driver cancelled PIN dialog
+
+        setState(() => _actionLoading = true);
+
         // Start Trip
-        final res = await ApiService.post('/driver/rides/${_ride!.id}/start');
+        final res = await ApiService.post(
+          '/driver/rides/${_ride!.id}/start',
+          body: {
+            'pin': pin,
+            'startLat': 23.0225, // Ahmedabad lat fallback
+            'startLng': 72.5714  // Ahmedabad lng fallback
+          },
+        );
         if (res.statusCode == 200) {
           setState(() => _stage = _TripStage.inProgress);
           _startAutoNavigationToDrop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to start trip')));
+          String errorText = 'Failed to start trip';
+          try {
+            final body = jsonDecode(res.body);
+            if (body['message'] != null) {
+              errorText = body['message'];
+            }
+          } catch (_) {}
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorText)));
         }
       } else if (_stage == _TripStage.inProgress) {
         // Complete Trip
@@ -120,6 +141,65 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
+  }
+
+  Future<String?> _showPinDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: const Text('Enter Passenger PIN', style: AppText.cardHeadline),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Please ask the passenger for their 4-digit verification PIN to start the ride.',
+                style: TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  counterText: '',
+                  hintText: '••••',
+                  hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 24, letterSpacing: 8),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, null),
+              child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final val = controller.text.trim();
+                if (val.length == 4) {
+                  Navigator.pop(context, val);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a 4-digit PIN')),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold),
+              child: const Text('Verify', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   /// Resolves the current ride's drop coordinates (geocoding the address as

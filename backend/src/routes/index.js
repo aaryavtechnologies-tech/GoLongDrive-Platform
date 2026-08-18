@@ -31,10 +31,15 @@ const adminDocumentRoutes = require('./admin.document.routes');
 const auditRoutes = require('./audit.routes');
 const systemRoutes = require('./system.routes');
 
+const mapsRoutes = require('./maps.routes');
+const ridesRoutes = require('./rides.routes');
+
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
 
 // ── Route mounting ────────────────────────────────────────────────────────────
+router.use('/maps',     mapsRoutes);
+router.use('/rides',    ridesRoutes);
 router.use('/admin',    adminRoutes);
 router.use('/admin/bookings', adminBookingRoutes);
 router.use('/customer', customerRoutes);

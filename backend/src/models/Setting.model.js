@@ -48,6 +48,18 @@ const settingSchema = new mongoose.Schema(
       paymentNotifications: { type: Boolean, default: true },
       documentNotifications: { type: Boolean, default: true },
       systemNotifications: { type: Boolean, default: true },
+    },
+    longDistanceSettings: {
+      advanceAmount: { type: Number, default: 500 },
+      advancePercentage: { type: Number, default: 20 },
+      isPercentageBased: { type: Boolean, default: false },
+      minAdvanceAmount: { type: Number, default: 500 },
+      allowedEarlyStartWindow: { type: Number, default: 15 }, // minutes
+      pinVerificationRequired: { type: Boolean, default: true },
+      minBookingLeadTime: { type: Number, default: 2 }, // hours
+      cancellationRules: { type: String, default: "Free cancellation up to 24 hours before pickup" },
+      refundRules: { type: String, default: "Full refund if cancelled before 24 hours, otherwise no refund" },
+      longDistanceAvailability: { type: Boolean, default: true },
     }
   },
   { timestamps: true }

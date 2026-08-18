@@ -33,6 +33,17 @@ export interface NotificationSettings {
   systemNotifications: boolean;
 }
 
+export interface LongDistanceSettings {
+  advanceAmount: number;
+  advancePercentage: number;
+  isPercentageBased: boolean;
+  minAdvanceAmount: number;
+  allowedEarlyStartWindow: number;
+  minBookingLeadTime: number;
+  cancellationRules?: string;
+  refundRules?: string;
+}
+
 export interface Settings {
   _id: string;
   companyName: string;
@@ -53,6 +64,7 @@ export interface Settings {
   paymentGatewaySettings?: PaymentGatewaySettings;
   securitySettings?: SecuritySettings;
   notificationSettings?: NotificationSettings;
+  longDistanceSettings?: LongDistanceSettings;
   createdAt: string;
   updatedAt: string;
 }

@@ -89,6 +89,23 @@ const bookingSchema = new mongoose.Schema(
     cancelledBy: { type: String }, // 'Customer', 'Driver', 'Admin'
     cancellationReason: { type: String },
     driverResponseTime: { type: Number }, // Time taken by driver to accept in ms
+
+    // ── Long-Distance Booking Enhancements ───────────────────────────────────
+    bookingType: {
+      type: String,
+      enum: ['local', 'long_distance'],
+      default: 'local',
+    },
+    pickupLat: { type: Number },
+    pickupLng: { type: Number },
+    destinationLat: { type: Number },
+    destinationLng: { type: Number },
+    rideStartedAt: { type: Date },
+    rideCompletedAt: { type: Date },
+    startLocation: {
+      address: { type: String },
+      coordinates: { type: [Number] }, // [lng, lat]
+    },
   },
   {
     timestamps: true,

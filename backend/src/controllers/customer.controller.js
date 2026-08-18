@@ -39,7 +39,20 @@ const register = asyncHandler(async (req, res) => {
     throw ApiError.conflict('Phone number is already registered');
   }
 
-  const customer = await Customer.create({ fullName, email, phoneNumber, password });
+  let ridePin = '';
+  let pinUnique = false;
+  let attempts = 0;
+  while (!pinUnique && attempts < 100) {
+    ridePin = String(Math.floor(1000 + Math.random() * 9000));
+    const duplicate = await Customer.findOne({ ridePin });
+    if (!duplicate) {
+      pinUnique = true;
+    }
+    attempts++;
+  }
+  if (!pinUnique) throw ApiError.internal('Unable to generate unique PIN');
+
+  const customer = await Customer.create({ fullName, email, phoneNumber, password, ridePin, ridePinCreatedAt: new Date() });
 
   const { accessToken, refreshToken } = generateTokenPair({ id: customer._id, role: customer.role });
 
@@ -79,6 +92,25 @@ const login = asyncHandler(async (req, res) => {
     throw ApiError.unauthorized('Invalid email or password');
   }
   if (!customer.isActive) throw ApiError.forbidden('Your account has been deactivated');
+
+  // Backfill ride PIN if missing
+  if (!customer.ridePin) {
+    let ridePin = '';
+    let pinUnique = false;
+    let attempts = 0;
+    while (!pinUnique && attempts < 100) {
+      ridePin = String(Math.floor(1000 + Math.random() * 9000));
+      const duplicate = await Customer.findOne({ ridePin });
+      if (!duplicate) {
+        pinUnique = true;
+      }
+      attempts++;
+    }
+    if (pinUnique) {
+      customer.ridePin = ridePin;
+      customer.ridePinCreatedAt = new Date();
+    }
+  }
 
   const { accessToken, refreshToken } = generateTokenPair({ id: customer._id, role: customer.role });
 
@@ -248,7 +280,28 @@ const verifyOTPHandler = asyncHandler(async (req, res) => {
  * @access  Private (customer)
  */
 const getProfile = asyncHandler(async (req, res) => {
-  const customer = await Customer.findById(req.user._id);
+  let customer = await Customer.findById(req.user._id);
+  
+  // Backfill ride PIN if missing
+  if (customer && !customer.ridePin) {
+    let ridePin = '';
+    let pinUnique = false;
+    let attempts = 0;
+    while (!pinUnique && attempts < 100) {
+      ridePin = String(Math.floor(1000 + Math.random() * 9000));
+      const duplicate = await Customer.findOne({ ridePin });
+      if (!duplicate) {
+        pinUnique = true;
+      }
+      attempts++;
+    }
+    if (pinUnique) {
+      customer.ridePin = ridePin;
+      customer.ridePinCreatedAt = new Date();
+      await customer.save({ validateBeforeSave: false });
+    }
+  }
+
   return sendSuccess(res, 200, 'Profile fetched successfully', { customer });
 });
 
