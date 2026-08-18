@@ -3,10 +3,10 @@
 
 require('dotenv').config();
 
-const http       = require('http');
-const app        = require('./app');
-const mongoose   = require('mongoose');
-const connectDB  = require('./src/config/database');
+const http = require('http');
+const app = require('./app');
+const mongoose = require('mongoose');
+const connectDB = require('./src/config/database');
 const { initSocket } = require('./src/config/socket');
 const { initializeSystem } = require('./src/helpers/init.helper');
 const { setupCronJobs } = require('./src/cron');
@@ -30,7 +30,7 @@ const start = async () => {
     await connectDB();
 
     // Drop orphaned userId index from drivers collection if it exists
-    await mongoose.connection.collection('drivers').dropIndex('userId_1').catch(() => {});
+    await mongoose.connection.collection('drivers').dropIndex('userId_1').catch(() => { });
 
     // Auto-seed RBAC and defaults
     await initializeSystem();
@@ -47,7 +47,7 @@ const start = async () => {
       console.log(`🌍  Environment : ${process.env.NODE_ENV || 'development'}`);
       console.log(`🚀  Server      : http://localhost:${PORT}`);
       console.log(`📋  API Docs    : http://localhost:${PORT}/api-docs`);
-      console.log(`❤️   Health      : http://localhost:${PORT}/api/health`);
+      console.log(`❤️  Health      : http://localhost:${PORT}/api/health`);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
     });
