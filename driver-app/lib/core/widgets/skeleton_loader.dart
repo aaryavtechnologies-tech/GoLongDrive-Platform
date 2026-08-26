@@ -79,17 +79,16 @@ class SkeletonCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle),
       ),
-      child: SizedBox(
-        height: height,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
-            SkeletonBox(width: 120, height: 14),
-            SkeletonBox(width: double.infinity, height: 12),
-            SkeletonBox(width: 160, height: 12),
-          ],
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          SkeletonBox(width: 120, height: 14),
+          SizedBox(height: 12),
+          SkeletonBox(width: double.infinity, height: 12),
+          SizedBox(height: 8),
+          SkeletonBox(width: 160, height: 12),
+        ],
       ),
     );
   }

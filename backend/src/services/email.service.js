@@ -12,13 +12,14 @@ const sendMail = async ({ to, subject, html }) => {
     const resend = getTransporter();
     const response = await resend.emails.send({ from: FROM, to, subject, html });
     if (response.error) {
-      console.error('Resend Error:', response.error);
-      console.log(`[Email Fallback] To: ${to} | Subject: ${subject}`);
+      console.error('Resend API Error Details:', JSON.stringify(response.error, null, 2));
+      console.log(`[Email Fallback] To: ${to} | Subject: ${subject} | (Check Resend Dashboard for "from" address verification)`);
       return null;
     }
     return response.data;
   } catch (err) {
     console.error('Email sending failed (network/config):', err.message);
+    if (err.stack) console.error(err.stack);
     console.log(`[Email Fallback] To: ${to} | Subject: ${subject}`);
     return null;
   }

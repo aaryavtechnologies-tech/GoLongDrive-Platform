@@ -95,6 +95,25 @@ const customerSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+    },
+
+    dateOfBirth: {
+      type: String,
+    },
+
+    emergencyContactName: {
+      type: String,
+      trim: true,
+    },
+
+    emergencyContactPhone: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,

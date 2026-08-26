@@ -173,7 +173,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_currentStep == 1) {
       setState(() => _currentStep = 0);
     } else {
-      Navigator.of(context).pop();
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.login,
+          (route) => false,
+        );
+      }
     }
   }
 
@@ -292,7 +299,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: colors.background,
       body: PopScope(
         canPop: _currentStep == 0,
-        onPopInvoked: (didPop) {
+        onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           setState(() => _currentStep = 0);
         },
@@ -332,7 +339,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
                       ),
                       GestureDetector(
-                        onTap: () => Navigator.of(context).pop(),
+                        onTap: () {
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          } else {
+                            Navigator.of(context).pushNamedAndRemoveUntil(
+                              AppRoutes.login,
+                              (route) => false,
+                            );
+                          }
+                        },
                         child: Text('Log In', style: AppTextStyles.link),
                       ),
                     ],

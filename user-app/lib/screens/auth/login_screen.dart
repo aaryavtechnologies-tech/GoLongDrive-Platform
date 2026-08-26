@@ -4,21 +4,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
-import '../../core/constants/app_assets.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/password_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/app_checkbox.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/user_scope.dart';
 
-/// Screen 3 from the checklist. Username, password (+eye toggle), remember me,
-/// forgot password, Google login, error/empty states. Mock navigation only —
-/// no backend calls. Replace TODOs with named routes once app_routes.dart exists.
-///
-/// DUMMY TEST CREDENTIALS (mock-auth only, no backend):
-///   username: gocabs
-///   password: 1234
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -27,11 +20,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const String _dummyUsername = 'gocabs';
-  static const String _dummyPassword = '1234';
-
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _rememberMe = false;
@@ -40,16 +30,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
-  }
-
-  String? _requiredValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Username is required';
-    }
-    return null;
   }
 
   void _onLoginPressed() async {
@@ -57,16 +40,38 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _authError = null);
 
-    final enteredUsername = _usernameController.text.trim();
+    final enteredEmail = _emailController.text.trim();
     final enteredPassword = _passwordController.text;
 
     setState(() => _isLoading = true);
 
     try {
-      await AuthService.login(enteredUsername, enteredPassword);
+      await AuthService.login(enteredEmail, enteredPassword);
+      if (!mounted) return;
+
+      // Fetch profile immediately after login
+      final userController = UserScope.of(context);
+      await userController.fetchProfile();
+
       if (!mounted) return;
       setState(() => _isLoading = false);
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+
+      if (userController.isLoggedIn) {
+        final profile = userController.userProfile!;
+        final isVerified = profile['emailVerified'] == true;
+
+        if (isVerified) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+        } else {
+          // If not verified, send to verification screen
+          await AuthService.sendOtp(); // Trigger a new OTP
+          if (!mounted) return;
+          Navigator.of(context).pushNamed(
+            AppRoutes.verifyEmail,
+            arguments: profile['email'],
+          );
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -111,12 +116,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 32),
 
                 AppTextField(
-                  label: 'Username',
-                  hint: 'Enter your username',
-                  controller: _usernameController,
-                  keyboardType: TextInputType.text,
-                  prefixIcon: Icons.person_outline,
-                  validator: _requiredValidator,
+                  label: 'Email',
+                  hint: 'Enter your email address',
+                  controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  prefixIcon: Icons.email_outlined,
+                  validator: Validators.email,
                 ),
                 const SizedBox(height: 20),
 

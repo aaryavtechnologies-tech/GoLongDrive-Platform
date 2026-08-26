@@ -8,23 +8,8 @@ import '../../models/ride_history_item.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
 
-/// Ride History — reached from Profile > "Ride History".
-///
-/// Full list of past (completed/cancelled) rides with a status filter.
-/// The "Past" tab on My Rides (screens/rides/my_rides_screen.dart) shows
-/// the same kind of data in summary form — this screen is the full,
-/// filterable list. Tapping a row pushes `RideDetailsScreen`.
-///
-/// ============================= BACKEND HOOKUP =============================
-/// UI-only — see the full checklist in `models/ride_history_item.dart`.
-/// In short: `_mockHistory` here is hardcoded; replace with a paginated
-/// `GET /api/rides/history` call. Row taps already push a real
-/// `RideDetailsScreen` (screens/rides/ride_details_screen.dart) — make sure
-/// whatever the real endpoint returns includes the detail-only fields on
-/// `RideHistoryItem` (car name, dates, distance, rates, driver, payment),
-/// not just the row subset, or that screen's sections will just hide
-/// themselves instead of showing real data.
-/// ===========================================================================
+import '../../core/services/booking_service.dart';
+
 class RideHistoryScreen extends StatefulWidget {
   const RideHistoryScreen({super.key});
 
@@ -33,88 +18,61 @@ class RideHistoryScreen extends StatefulWidget {
 }
 
 class _RideHistoryScreenState extends State<RideHistoryScreen> {
-  // TODO(backend): GET /api/rides/history?status=&page= — see file header.
-  static const List<RideHistoryItem> _mockHistory = [
-    RideHistoryItem(
-      id: 'ride_1',
-      fromAddress: 'Home, Mumbai',
-      toAddress: 'Lonavala Hill Station',
-      dateLabel: '25 Jul 2026',
-      fare: '₹5,850',
-      status: RideStatus.completed,
-      vehicleLabel: 'Sedan',
-      carName: 'Swift Dzire',
-      startDateLabel: '25 Jul 2026',
-      returnDateLabel: '26 Jul 2026',
-      numberOfDays: 2,
-      distanceKm: 190,
-      perDayRate: 2000,
-      perKmRate: 15,
-      driverName: 'Ramesh Kumar',
-      driverRating: 4.8,
-      plateNumber: 'KA 03 AB 4521',
-      paymentLabel: 'UPI',
-    ),
-    RideHistoryItem(
-      id: 'ride_2',
-      fromAddress: 'Office, Bandra Kurla Complex',
-      toAddress: 'Pune City Center',
-      dateLabel: '18 Jul 2026',
-      fare: '₹4,150',
-      status: RideStatus.completed,
-      vehicleLabel: 'MPV',
-      carName: 'Maruti Suzuki Ertiga',
-      startDateLabel: '18 Jul 2026',
-      returnDateLabel: '18 Jul 2026',
-      numberOfDays: 1,
-      distanceKm: 150,
-      perDayRate: 2500,
-      perKmRate: 17,
-      driverName: 'Suresh Patil',
-      driverRating: 4.6,
-      plateNumber: 'MH 12 CD 7734',
-      paymentLabel: 'Cash',
-    ),
-    RideHistoryItem(
-      id: 'ride_3',
-      fromAddress: 'Bandra Kurla Complex',
-      toAddress: 'Goa (Panaji)',
-      dateLabel: '9 Jul 2026',
-      fare: '₹19,400',
-      status: RideStatus.completed,
-      vehicleLabel: 'SUV',
-      carName: 'Mahindra Scorpio',
-      startDateLabel: '9 Jul 2026',
-      returnDateLabel: '12 Jul 2026',
-      numberOfDays: 4,
-      distanceKm: 590,
-      perDayRate: 3000,
-      perKmRate: 18,
-      driverName: 'Arjun Nair',
-      driverRating: 4.9,
-      plateNumber: 'KA 05 EF 1190',
-      paymentLabel: 'Visa •••• 4242',
-    ),
-    RideHistoryItem(
-      id: 'ride_4',
-      fromAddress: 'Home, Mumbai',
-      toAddress: 'Nashik Vineyards',
-      dateLabel: '12 Jun 2026',
-      fare: '₹0',
-      status: RideStatus.cancelled,
-      vehicleLabel: 'Sedan',
-      carName: 'Hyundai Aura',
-      startDateLabel: '12 Jun 2026',
-      cancellationReason: 'Cancelled by rider before driver assignment — no charge applied.',
-    ),
-  ];
-
+  List<RideHistoryItem> _history = [];
+  bool _isLoading = true;
   String _filter = 'All';
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchHistory();
+  }
+
+  Future<void> _fetchHistory() async {
+    try {
+      setState(() => _isLoading = true);
+      final bookings = await BookingService.getMyBookings();
+      final List<RideHistoryItem> list = [];
+      for (final b in bookings) {
+        final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
+        final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
+        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total'] ?? '');
+        final date = b['pickupDate'] ?? b['date'] ?? '';
+        final statusStr = b['status']?.toString().toLowerCase() ?? '';
+        final status = statusStr.contains('cancel')
+            ? RideStatus.cancelled
+            : RideStatus.completed;
+
+        list.add(RideHistoryItem(
+          id: b['_id'] ?? b['id'] ?? '',
+          fromAddress: from,
+          toAddress: to,
+          dateLabel: date,
+          fare: fare,
+          status: status,
+          vehicleLabel: b['vehicleType'] ?? 'Car',
+          carName: b['vehicleType'] ?? 'Car',
+          driverName: b['driver']?['fullName'],
+          driverRating: 4.8,
+          plateNumber: b['vehicle']?['registrationNumber'],
+          paymentLabel: b['paymentMethod'] ?? 'Online',
+        ));
+      }
+      if (mounted) {
+        setState(() {
+          _history = list;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   List<RideHistoryItem> get _filtered {
-    if (_filter == 'All') return _mockHistory;
+    if (_filter == 'All') return _history;
     final status = _filter == 'Completed' ? RideStatus.completed : RideStatus.cancelled;
-    return _mockHistory.where((r) => r.status == status).toList();
+    return _history.where((r) => r.status == status).toList();
   }
 
   void _openRideDetails(RideHistoryItem ride) {
@@ -141,21 +99,29 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             ),
             const SizedBox(height: 16),
             Expanded(
-              child: rides.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                      itemCount: rides.length,
-                      itemBuilder: (context, index) {
-                        final ride = rides[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _RideHistoryTile(
-                            ride: ride,
-                            onTap: () => _openRideDetails(ride),
-                          ),
-                        );
-                      },
+              child: _isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryGold),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: _fetchHistory,
+                      color: AppColors.primaryGold,
+                      child: rides.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+                              itemCount: rides.length,
+                              itemBuilder: (context, index) {
+                                final ride = rides[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: _RideHistoryTile(
+                                    ride: ride,
+                                    onTap: () => _openRideDetails(ride),
+                                  ),
+                                );
+                              },
+                            ),
                     ),
             ),
           ],

@@ -35,8 +35,12 @@ const register = asyncHandler(async (req, res) => {
 
   const existing = await Customer.findOne({ $or: [{ email }, { phoneNumber }] });
   if (existing) {
-    if (existing.email === email) throw ApiError.conflict('Email is already registered');
-    throw ApiError.conflict('Phone number is already registered');
+    if (existing.emailVerified) {
+      if (existing.email === email) throw ApiError.conflict('Email is already registered');
+      throw ApiError.conflict('Phone number is already registered');
+    }
+    // If not verified, remove it so we can re-create it (retry flow)
+    await Customer.deleteOne({ _id: existing._id });
   }
 
   let ridePin = '';
@@ -315,6 +319,10 @@ const updateProfile = asyncHandler(async (req, res) => {
   const updates = {};
   if (req.body.fullName) updates.fullName = req.body.fullName;
   if (req.body.phoneNumber) updates.phoneNumber = req.body.phoneNumber;
+  if (req.body.gender) updates.gender = req.body.gender;
+  if (req.body.dateOfBirth) updates.dateOfBirth = req.body.dateOfBirth;
+  if (req.body.emergencyContactName) updates.emergencyContactName = req.body.emergencyContactName;
+  if (req.body.emergencyContactPhone) updates.emergencyContactPhone = req.body.emergencyContactPhone;
 
   // Handle profile image upload
   if (req.file) {

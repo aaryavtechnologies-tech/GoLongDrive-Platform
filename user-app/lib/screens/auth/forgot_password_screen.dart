@@ -1,14 +1,12 @@
 // lib/screens/auth/forgot_password_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
 import '../../core/utils/app_toast.dart';
-import '../../core/services/auth_service.dart';
+import '../../core/data/api_client.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/otp_input.dart';
 import '../../widgets/password_field.dart';
@@ -18,15 +16,6 @@ import '../../routes/app_routes.dart';
 
 /// Screens 6 + 7 merged — Forgot Password (email entry) and Reset
 /// Password (OTP + new password).
-///
-/// Step 1: user enters their registered email, "Send OTP" mocks sending
-/// a code and advances to Step 2.
-/// Step 2: OTP + new password + confirm password. The new-password
-/// field shows a live strength indicator (corner brackets that grow and
-/// shift red -> orange -> green) via [PasswordField]'s
-/// enableStrengthIndicator/strength params.
-/// Step 3: success state, "Back to Login".
-/// UI-only — sending OTP, verification, and reset are all mocked locally.
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -65,6 +54,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _passwordStrength = Validators.passwordStrength(value));
   }
 
+  void _handleBack() {
+    if (_step == _ForgotPasswordStep.resetPassword) {
+      setState(() => _step = _ForgotPasswordStep.email);
+    } else {
+      _handleBackToLogin();
+    }
+  }
+
+  void _handleBackToLogin() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+    }
+  }
+
   Future<void> _handleSendOtp() async {
     final formValid = _emailFormKey.currentState?.validate() ?? false;
     if (!formValid) return;
@@ -72,12 +80,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isSendingOtp = true);
 
     try {
-      final url = Uri.parse('${AuthService.baseUrl}/customer/forgot-password');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': _emailController.text}),
-      );
+      final response = await ApiClient.post('/customer/forgot-password', body: {'email': _emailController.text.trim()});
 
       if (!mounted) return;
       setState(() => _isSendingOtp = false);
@@ -108,16 +111,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      final url = Uri.parse('${AuthService.baseUrl}/customer/reset-password');
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text,
-          'otp': _otpController.text,
-          'newPassword': _newPasswordController.text,
-        }),
-      );
+      final response = await ApiClient.post('/customer/reset-password', body: {
+        'email': _emailController.text.trim(),
+        'otp': _otpController.text.trim(),
+        'newPassword': _newPasswordController.text,
+      });
 
       if (!mounted) return;
       setState(() => _isSubmitting = false);
@@ -137,26 +135,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
   }
 
-  void _handleBackToLogin() {
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AppRoutes.login,
-          (route) => false,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: switch (_step) {
-            _ForgotPasswordStep.email => _buildEmailState(),
-            _ForgotPasswordStep.resetPassword => _buildResetState(),
-            _ForgotPasswordStep.success => _buildSuccessState(),
-          },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: colors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: switch (_step) {
+              _ForgotPasswordStep.email => _buildEmailState(),
+              _ForgotPasswordStep.resetPassword => _buildResetState(),
+              _ForgotPasswordStep.success => _buildSuccessState(),
+            },
+          ),
         ),
       ),
     );
@@ -169,7 +167,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       child: ListView(
         children: [
           const SizedBox(height: 8),
-          AppBackButton(onPressed: () => Navigator.of(context).pop()),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppBackButton(onPressed: _handleBackToLogin),
+          ),
           const SizedBox(height: 24),
           Text(
             'Forgot Password?',
@@ -202,7 +203,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
           Center(
             child: GestureDetector(
-              onTap: () => Navigator.of(context).pop(),
+              onTap: _handleBackToLogin,
               child: Text('Back to Login', style: AppTextStyles.link),
             ),
           ),
@@ -219,9 +220,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       child: ListView(
         children: [
           const SizedBox(height: 8),
-          AppBackButton(
-            onPressed: () =>
-                setState(() => _step = _ForgotPasswordStep.email),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppBackButton(
+              onPressed: () => setState(() => _step = _ForgotPasswordStep.email),
+            ),
           ),
           const SizedBox(height: 24),
           Text(
@@ -243,7 +246,32 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: colors.surfaceSecondary,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.inputBorder.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, size: 18, color: AppColors.primaryGold),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Please also check your spam/junk folder for the email OTP if you do not see it in your inbox.',
+                    style: AppTextStyles.caption.copyWith(
+                      color: colors.textSecondary,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
 
           Text(
             'Verification Code',

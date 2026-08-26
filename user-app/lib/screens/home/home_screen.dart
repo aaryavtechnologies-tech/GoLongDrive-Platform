@@ -11,6 +11,9 @@ import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../booking/location_search_sheet.dart';
 import '../booking/journey_date_time_sheet.dart';
+import '../../core/services/user_scope.dart';
+import '../../core/services/booking_service.dart';
+import '../../core/data/api_client.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -32,10 +35,105 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   int _passengers = 2;
   int _luggage = 2;
   
+  List<RideHistoryItem> _recentBookings = [];
+  Map<String, dynamic>? _previewDistanceData;
+  bool _isLoadingPreviewDistance = false;
+
   late final AnimationController _swapController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 300),
   );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        UserScope.of(context, listen: false).fetchProfile();
+        _fetchRecentBookings();
+      }
+    });
+  }
+
+  Future<void> _fetchRecentBookings() async {
+    try {
+      final bookings = await BookingService.getMyBookings();
+      final List<RideHistoryItem> items = [];
+      for (final b in bookings.take(5)) {
+        final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
+        final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
+        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total'] ?? '');
+        final date = b['pickupDate'] ?? b['date'] ?? '';
+        final statusStr = b['status']?.toString().toLowerCase() ?? '';
+        final status = statusStr.contains('cancel') 
+            ? RideStatus.cancelled 
+            : RideStatus.completed;
+
+        items.add(RideHistoryItem(
+          id: b['_id'] ?? b['id'] ?? '',
+          fromAddress: from,
+          toAddress: to,
+          dateLabel: date,
+          fare: fare,
+          status: status,
+          vehicleLabel: b['vehicleType'] ?? 'Car',
+          carName: b['vehicleType'] ?? 'Car',
+        ));
+      }
+      if (mounted) {
+        setState(() {
+          _recentBookings = items;
+        });
+      }
+    } catch (_) {}
+  }
+
+  double _calculateHaversine(LatLng p1, LatLng p2) {
+    const p = 0.017453292519943295; // Math.PI / 180
+    final a = 0.5 - math.cos((p2.latitude - p1.latitude) * p) / 2 +
+        math.cos(p1.latitude * p) * math.cos(p2.latitude * p) *
+        (1 - math.cos((p2.longitude - p1.longitude) * p)) / 2;
+    return 12742 * math.asin(math.sqrt(a)); // 2 * R (R = 6371 km)
+  }
+
+  Future<void> _fetchRoutePreview(StateSetter? setSheetState) async {
+    if (_fromLatLng == null || _toLatLng == null) return;
+    if (setSheetState != null) {
+      setSheetState(() => _isLoadingPreviewDistance = true);
+    }
+    setState(() => _isLoadingPreviewDistance = true);
+
+    try {
+      final data = await BookingService.getRouteDistance(
+        originLat: _fromLatLng!.latitude,
+        originLng: _fromLatLng!.longitude,
+        destLat: _toLatLng!.latitude,
+        destLng: _toLatLng!.longitude,
+      );
+      if (data != null && mounted) {
+        if (setSheetState != null) {
+          setSheetState(() {
+            _previewDistanceData = data;
+            _isLoadingPreviewDistance = false;
+          });
+        }
+        setState(() {
+          _previewDistanceData = data;
+          _isLoadingPreviewDistance = false;
+        });
+      } else {
+        if (setSheetState != null) {
+          setSheetState(() => _isLoadingPreviewDistance = false);
+        }
+        setState(() => _isLoadingPreviewDistance = false);
+      }
+    } catch (_) {
+      if (setSheetState != null) {
+        setSheetState(() => _isLoadingPreviewDistance = false);
+      }
+      setState(() => _isLoadingPreviewDistance = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -61,6 +159,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     });
     if (setSheetState != null) {
       setSheetState(() {});
+    }
+    if (_fromLatLng != null && _toLatLng != null) {
+      _fetchRoutePreview(setSheetState);
     }
   }
 
@@ -119,6 +220,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         }
       });
       setSheetState(() {});
+      if (_fromLatLng != null && _toLatLng != null) {
+        _fetchRoutePreview(setSheetState);
+      }
     }
   }
 
@@ -367,13 +471,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildMapPreview(AppColorPalette colors) {
-    // A beautiful conceptual map preview (avoids heavy GoogleMap rendering inside a bottom sheet for speed).
+    String distanceText = '~ -- KM';
+    String durationText = 'Calculating route...';
+
+    if (_previewDistanceData != null) {
+      final km = _previewDistanceData!['distanceValueKm'] ?? _previewDistanceData!['distance'];
+      final distStr = _previewDistanceData!['distanceText'] ?? (km != null ? '$km KM' : null);
+      final durStr = _previewDistanceData!['durationText'];
+      if (distStr != null) distanceText = '~$distStr';
+      if (durStr != null) durationText = 'Estimated travel time: $durStr';
+    } else if (_fromLatLng != null && _toLatLng != null) {
+      final directKm = _calculateHaversine(_fromLatLng!, _toLatLng!);
+      final estimatedRoadKm = (directKm * 1.25).round();
+      final estimatedHours = (estimatedRoadKm / 60).floor();
+      final estimatedMins = (estimatedRoadKm % 60);
+      distanceText = '~$estimatedRoadKm KM';
+      durationText = estimatedHours > 0 
+          ? 'Estimated travel time: $estimatedHours hr $estimatedMins min'
+          : 'Estimated travel time: $estimatedMins min';
+    }
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
@@ -381,7 +504,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             height: 60,
             width: 60,
             decoration: BoxDecoration(
-              color: AppColors.primaryGold.withOpacity(0.1),
+              color: AppColors.primaryGold.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
             child: const Icon(Icons.map_outlined, color: AppColors.primaryGold, size: 28),
@@ -401,12 +524,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         color: colors.background,
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('~520 KM', style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        _isLoadingPreviewDistance ? 'Calculating...' : distanceText,
+                        style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text('Estimated travel time: 9 hr 30 min', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                Text(
+                  _isLoadingPreviewDistance ? 'Fetching optimal route...' : durationText,
+                  style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                ),
               ],
             ),
           ),
@@ -476,6 +605,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildHeader(AppColorPalette colors) {
+    final userController = UserScope.of(context);
+    final userProfile = userController.userProfile;
+    final fullName = (userProfile?['fullName'] as String?)?.trim();
+    final displayName = (fullName != null && fullName.isNotEmpty)
+        ? fullName
+        : ((userProfile?['email'] as String?)?.split('@').first ?? 'Rider');
+    final firstName = displayName.split(' ').first;
+    final profileImage = userProfile?['profileImage'] as String?;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -483,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Good Morning, Himanshu 👋', style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
+              Text('Welcome, $firstName 👋', style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 8),
               Text(
                 'Where are you travelling today?',
@@ -506,11 +644,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               border: Border.all(color: colors.inputBorder),
             ),
             child: ClipOval(
-              child: Image.asset(
-                'assets/images/logo.jpeg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) => Icon(Icons.person, color: colors.textPrimary),
-              ),
+              child: (profileImage != null && profileImage.isNotEmpty)
+                ? Image.network(
+                    profileImage.startsWith('http') ? profileImage : '${ApiClient.baseUrl.replaceAll('/api/v1', '')}/$profileImage',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Icon(Icons.person, color: colors.textPrimary),
+                  )
+                : Container(
+                    color: AppColors.primaryGold.withValues(alpha: 0.15),
+                    alignment: Alignment.center,
+                    child: Text(
+                      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                      style: AppTextStyles.mediumHeading.copyWith(color: AppColors.primaryGold),
+                    ),
+                  ),
             ),
           ),
         ),
@@ -707,26 +854,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Widget _buildRecentRidesSection(AppColorPalette colors) {
-    const mockRecentRides = [
-      RideHistoryItem(
-        id: 'recent_1',
-        fromAddress: 'Ahmedabad',
-        toAddress: 'Surat',
-        dateLabel: 'Yesterday, 6:42 PM',
-        fare: '₹2,500',
-        status: RideStatus.completed,
-        vehicleLabel: 'Sedan',
-      ),
-      RideHistoryItem(
-        id: 'recent_2',
-        fromAddress: 'Mumbai',
-        toAddress: 'Pune',
-        dateLabel: 'Mon, 1:15 PM',
-        fare: '₹1,800',
-        status: RideStatus.completed,
-        vehicleLabel: 'Sedan',
-      ),
-    ];
+    final ridesToShow = _recentBookings.isNotEmpty
+        ? _recentBookings
+        : const [
+            RideHistoryItem(
+              id: 'sample_1',
+              fromAddress: 'Ahmedabad',
+              toAddress: 'Surat',
+              dateLabel: 'Popular Route',
+              fare: '₹2,500',
+              status: RideStatus.completed,
+              vehicleLabel: 'Sedan',
+            ),
+            RideHistoryItem(
+              id: 'sample_2',
+              fromAddress: 'Mumbai',
+              toAddress: 'Pune',
+              dateLabel: 'Popular Route',
+              fare: '₹1,800',
+              status: RideStatus.completed,
+              vehicleLabel: 'Sedan',
+            ),
+          ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,7 +883,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Recent Searches', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+            Text(
+              _recentBookings.isNotEmpty ? 'Recent Bookings' : 'Popular Routes',
+              style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+            ),
             GestureDetector(
               onTap: _openMyRides,
               child: Text('View all', style: AppTextStyles.link),
@@ -742,7 +894,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ],
         ),
         const SizedBox(height: 16),
-        ...mockRecentRides.map(
+        ...ridesToShow.map(
           (ride) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: _RecentRideTile(
@@ -751,9 +903,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 setState(() {
                   _fromLocation = ride.fromAddress;
                   _toLocation = ride.toAddress;
-                  // Note: Mock recent searches don't have LatLngs, so in a real scenario
-                  // we'd also hydrate their coordinates here. For this demo, we'll
-                  // just set dummy coordinates so the flow can proceed.
                   _fromLatLng = const LatLng(23.0225, 72.5714); 
                   _toLatLng = const LatLng(19.0760, 72.8777);
                 });

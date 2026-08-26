@@ -61,10 +61,17 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
       final String dateString = '${_journeyDate.year}-${_journeyDate.month.toString().padLeft(2, '0')}-${_journeyDate.day.toString().padLeft(2, '0')}';
       final String timeString = '${_pickupTime.hour}:${_pickupTime.minute}';
 
+      final rawDist = car['distanceValueKm'] ?? 
+                      (widget.bookingArgs['distance'] is Map ? widget.bookingArgs['distance']['distanceValueKm'] : null) ??
+                      car['distance'];
+      final double distance = rawDist is num 
+          ? rawDist.toDouble() 
+          : (double.tryParse(rawDist.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0);
+
       final payload = {
         'pickupLocation': {'address': from, 'coordinates': [0,0]},
         'dropLocation': {'address': to, 'coordinates': [0,0]},
-        'distance': double.tryParse((car['distance'] ?? '0').toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0,
+        'distance': distance,
         'tripType': 'One Way',
         'pickupDate': dateString,
         'pickupTime': timeString,
@@ -292,9 +299,11 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                               _buildTicketDetailRow(
                                 colors, 
                                 'Distance', 
-                                car['distance'] ?? '520 KM', 
+                                car['distance'] ?? 
+                                    (widget.bookingArgs['distance'] is Map ? widget.bookingArgs['distance']['distanceText'] : null) ?? 
+                                    'N/A', 
                                 'Vehicle', 
-                                car['model'] ?? 'Toyota Etios',
+                                car['model'] ?? 'Car',
                               ),
                               const SizedBox(height: 16),
                               

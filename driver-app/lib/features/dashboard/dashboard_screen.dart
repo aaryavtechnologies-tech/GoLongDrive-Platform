@@ -45,56 +45,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
 
     try {
+      // Use separate try-catch for critical profile data so it doesn't block the whole screen
+      try {
+        final profileRes = await ApiService.get('/driver/profile');
+        if (profileRes.statusCode == 200) {
+          final rawData = jsonDecode(profileRes.body)['data'];
+          final d = rawData['driver'] ?? rawData;
+          setState(() {
+            _driverName = d['fullName'] ?? 'Driver';
+            String? imgPath = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
+            if (imgPath != null && imgPath.isNotEmpty) {
+              _profileImg = imgPath.startsWith('http') ? imgPath : '${EnvConfig.socketUrl}/$imgPath';
+            } else {
+              _profileImg = null;
+            }
+            _online = d['onlineStatus'] == 'online';
+          });
+        }
+      } catch (e) {
+        print('Dashboard Profile Error: $e');
+      }
+
       final futures = await Future.wait([
-        ApiService.get('/driver/profile'),
-        ApiService.get('/driver/dashboard'),
+        ApiService.get('/driver/bookings/dashboard'),
         ApiService.get('/earnings/driver/dashboard'),
-        ApiService.get('/driver/rides/current'),
+        ApiService.get('/driver/bookings/rides/current'),
       ]);
 
-      final profileRes = futures[0];
-      final dashboardRes = futures[1];
-      final earningsRes = futures[2];
-      final currentRideRes = futures[3];
+      final dashboardRes = futures[0];
+      final earningsRes = futures[1];
+      final currentRideRes = futures[2];
 
-      if (profileRes.statusCode == 200) {
-        final rawData = jsonDecode(profileRes.body)['data'];
-        final d = rawData['driver'] ?? rawData;
-        _driverName = d['fullName'] ?? 'Driver';
-        
-        String? imgPath = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
-        if (imgPath != null && imgPath.isNotEmpty) {
-          _profileImg = imgPath.startsWith('http') ? imgPath : '${EnvConfig.socketUrl}/$imgPath';
-        } else {
-          _profileImg = null;
-        }
-        
-        _online = d['onlineStatus'] == 'online';
-      }
-      
       if (dashboardRes.statusCode == 200) {
         final d = jsonDecode(dashboardRes.body)['data'];
-        _tripsToday = d['stats']?['todayTrips'] ?? 0;
+        setState(() {
+          _tripsToday = d['stats']?['todayTrips'] ?? 0;
+        });
       }
       
       if (earningsRes.statusCode == 200) {
         final d = jsonDecode(earningsRes.body)['data'];
-        _todayEarnings = (d['todayEarnings'] ?? 0).toInt();
-        _recentTxns = d['recentTransactions'] ?? [];
+        setState(() {
+          _todayEarnings = (d['todayEarnings'] ?? 0).toInt();
+          _recentTxns = d['recentTransactions'] ?? [];
+        });
       }
       
       if (currentRideRes.statusCode == 200) {
         final d = jsonDecode(currentRideRes.body)['data'];
-        if (d != null && d['ride'] != null) {
-          _ongoingRide = d['ride'];
-        } else {
-          _ongoingRide = null;
-        }
+        setState(() {
+          if (d != null && d['ride'] != null) {
+            _ongoingRide = d['ride'];
+          } else {
+            _ongoingRide = null;
+          }
+        });
       }
 
     } catch (e) {
+      print('Dashboard Data Error: $e');
       if (mounted) {
-        setState(() => _errorMsg = 'Failed to load dashboard data. Check connection.');
+        setState(() => _errorMsg = 'Failed to load some dashboard data. Tap refresh to retry.');
       }
     } finally {
       if (mounted) {
@@ -110,8 +121,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final original = _online;
     setState(() => _online = val);
     try {
-      final res = await ApiService.patch('/driver/status', body: {
-        'onlineStatus': val ? 'Online' : 'Offline'
+      final res = await ApiService.patch('/driver/bookings/status', body: {
+        'onlineStatus': val ? 'online' : 'offline'
       });
       if (res.statusCode != 200) throw Exception();
     } catch (e) {
@@ -408,31 +419,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          const SkeletonCard(height: 24),
+          const SkeletonCard(),
           const SizedBox(height: 16),
           Row(
             children: const [
-              Expanded(child: SkeletonCard(height: 60)),
+              Expanded(child: SkeletonCard()),
               SizedBox(width: 16),
-              Expanded(child: SkeletonCard(height: 60)),
+              Expanded(child: SkeletonCard()),
             ],
           ),
           const SizedBox(height: 24),
-          const SkeletonCard(height: 90),
+          const SkeletonCard(),
           const SizedBox(height: 24),
           Row(
             children: const [
-              Expanded(child: SkeletonCard(height: 56)),
+              Expanded(child: SkeletonCard()),
               SizedBox(width: 12),
-              Expanded(child: SkeletonCard(height: 56)),
+              Expanded(child: SkeletonCard()),
               SizedBox(width: 12),
-              Expanded(child: SkeletonCard(height: 56)),
+              Expanded(child: SkeletonCard()),
               SizedBox(width: 12),
-              Expanded(child: SkeletonCard(height: 56)),
+              Expanded(child: SkeletonCard()),
             ],
           ),
           const SizedBox(height: 24),
-          const SkeletonCard(height: 140),
+          const SkeletonCard(),
         ],
       ),
     );

@@ -30,8 +30,12 @@ const register = asyncHandler(async (req, res) => {
 
   const existing = await Driver.findOne({ $or: [{ email }, { phoneNumber }] });
   if (existing) {
-    if (existing.email === email) throw ApiError.conflict('Email is already registered');
-    throw ApiError.conflict('Phone number is already registered');
+    if (existing.emailVerified) {
+      if (existing.email === email) throw ApiError.conflict('Email is already registered');
+      throw ApiError.conflict('Phone number is already registered');
+    }
+    // If not verified, remove it so we can re-create it (retry flow)
+    await Driver.deleteOne({ _id: existing._id });
   }
 
   const driver = await Driver.create({ fullName, email, phoneNumber, password });

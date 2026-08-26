@@ -20,18 +20,26 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
 
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  const [total, todayEarnings, weeklyEarnings, monthlyEarnings] = await Promise.all([
+  const [total, todayEarnings, weeklyEarnings, monthlyEarnings, recentTransactions] = await Promise.all([
     DriverEarning.aggregate([{ $match: { driver: driverId } }, { $group: { _id: null, sum: { $sum: '$driverEarnings' } } }]),
     DriverEarning.aggregate([{ $match: { driver: driverId, createdAt: { $gte: today } } }, { $group: { _id: null, sum: { $sum: '$driverEarnings' } } }]),
     DriverEarning.aggregate([{ $match: { driver: driverId, createdAt: { $gte: startOfWeek } } }, { $group: { _id: null, sum: { $sum: '$driverEarnings' } } }]),
     DriverEarning.aggregate([{ $match: { driver: driverId, createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, sum: { $sum: '$driverEarnings' } } }]),
+    DriverEarning.find({ driver: driverId }).sort({ createdAt: -1 }).limit(5).populate('booking', 'bookingId pickupDate fare')
   ]);
 
   return sendSuccess(res, 200, 'Driver Earnings Dashboard', {
     total: total[0] ? total[0].sum : 0,
-    today: todayEarnings[0] ? todayEarnings[0].sum : 0,
+    todayEarnings: todayEarnings[0] ? todayEarnings[0].sum : 0,
     weekly: weeklyEarnings[0] ? weeklyEarnings[0].sum : 0,
     monthly: monthlyEarnings[0] ? monthlyEarnings[0].sum : 0,
+    recentTransactions: recentTransactions.map(t => ({
+      id: t._id,
+      type: 'Ride Earnings',
+      amount: t.driverEarnings,
+      date: t.createdAt,
+      bookingId: t.booking?.bookingId
+    }))
   });
 });
 

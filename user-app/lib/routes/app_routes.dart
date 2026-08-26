@@ -8,7 +8,6 @@ import '../screens/auth/register_screen.dart';
 import '../screens/auth/verify_email_screen.dart';
 import '../screens/auth/forgot_password_screen.dart';
 import '../screens/main_tabs_screen.dart';
-import '../screens/home/home_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/profile/account_details_screen.dart';
 import '../screens/profile/payment_methods_screen.dart';

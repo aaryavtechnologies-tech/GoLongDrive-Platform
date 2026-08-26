@@ -6,7 +6,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/theme_scope.dart';
 import '../../routes/app_routes.dart';
-import '../../core/services/auth_service.dart';
+import '../../core/services/user_controller.dart';
+import '../../core/services/user_scope.dart';
+import '../../core/data/api_client.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,28 +18,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  Map<String, dynamic>? _userProfile;
-  bool _isLoading = true;
   bool _showPin = false;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final profile = await AuthService.getUserProfile();
-      if (!mounted) return;
-      setState(() {
-        _userProfile = profile;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    }
+    // Fetch fresh profile data when entering the profile screen
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        UserScope.of(context, listen: false).fetchProfile();
+      }
+    });
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
@@ -45,52 +36,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        backgroundColor: colors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('Log out?', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+        backgroundColor: colors.surfaceCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Log Out', style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary)),
         content: Text(
-          'You\'ll need to sign in again to book a ride.',
+          'Are you sure you want to log out of your account?',
           style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text('Cancel', style: AppTextStyles.body.copyWith(color: colors.textPrimary)),
+            child: Text('Cancel', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-              'Log out',
-              style: AppTextStyles.body.copyWith(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.w600,
-              ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
+            child: Text('Log Out', style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.login,
-        (route) => false,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logged out')),
-      );
+      final userController = UserScope.of(context, listen: false);
+      await userController.logout();
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.login,
+          (route) => false,
+        );
+      }
     }
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature — coming soon')),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final userController = UserScope.of(context);
+
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -99,42 +85,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             _buildTopBar(context),
             const SizedBox(height: 32),
-            _buildProfileCard(context),
+            _buildProfileCard(context, userController),
             const SizedBox(height: 32),
-            _buildSectionTitle(context, 'Account'),
-            _buildMenuCard(
-              context: context,
-              items: [
-                _MenuItem(icon: Icons.history, label: 'My Bookings', route: AppRoutes.myRides),
-                _MenuItem(icon: Icons.person_outline, label: 'Personal Information', route: AppRoutes.accountDetails),
-                _MenuItem(icon: Icons.location_on_outlined, label: 'Saved Locations', onTap: () => _showComingSoon(context, 'Saved Locations')),
-                _MenuItem(icon: Icons.payment_outlined, label: 'Payment History', route: AppRoutes.paymentMethods),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle(context, 'Preferences'),
-            _buildMenuCard(
-              context: context,
-              items: [
-                _MenuItem(
-                  icon: ThemeScope.of(context).isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-                  label: 'Dark Mode',
-                  isToggle: true,
-                  toggleValue: ThemeScope.of(context).isDark,
-                  onToggle: (_) => ThemeScope.of(context).toggle(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _buildSectionTitle(context, 'About'),
-            _buildMenuCard(
-              context: context,
-              items: [
-                _MenuItem(icon: Icons.help_outline, label: 'Help & Support', route: AppRoutes.helpSupport),
-                _MenuItem(icon: Icons.description_outlined, label: 'Terms & Conditions', onTap: () => _showComingSoon(context, 'Terms & Conditions')),
-                _MenuItem(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', onTap: () => _showComingSoon(context, 'Privacy Policy')),
-              ],
-            ),
+            _buildSettingsSection(context),
             const SizedBox(height: 32),
             _buildLogoutButton(context),
           ],
@@ -147,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final colors = AppColors.of(context);
     return Row(
       children: [
-        if (Navigator.canPop(context)) ...[
+        if (Navigator.of(context).canPop()) ...[
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
             child: Container(
@@ -167,12 +120,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildProfileCard(BuildContext context) {
+  Widget _buildProfileCard(BuildContext context, UserController userController) {
     final colors = AppColors.of(context);
-    final String fullName = _userProfile?['fullName'] ?? 'Guest User';
-    final String phone = _userProfile?['phoneNumber'] ?? 'N/A';
-    final String email = _userProfile?['email'] ?? 'N/A';
-    final String imageUrl = _userProfile?['profileImage'] ?? '';
+    final userProfile = userController.userProfile;
+    final isLoading = userController.isLoading;
+
+    final String fullName = (userProfile?['fullName'] as String?)?.trim() ?? '';
+    final String displayFullName = fullName.isNotEmpty
+        ? fullName
+        : ((userProfile?['email'] as String?)?.split('@').first ?? 'Rider');
+    final String phone = userProfile?['phoneNumber'] ?? 'Not set';
+    final String email = userProfile?['email'] ?? 'Not set';
+    final String rawImage = userProfile?['profileImage'] ?? '';
+    final String imageUrl = rawImage.isNotEmpty
+        ? (rawImage.startsWith('http') ? rawImage : '${ApiClient.baseUrl.replaceAll('/api/v1', '')}/$rawImage')
+        : '';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -182,14 +144,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: colors.inputBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
         ],
       ),
-      child: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+      child: isLoading
+        ? const SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+          )
         : Column(
             children: [
               Container(
@@ -206,10 +171,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         )
                       : null,
                 ),
-                child: imageUrl.isEmpty ? Icon(Icons.person, color: colors.accentIcon, size: 40) : null,
+                child: imageUrl.isEmpty
+                    ? Center(
+                        child: Text(
+                          displayFullName.isNotEmpty ? displayFullName[0].toUpperCase() : 'U',
+                          style: AppTextStyles.largeHeading.copyWith(color: AppColors.primaryGold),
+                        ),
+                      )
+                    : null,
               ),
               const SizedBox(height: 16),
-              Text(fullName, style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary, fontSize: 24)),
+              Text(displayFullName, style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary, fontSize: 24)),
               const SizedBox(height: 8),
               Text(phone, style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 4),
@@ -220,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 decoration: BoxDecoration(
                   color: colors.surfaceSecondary,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colors.inputBorder.withOpacity(0.5)),
+                  border: Border.all(color: colors.inputBorder.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -228,7 +200,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     const Icon(Icons.pin, color: AppColors.primaryGold, size: 16),
                     const SizedBox(width: 8),
                     Text(
-                      'Ride PIN: ${_showPin ? (_userProfile?['ridePin'] ?? 'N/A') : '••••'}',
+                      'Ride PIN: ${_showPin ? (userProfile?['ridePin'] ?? 'N/A') : '••••'}',
                       style: AppTextStyles.body.copyWith(
                         color: colors.textPrimary, 
                         fontWeight: FontWeight.bold,
@@ -260,6 +232,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
     ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildSettingsSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle(context, 'Account'),
+        _buildMenuCard(
+          context: context,
+          items: [
+            _MenuItem(icon: Icons.history, label: 'My Bookings', route: AppRoutes.myRides),
+            _MenuItem(icon: Icons.person_outline, label: 'Personal Information', route: AppRoutes.accountDetails),
+            _MenuItem(icon: Icons.payment_outlined, label: 'Payment History', route: AppRoutes.paymentMethods),
+          ],
+        ),
+        const SizedBox(height: 24),
+        _buildSectionTitle(context, 'Preferences'),
+        _buildMenuCard(
+          context: context,
+          items: [
+            _MenuItem(
+              icon: ThemeScope.of(context).isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+              label: 'Dark Mode',
+              isToggle: true,
+              toggleValue: ThemeScope.of(context).isDark,
+              onToggle: (_) => ThemeScope.of(context).toggle(),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {

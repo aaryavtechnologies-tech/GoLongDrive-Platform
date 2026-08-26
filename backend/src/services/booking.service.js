@@ -163,7 +163,7 @@ const broadcastRideRequest = async (bookingId) => {
  */
 const randomFallbackAssign = async (bookingId) => {
   try {
-    const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS } = require('../utils/constants');
+    const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS, ONLINE_STATUS } = require('../utils/constants');
     const Driver = require('../models/Driver.model');
 
     const booking = await Booking.findById(bookingId);
@@ -203,7 +203,7 @@ const randomFallbackAssign = async (bookingId) => {
     booking.assignedAt = new Date();
     await booking.save();
 
-    if (selectedDriver.onlineStatus === 'Online') {
+    if (selectedDriver.onlineStatus === ONLINE_STATUS.ONLINE) {
       selectedDriver.availabilityStatus = AVAILABILITY_STATUS.BUSY;
       await selectedDriver.save();
     }

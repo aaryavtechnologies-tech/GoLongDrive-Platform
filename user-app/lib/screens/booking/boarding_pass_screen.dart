@@ -1,5 +1,4 @@
 // lib/screens/booking/boarding_pass_screen.dart
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -116,9 +115,9 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
     final String model = _passData!['vehicle']?['model'] ?? widget.bookingData['car']?['model'] ?? 'Toyota Etios';
     final String distance = _passData!['journey']?['distanceKm'] != null 
         ? '${_passData!['journey']['distanceKm']} KM'
-        : widget.bookingData['car']?['distance'] ?? '520 KM';
+        : widget.bookingData['car']?['distance'] ?? widget.bookingData['distance']?['distanceText'] ?? 'N/A';
     
-    final String passengerName = _passData!['passenger']?['name'] ?? 'Guest';
+    final String passengerName = _passData!['passenger']?['name'] ?? widget.bookingData['passengerName'] ?? widget.bookingData['customer']?['fullName'] ?? 'Passenger';
     final String ridePin = _passData!['passenger']?['ridePin'] ?? 'N/A';
     
     final String carNumber = _passData!['vehicle']?['registrationNumber'] ?? 'GJ01AB1234';
@@ -309,7 +308,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                               const SizedBox(height: 20),
                               Row(
                                 children: [
-                                  Expanded(child: _buildPassDetail(colors, 'Passengers', '$passengers')),
+                                  Expanded(child: _buildPassDetail(colors, 'Passengers', '$passengers ($luggage bags)')),
                                   Expanded(child: _buildPassDetail(colors, 'Distance', distance)),
                                   Expanded(
                                     child: Column(

@@ -45,8 +45,8 @@ router.use('/admin/bookings', adminBookingRoutes);
 router.use('/customer', customerRoutes);
 router.use('/customer/bookings', customerBookingRoutes);
 router.use('/customer/vehicles', customerVehicleRoutes);
-router.use('/driver',   driverRoutes);
 router.use('/driver/bookings', driverBookingRoutes);
+router.use('/driver',   driverRoutes);
 router.use('/auth',     authRoutes);
 
 // Financial routes

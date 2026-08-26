@@ -5,10 +5,11 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
-import '../../models/user_account.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/back_button.dart';
 import '../../widgets/primary_button.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/user_scope.dart';
 
 /// Account Details — reached from Profile > "Account Details".
 ///
@@ -40,19 +41,11 @@ class AccountDetailsScreen extends StatefulWidget {
 class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // TODO(backend): replace with a real fetch — see file header.
-  UserAccount _account = UserAccount.mock;
-
-  late final TextEditingController _nameController =
-      TextEditingController(text: _account.fullName);
-  late final TextEditingController _emailController =
-      TextEditingController(text: _account.email);
-  late final TextEditingController _mobileController =
-      TextEditingController(text: _account.mobile);
-  late final TextEditingController _emergencyNameController =
-      TextEditingController(text: _account.emergencyContactName ?? '');
-  late final TextEditingController _emergencyPhoneController =
-      TextEditingController(text: _account.emergencyContactPhone ?? '');
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _mobileController;
+  late final TextEditingController _emergencyNameController;
+  late final TextEditingController _emergencyPhoneController;
 
   String? _gender;
   String? _dateOfBirth;
@@ -61,8 +54,41 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    _gender = _account.gender;
-    _dateOfBirth = _account.dateOfBirth;
+    _nameController = TextEditingController();
+    _emailController = TextEditingController();
+    _mobileController = TextEditingController();
+    _emergencyNameController = TextEditingController();
+    _emergencyPhoneController = TextEditingController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadProfileData();
+    });
+  }
+
+  void _loadProfileData() {
+    final profile = UserScope.of(context, listen: false).userProfile;
+    if (profile != null && profile.isNotEmpty) {
+      _populateFromProfile(profile);
+    } else {
+      UserScope.of(context, listen: false).fetchProfile().then((_) {
+        if (mounted) {
+          final p = UserScope.of(context, listen: false).userProfile;
+          if (p != null) _populateFromProfile(p);
+        }
+      });
+    }
+  }
+
+  void _populateFromProfile(Map<String, dynamic> profile) {
+    _nameController.text = profile['fullName'] ?? '';
+    _emailController.text = profile['email'] ?? '';
+    _mobileController.text = profile['phoneNumber'] ?? '';
+    _emergencyNameController.text = profile['emergencyContactName'] ?? '';
+    _emergencyPhoneController.text = profile['emergencyContactPhone'] ?? '';
+    setState(() {
+      _gender = profile['gender'];
+      _dateOfBirth = profile['dateOfBirth'];
+    });
   }
 
   @override
@@ -95,29 +121,47 @@ class _AccountDetailsScreenState extends State<AccountDetailsScreen> {
 
     setState(() => _isSaving = true);
 
-    // TODO(backend): PATCH /api/user/profile with the edited fields below.
-    // Only update `_account` / show success once that call actually
-    // succeeds — this artificial delay just simulates network latency.
-    await Future.delayed(const Duration(milliseconds: 600));
+    try {
+      final updates = {
+        'fullName': _nameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'phoneNumber': _mobileController.text.trim(),
+        'gender': _gender,
+        'dateOfBirth': _dateOfBirth,
+        'emergencyContactName': _emergencyNameController.text.trim(),
+        'emergencyContactPhone': _emergencyPhoneController.text.trim(),
+      };
 
-    if (!mounted) return;
+      final updatedProfile = await AuthService.updateProfile(updates);
 
-    setState(() {
-      _account = _account.copyWith(
-        fullName: _nameController.text.trim(),
-        email: _emailController.text.trim(),
-        mobile: _mobileController.text.trim(),
-        gender: _gender,
-        dateOfBirth: _dateOfBirth,
-        emergencyContactName: _emergencyNameController.text.trim(),
-        emergencyContactPhone: _emergencyPhoneController.text.trim(),
+      if (!mounted) return;
+
+      // Update global user state
+      if (updatedProfile.isNotEmpty) {
+        UserScope.of(context, listen: false).setProfile(updatedProfile);
+      } else {
+        await UserScope.of(context, listen: false).fetchProfile();
+      }
+
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account details saved successfully'),
+          backgroundColor: AppColors.success,
+        ),
       );
-      _isSaving = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Account details saved')),
-    );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override

@@ -64,6 +64,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
       arguments: {
         ...widget.searchArgs,
         'car': carDetails,
+        if (_distanceData != null) 'distance': _distanceData,
       },
     );
   }

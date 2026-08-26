@@ -45,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final decoded = bodyData['data'] ?? {};
         _profileData = decoded['driver'] ?? decoded;
       } else {
-        throw Exception('Failed to load profile');
+        throw Exception('Failed to load profile (Status: ${res.statusCode})');
       }
     } catch (e) {
       print('Profile fetch error: $e');

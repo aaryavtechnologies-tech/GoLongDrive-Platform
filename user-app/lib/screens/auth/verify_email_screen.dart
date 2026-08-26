@@ -1,6 +1,5 @@
 // lib/screens/auth/verify_email_screen.dart
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -13,11 +12,12 @@ import '../../widgets/loading_button.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/user_scope.dart';
+
 /// Screen 5 — Verify Email (OTP)
 ///
 /// 6-digit OTP entry via [OtpInput], a 00:30 resend countdown, a "Change
-/// Email" link back to Register, and a success animation before landing
-/// on Login. UI-only — verification and resend are both mocked locally.
+/// Email" link back to Register, and a success animation before landing on Home.
 class VerifyEmailScreen extends StatefulWidget {
   final String email;
 
@@ -52,9 +52,9 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_secondsLeft <= 1) {
         timer.cancel();
-        setState(() => _secondsLeft = 0);
+        if (mounted) setState(() => _secondsLeft = 0);
       } else {
-        setState(() => _secondsLeft--);
+        if (mounted) setState(() => _secondsLeft--);
       }
     });
   }
@@ -72,6 +72,43 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     return '$minutes:$seconds';
   }
 
+  String _getDisplayEmail() {
+    if (widget.email.isNotEmpty) return widget.email;
+    final userController = UserScope.of(context, listen: false);
+    return userController.userProfile?['email'] ?? 'your email';
+  }
+
+  void _handleBack() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
+    }
+  }
+
+  Future<void> _handleChangeEmail() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    UserScope.of(context, listen: false).clearProfile();
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.register,
+      (route) => false,
+    );
+  }
+
+  Future<void> _handleLogoutAndLogin() async {
+    await AuthService.logout();
+    if (!mounted) return;
+    UserScope.of(context, listen: false).clearProfile();
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.login,
+      (route) => false,
+    );
+  }
+
   Future<void> _handleVerify([String? completedValue]) async {
     final value = completedValue ?? _otpController.text;
     final error = Validators.otp(value);
@@ -86,17 +123,21 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
       if (!mounted) return;
 
+      // Fetch profile immediately after verification
+      await UserScope.of(context, listen: false).fetchProfile();
+      if (!mounted) return;
+
       setState(() {
         _isVerifying = false;
         _verified = true;
       });
 
-      await Future.delayed(const Duration(seconds: 2));
+      await Future.delayed(const Duration(milliseconds: 1500));
       if (!mounted) return;
 
       Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRoutes.login,
-            (route) => false,
+        AppRoutes.home,
+        (route) => false,
       );
     } catch (e) {
       if (!mounted) return;
@@ -118,30 +159,39 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       setState(() => _isResending = false);
       _startCountdown();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('OTP resent successfully')),
+        const SnackBar(
+          content: Text('OTP resent successfully'),
+          backgroundColor: AppColors.success,
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _isResending = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: AppColors.error,
+        ),
       );
     }
-  }
-
-  void _handleChangeEmail() {
-    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: _verified ? _buildSuccessState() : _buildVerifyState(),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleBack();
+      },
+      child: Scaffold(
+        backgroundColor: colors.background,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: _verified ? _buildSuccessState() : _buildVerifyState(),
+          ),
         ),
       ),
     );
@@ -149,10 +199,15 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
   Widget _buildVerifyState() {
     final colors = AppColors.of(context);
+    final displayEmail = _getDisplayEmail();
+
     return ListView(
       children: [
         const SizedBox(height: 8),
-        AppBackButton(onPressed: () => Navigator.of(context).pop()),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppBackButton(onPressed: _handleBack),
+        ),
         const SizedBox(height: 24),
         Text(
           'Verify Your Email',
@@ -165,14 +220,39 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             children: [
               const TextSpan(text: 'We sent a 6-digit code to '),
               TextSpan(
-                text: widget.email,
+                text: displayEmail,
                 style: AppTextStyles.body
                     .copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            color: colors.surfaceSecondary,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.inputBorder.withValues(alpha: 0.5)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, size: 18, color: AppColors.primaryGold),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Please also check your spam/junk folder for the email OTP if you do not see it in your inbox.',
+                  style: AppTextStyles.caption.copyWith(
+                    color: colors.textSecondary,
+                    height: 1.3,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
 
         OtpInput(
           controller: _otpController,
@@ -204,23 +284,34 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
             ),
             _secondsLeft > 0
                 ? Text(
-              'Resend in $_formattedCountdown',
-              style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
-            )
+                    'Resend in $_formattedCountdown',
+                    style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                  )
                 : LoadingButton(
-              label: 'Resend OTP',
-              isLoading: _isResending,
-              onPressed: _handleResend,
-            ),
+                    label: 'Resend OTP',
+                    isLoading: _isResending,
+                    onPressed: _handleResend,
+                  ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
 
-        Center(
-          child: GestureDetector(
-            onTap: _handleChangeEmail,
-            child: Text('Change Email', style: AppTextStyles.link),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            GestureDetector(
+              onTap: _handleChangeEmail,
+              child: Text('Change Email / Sign Up', style: AppTextStyles.link),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text('•', style: TextStyle(color: colors.textSecondary)),
+            ),
+            GestureDetector(
+              onTap: _handleLogoutAndLogin,
+              child: Text('Back to Login', style: AppTextStyles.link),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
       ],
@@ -254,7 +345,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
           ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
           const SizedBox(height: 8),
           Text(
-            'Taking you to login...',
+            'Redirecting to home...',
             style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
           ).animate().fadeIn(delay: 350.ms, duration: 300.ms),
         ],

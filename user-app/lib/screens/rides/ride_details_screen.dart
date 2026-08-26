@@ -38,7 +38,7 @@ class RideDetailsScreen extends StatelessWidget {
         'time': '08:30 AM', // Mock data
         'car': {
           'model': ride.carName ?? ride.vehicleLabel,
-          'distance': '${ride.distanceKm ?? 520} KM'
+          'distance': ride.distanceKm != null ? '${ride.distanceKm!.toStringAsFixed(0)} KM' : 'N/A'
         },
         'passengers': 2,
         'luggage': 2,
@@ -145,7 +145,7 @@ class RideDetailsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: _buildDetailItem(colors, 'Distance', '${ride.distanceKm?.toStringAsFixed(0) ?? "520"} KM')),
+              Expanded(child: _buildDetailItem(colors, 'Distance', ride.distanceKm != null ? '${ride.distanceKm!.toStringAsFixed(0)} KM' : 'N/A')),
               Expanded(child: _buildDetailItem(colors, 'Duration', '10h 30m')), // Mock duration
             ],
           ),

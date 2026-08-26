@@ -8,7 +8,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../models/ride_request.dart';
-import '../../widgets/primary_button.dart';
 import '../../widgets/secondary_button.dart';
 import '../../routes/app_routes.dart';
 

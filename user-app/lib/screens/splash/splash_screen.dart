@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../core/services/auth_service.dart';
+import '../../core/services/user_scope.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -17,12 +19,48 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // After the splash animation, move on to onboarding.
-    Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+    _initApp();
+  }
+
+  Future<void> _initApp() async {
+    // Wait for the splash animation
+    await Future.delayed(const Duration(milliseconds: 1800));
+
+    if (!mounted) return;
+
+    final token = await AuthService.getToken();
+    debugPrint('📱 [SplashScreen] Auth token present: ${token != null}');
+
+    if (token != null) {
+      try {
+        if (!mounted) return;
+        final userController = UserScope.of(context);
+        await userController.fetchProfile();
+
+        if (mounted && userController.isLoggedIn) {
+          final profile = userController.userProfile!;
+          final isVerified = profile['emailVerified'] == true;
+          debugPrint('📱 [SplashScreen] Logged in user: ${profile['email']}, emailVerified: $isVerified');
+
+          if (isVerified) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+          } else {
+            Navigator.of(context).pushReplacementNamed(
+              AppRoutes.verifyEmail,
+              arguments: profile['email'] ?? '',
+            );
+          }
+          return;
+        }
+      } catch (e) {
+        debugPrint('⚠️ [SplashScreen] Error loading user profile: $e. Clearing token.');
+        await AuthService.logout();
       }
-    });
+    }
+
+    if (mounted) {
+      Navigator.of(context).pushReplacementNamed(AppRoutes.onboarding);
+    }
   }
 
   @override
@@ -34,10 +72,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // TEMPORARY DIAGNOSTIC: errorBuilder shows a visible red box +
-            // the exact error message if the logo asset fails to load,
-            // instead of silently rendering nothing. Remove errorBuilder
-            // once the logo is confirmed working.
             Image.asset(
               AppAssets.logo,
               width: 200,
@@ -45,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 return Container(
                   width: 200,
                   height: 200,
-                  color: Colors.red.withOpacity(0.15),
+                  color: Colors.red.withAlpha(38),
                   padding: const EdgeInsets.all(12),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
