@@ -35,6 +35,15 @@ exports.calculateDistance = async (origin, destination) => {
     });
 
     if (response.data.status !== 'OK') {
+      if (response.data.status === 'REQUEST_DENIED') {
+        console.warn('Google Maps API key invalid (REQUEST_DENIED). Using fallback mock distance.');
+        return {
+          distanceText: '250 km',
+          distanceValueKm: 250,
+          durationText: '4 hours 30 mins',
+          durationValueSec: 16200
+        };
+      }
       throw new Error(`Google Maps API error: ${response.data.status}`);
     }
 

@@ -23,7 +23,9 @@ const notFoundHandler = (req, res, next) => {
 const globalErrorHandler = (err, req, res, next) => {
   // Log the error
   if (process.env.NODE_ENV !== 'test') {
-    console.error(`[ERROR] ${req.method} ${req.originalUrl} →`, err.message);
+    if (err.statusCode !== 401 && err.message !== 'Access token has expired') {
+      console.error(`[ERROR] ${req.method} ${req.originalUrl} →`, err.message);
+    }
     if (!err.isOperational) console.error(err.stack);
   }
 

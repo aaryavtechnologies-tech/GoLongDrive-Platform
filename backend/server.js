@@ -10,7 +10,7 @@ const connectDB = require('./src/config/database');
 const { initSocket } = require('./src/config/socket');
 const { initializeSystem } = require('./src/helpers/init.helper');
 const { setupCronJobs } = require('./src/cron');
-const mailConfig = require('./src/config/mail');
+const { initMailer } = require('./src/config/mail');
 
 const PORT = process.env.PORT || 5000;
 
@@ -28,6 +28,9 @@ const start = async () => {
   try {
     // 1. Connect to MongoDB
     await connectDB();
+
+    // 2. Initialize Mailer
+    await initMailer();
 
     // Drop orphaned userId index from drivers collection if it exists
     await mongoose.connection.collection('drivers').dropIndex('userId_1').catch(() => { });
