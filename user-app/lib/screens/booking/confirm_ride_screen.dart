@@ -69,16 +69,17 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
           : (double.tryParse(rawDist.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0);
 
       final payload = {
-        'pickupLocation': {'address': from, 'coordinates': [0,0]},
-        'dropLocation': {'address': to, 'coordinates': [0,0]},
+        'pickupAddress': from,
+        'dropAddress': to,
         'distance': distance,
         'tripType': 'One Way',
         'pickupDate': dateString,
         'pickupTime': timeString,
         'fareAmount': car['total'],
         'advancePaid': car['advanceAmount'] ?? 500,
-        'passengers': _passengers,
-        'luggage': _luggage,
+        'numberOfPassengers': _passengers,
+        'numberOfBags': _luggage,
+        'vehicleType': car['name'] ?? car['model'] ?? 'Sedan',
       };
 
       final bookingResult = await BookingService.createBooking(payload);

@@ -25,14 +25,14 @@ const isValidDate = (value) => {
 
 const createBookingValidator = [
   body('pickupAddress').trim().notEmpty().withMessage('Pickup address is required'),
-  body('pickupCity').trim().notEmpty().withMessage('Pickup city is required'),
-  body('pickupState').trim().notEmpty().withMessage('Pickup state is required'),
-  body('pickupPincode').trim().notEmpty().withMessage('Pickup pincode is required'),
+  body('pickupCity').optional().trim(),
+  body('pickupState').optional().trim(),
+  body('pickupPincode').optional().trim(),
   
   body('dropAddress').trim().notEmpty().withMessage('Drop address is required'),
-  body('dropCity').trim().notEmpty().withMessage('Drop city is required'),
-  body('dropState').trim().notEmpty().withMessage('Drop state is required'),
-  body('dropPincode').trim().notEmpty().withMessage('Drop pincode is required'),
+  body('dropCity').optional().trim(),
+  body('dropState').optional().trim(),
+  body('dropPincode').optional().trim(),
   
   body('tripType').trim().notEmpty().withMessage('Trip type is required')
     .isIn(Object.values(TRIP_TYPES)).withMessage('Invalid trip type'),
