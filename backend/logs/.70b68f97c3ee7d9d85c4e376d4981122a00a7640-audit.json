@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\ANUSHYA\\Videos\\chirag-projects\\car-booking\\backend\\logs\\.70b68f97c3ee7d9d85c4e376d4981122a00a7640-audit.json",
+    "files": [
+        {
+            "date": 1787748962125,
+            "name": "C:\\Users\\ANUSHYA\\Videos\\chirag-projects\\car-booking\\backend\\logs\\application-2026-08-26.log",
+            "hash": "44aedb96969f3018bbfddc7ac2fe2ba8958fea152fa761fb00dd6bda68c37177"
+        }
+    ],
+    "hashType": "sha256"
+}
