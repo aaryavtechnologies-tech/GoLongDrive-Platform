@@ -52,7 +52,8 @@ const autocomplete = async (input) => {
       }
     });
 
-    if (response.data.status !== 'OK') {
+    const status = (response.data.status || '').toUpperCase();
+    if (status !== 'OK') {
       throw new Error(`OLA Maps autocomplete status: ${response.data.status}`);
     }
 
@@ -105,7 +106,8 @@ const placeDetails = async (placeId) => {
       }
     });
 
-    if (response.data.status !== 'OK') {
+    const status = (response.data.status || '').toUpperCase();
+    if (status !== 'OK') {
       throw new Error(`OLA Maps details status: ${response.data.status}`);
     }
 
@@ -216,7 +218,8 @@ const getRoute = async (originLat, originLng, destLat, destLng) => {
       }
     );
 
-    if (response.data.status !== 'SUCCESS' && response.data.status !== 'OK') {
+    const status = (response.data.status || '').toUpperCase();
+    if (status !== 'SUCCESS' && status !== 'OK') {
       throw new Error(`OLA Maps directions status: ${response.data.status}`);
     }
 
