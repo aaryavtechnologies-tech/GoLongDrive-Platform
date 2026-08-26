@@ -31,7 +31,7 @@ export default function VehiclesPage() {
     try {
       // Assuming you have a way to inject the auth token or the API handles it via cookies in Next.js
       // We will just do a standard fetch for now. If you need a token, you'd add it to headers.
-      const response = await fetch('http://localhost:5000/api/admin/vehicles', {
+      const response = await fetch('http://localhost:5000/api/v1/admin/vehicles', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
         }
@@ -50,7 +50,7 @@ export default function VehiclesPage() {
   const deleteVehicle = async (id: string) => {
     if (!confirm('Are you sure you want to delete this vehicle type?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/vehicles/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/v1/admin/vehicles/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
