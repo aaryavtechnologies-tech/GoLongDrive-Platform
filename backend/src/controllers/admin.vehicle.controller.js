@@ -10,6 +10,21 @@ exports.getAllVehicles = async (req, res) => {
   }
 };
 
+exports.uploadImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+    // Return relative URL or full URL. The multer config usually returns req.file.path or similar.
+    // In Express with static serving, it's usually /uploads/vehicles/filename
+    // Let's assume standard uploads/ format.
+    const fileUrl = `/uploads/vehicles/${req.file.filename}`;
+    res.status(200).json({ success: true, url: fileUrl });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 exports.createVehicle = async (req, res) => {
   try {
     const vehicle = await VehicleType.create(req.body);

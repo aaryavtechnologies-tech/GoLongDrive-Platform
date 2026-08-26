@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { AddVehicleDialog } from '@/components/vehicles/AddVehicleDialog';
 
 // Types
 interface VehicleType {
@@ -70,9 +71,7 @@ export default function VehiclesPage() {
           <h1 className="text-3xl font-bold text-white tracking-tight">Vehicle Pricing</h1>
           <p className="text-zinc-400 mt-1">Manage car types, base fares, and price per km.</p>
         </div>
-        <Button className="bg-yellow-400 text-black hover:bg-yellow-500 font-semibold gap-2">
-          <Plus className="w-4 h-4" /> Add Vehicle
-        </Button>
+        <AddVehicleDialog onSuccess={fetchVehicles} />
       </div>
 
       <Card className="bg-zinc-900 border-zinc-800 shadow-xl overflow-hidden">
