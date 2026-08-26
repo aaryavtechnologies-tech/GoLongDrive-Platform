@@ -76,7 +76,13 @@ export function Sidebar() {
             <p className="truncate text-sm font-semibold text-white tracking-tight">Admin Profile</p>
             <p className="truncate text-xs text-zinc-500 font-medium">Super Admin</p>
           </div>
-          <button className="text-zinc-500 hover:text-white transition-colors p-1.5 hover:bg-zinc-800 rounded-md">
+          <button 
+            className="text-zinc-500 hover:text-white transition-colors p-1.5 hover:bg-zinc-800 rounded-md"
+            onClick={() => {
+              document.cookie = 'admin_token=; Max-Age=0; path=/';
+              window.location.href = '/login';
+            }}
+          >
             <LogOut className="h-4 w-4" />
           </button>
         </div>

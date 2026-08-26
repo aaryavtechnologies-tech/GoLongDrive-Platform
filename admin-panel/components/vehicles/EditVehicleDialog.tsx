@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit, Upload, Link as LinkIcon, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,26 +17,56 @@ import {
 import { cn } from '@/lib/utils';
 import apiClient from '@/lib/axios';
 
-interface AddVehicleDialogProps {
+interface VehicleType {
+  _id: string;
+  name: string;
+  category: string;
+  baseFare: number;
+  pricePerKm: number;
+  advanceAmount: number;
+  seatingCapacity: number;
+  luggageCapacity: number;
+  iconUrl?: string;
+  isActive?: boolean;
+}
+
+interface EditVehicleDialogProps {
+  vehicle: VehicleType;
   onSuccess: () => void;
 }
 
-export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
+export function EditVehicleDialog({ vehicle, onSuccess }: EditVehicleDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [imageMode, setImageMode] = useState<'url' | 'upload'>('url');
   
   const [formData, setFormData] = useState({
-    name: '',
-    category: '',
-    baseFare: 2000,
-    pricePerKm: 12,
-    advanceAmount: 500,
-    seatingCapacity: 4,
-    luggageCapacity: 2,
-    iconUrl: ''
+    name: vehicle.name || '',
+    category: vehicle.category || '',
+    baseFare: vehicle.baseFare || 0,
+    pricePerKm: vehicle.pricePerKm || 0,
+    advanceAmount: vehicle.advanceAmount || 0,
+    seatingCapacity: vehicle.seatingCapacity || 1,
+    luggageCapacity: vehicle.luggageCapacity || 0,
+    iconUrl: vehicle.iconUrl || ''
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: vehicle.name || '',
+        category: vehicle.category || '',
+        baseFare: vehicle.baseFare || 0,
+        pricePerKm: vehicle.pricePerKm || 0,
+        advanceAmount: vehicle.advanceAmount || 0,
+        seatingCapacity: vehicle.seatingCapacity || 1,
+        luggageCapacity: vehicle.luggageCapacity || 0,
+        iconUrl: vehicle.iconUrl || ''
+      });
+      setImageFile(null);
+    }
+  }, [open, vehicle]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
@@ -54,10 +84,10 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
 
   const uploadImage = async (): Promise<string> => {
     if (!imageFile) return '';
-    const formData = new FormData();
-    formData.append('vehicleImage', imageFile);
+    const uploadData = new FormData();
+    uploadData.append('vehicleImage', imageFile);
 
-    const response = await apiClient.post('/admin/vehicles/upload-image', formData, {
+    const response = await apiClient.post('/admin/vehicles/upload-image', uploadData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -82,21 +112,15 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
         iconUrl: finalIconUrl
       };
 
-      const response = await apiClient.post('/admin/vehicles', payload);
+      const response = await apiClient.put(`/admin/vehicles/${vehicle._id}`, payload);
 
       if (response.data && response.data.success === false) {
-        throw new Error(response.data.message || 'Failed to create vehicle');
+        throw new Error(response.data.message || 'Failed to update vehicle');
       }
 
-      toast.success('Vehicle created successfully');
+      toast.success('Vehicle updated successfully');
       setOpen(false);
       onSuccess();
-      
-      // Reset form
-      setFormData({
-        name: '', category: '', baseFare: 2000, pricePerKm: 12, advanceAmount: 500, seatingCapacity: 4, luggageCapacity: 2, iconUrl: ''
-      });
-      setImageFile(null);
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong');
     } finally {
@@ -106,12 +130,12 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button className="bg-yellow-400 text-black hover:bg-yellow-500 font-semibold gap-2" />}>
-        <Plus className="w-4 h-4" /> Add Vehicle
+      <DialogTrigger render={<Button variant="outline" size="sm" className="h-8 w-8 p-0 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white" />}>
+        <Edit className="h-4 w-4" />
       </DialogTrigger>
       <DialogContent className="max-w-2xl bg-zinc-900 border-zinc-800">
         <DialogHeader>
-          <DialogTitle className="text-white text-xl">Add New Vehicle</DialogTitle>
+          <DialogTitle className="text-white text-xl">Edit Vehicle Details</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
@@ -127,7 +151,7 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
 
             <div className="space-y-2">
               <Label className="text-zinc-300">Base Fare (₹)</Label>
-              <Input required type="number" min="2000" name="baseFare" value={formData.baseFare} onChange={handleChange} className="bg-zinc-800 border-zinc-700 text-white" />
+              <Input required type="number" min="0" name="baseFare" value={formData.baseFare} onChange={handleChange} className="bg-zinc-800 border-zinc-700 text-white" />
             </div>
             <div className="space-y-2">
               <Label className="text-zinc-300">Price Per KM (₹)</Label>
@@ -136,7 +160,7 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
 
             <div className="space-y-2">
               <Label className="text-zinc-300">Advance Amount (₹)</Label>
-              <Input required type="number" min="500" name="advanceAmount" value={formData.advanceAmount} onChange={handleChange} className="bg-zinc-800 border-zinc-700 text-white" />
+              <Input required type="number" min="0" name="advanceAmount" value={formData.advanceAmount} onChange={handleChange} className="bg-zinc-800 border-zinc-700 text-white" />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-2">
@@ -212,7 +236,7 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="bg-yellow-400 text-black hover:bg-yellow-500 font-semibold min-w-[120px]">
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Vehicle'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Update Vehicle'}
             </Button>
           </DialogFooter>
         </form>

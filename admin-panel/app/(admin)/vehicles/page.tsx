@@ -1,10 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { AddVehicleDialog } from '@/components/vehicles/AddVehicleDialog';
+import { EditVehicleDialog } from '@/components/vehicles/EditVehicleDialog';
+import apiClient from '@/lib/axios';
+import { toast } from 'sonner';
 
 // Types
 interface VehicleType {
@@ -16,6 +19,7 @@ interface VehicleType {
   advanceAmount: number;
   seatingCapacity: number;
   luggageCapacity: number;
+  iconUrl?: string;
   isActive: boolean;
 }
 
@@ -29,16 +33,9 @@ export default function VehiclesPage() {
 
   const fetchVehicles = async () => {
     try {
-      // Assuming you have a way to inject the auth token or the API handles it via cookies in Next.js
-      // We will just do a standard fetch for now. If you need a token, you'd add it to headers.
-      const response = await fetch('http://localhost:5000/api/v1/admin/vehicles', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setVehicles(data.data);
+      const response = await apiClient.get('/admin/vehicles');
+      if (response.data.success) {
+        setVehicles(response.data.data);
       }
     } catch (error) {
       console.error('Failed to fetch vehicles:', error);
@@ -50,17 +47,12 @@ export default function VehiclesPage() {
   const deleteVehicle = async (id: string) => {
     if (!confirm('Are you sure you want to delete this vehicle type?')) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/v1/admin/vehicles/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_token') || ''}`,
-        }
-      });
-      if (response.ok) {
-        setVehicles(vehicles.filter(v => v._id !== id));
-      }
-    } catch (error) {
+      await apiClient.delete(`/admin/vehicles/${id}`);
+      setVehicles(vehicles.filter(v => v._id !== id));
+      toast.success('Vehicle deleted successfully');
+    } catch (error: any) {
       console.error('Failed to delete vehicle:', error);
+      toast.error(error.message || 'Failed to delete vehicle');
     }
   };
 
@@ -84,7 +76,7 @@ export default function VehiclesPage() {
             <table className="w-full text-left text-sm text-zinc-300">
               <thead className="text-xs uppercase bg-zinc-900/80 text-zinc-400 border-b border-zinc-800">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Name</th>
+                  <th className="px-6 py-4 font-semibold">Vehicle</th>
                   <th className="px-6 py-4 font-semibold">Category</th>
                   <th className="px-6 py-4 font-semibold">Base Fare (₹)</th>
                   <th className="px-6 py-4 font-semibold">Price/KM (₹)</th>
@@ -107,7 +99,18 @@ export default function VehiclesPage() {
                 ) : (
                   vehicles.map((vehicle) => (
                     <tr key={vehicle._id} className="hover:bg-zinc-800/20 transition-colors">
-                      <td className="px-6 py-4 font-medium text-white">{vehicle.name}</td>
+                      <td className="px-6 py-4 font-medium text-white">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-12 shrink-0 rounded-md bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
+                            {vehicle.iconUrl ? (
+                              <img src={vehicle.iconUrl} alt={vehicle.name} className="h-full w-full object-cover" />
+                            ) : (
+                              <Car className="h-5 w-5 text-zinc-500" />
+                            )}
+                          </div>
+                          <span>{vehicle.name}</span>
+                        </div>
+                      </td>
                       <td className="px-6 py-4">{vehicle.category}</td>
                       <td className="px-6 py-4 font-mono">₹{vehicle.baseFare}</td>
                       <td className="px-6 py-4 font-mono text-yellow-400">₹{vehicle.pricePerKm}/km</td>
@@ -115,12 +118,10 @@ export default function VehiclesPage() {
                       <td className="px-6 py-4">{vehicle.seatingCapacity}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0 border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
+                          <EditVehicleDialog vehicle={vehicle} onSuccess={fetchVehicles} />
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => deleteVehicle(vehicle._id)}
                             className="h-8 w-8 p-0 border-zinc-700 bg-zinc-800 hover:bg-red-500/20 hover:border-red-500/50 text-zinc-300 hover:text-red-400 transition-colors"
                           >
