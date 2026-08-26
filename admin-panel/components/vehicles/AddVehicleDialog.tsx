@@ -190,6 +190,7 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
 
             {imageMode === 'url' ? (
               <Input 
+                key="url-input"
                 name="iconUrl" 
                 value={formData.iconUrl} 
                 onChange={handleChange} 
@@ -198,6 +199,7 @@ export function AddVehicleDialog({ onSuccess }: AddVehicleDialogProps) {
               />
             ) : (
               <Input 
+                key="file-input"
                 type="file" 
                 accept="image/*"
                 onChange={handleFileChange}
