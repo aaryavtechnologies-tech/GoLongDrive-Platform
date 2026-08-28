@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/select_field.dart';
+import '../../../core/data/vehicle_service.dart';
 import '../registration_provider.dart';
 import '../registration_step_scaffold.dart';
-
-const _vehicleTypes = ['Hatchback', 'Sedan', 'SUV', 'MUV', 'Luxury'];
 
 /// Step 4 — Vehicle basic info. Fields: Brand, Model, Registration Number,
 /// Vehicle Type (SelectField, per Phase 2 decision).
@@ -23,6 +22,8 @@ class _VehicleBasicStepState extends State<VehicleBasicStep> {
   late final _regController =
       TextEditingController(text: widget.registration.registrationNumber);
   String? _vehicleType;
+  List<String> _dynamicVehicleTypes = [];
+  bool _isLoadingTypes = true;
 
   String? _brandError, _modelError, _regError, _typeError;
 
@@ -30,6 +31,22 @@ class _VehicleBasicStepState extends State<VehicleBasicStep> {
   void initState() {
     super.initState();
     _vehicleType = widget.registration.vehicleType.isEmpty ? null : widget.registration.vehicleType;
+    _fetchVehicleTypes();
+  }
+
+  Future<void> _fetchVehicleTypes() async {
+    final types = await VehicleService.getVehicleTypes();
+    if (mounted) {
+      setState(() {
+        _dynamicVehicleTypes = types.map((e) => e['name'].toString()).toList();
+        _isLoadingTypes = false;
+        
+        // Ensure the pre-selected type still exists in the fetched list
+        if (_vehicleType != null && !_dynamicVehicleTypes.contains(_vehicleType)) {
+          _vehicleType = null;
+        }
+      });
+    }
   }
 
   bool _validate() {
@@ -103,15 +120,17 @@ class _VehicleBasicStepState extends State<VehicleBasicStep> {
           errorText: _regError,
         ),
         const SizedBox(height: 20),
-        SelectField(
-          label: 'Vehicle Type',
-          value: _vehicleType,
-          placeholder: 'Select vehicle type',
-          leftIcon: Icons.category_outlined,
-          options: _vehicleTypes,
-          errorText: _typeError,
-          onChanged: (v) => setState(() => _vehicleType = v),
-        ),
+        _isLoadingTypes
+            ? const Center(child: CircularProgressIndicator())
+            : SelectField(
+                label: 'Vehicle Type',
+                value: _vehicleType,
+                placeholder: 'Select vehicle type',
+                leftIcon: Icons.category_outlined,
+                options: _dynamicVehicleTypes,
+                errorText: _typeError,
+                onChanged: (v) => setState(() => _vehicleType = v),
+              ),
       ],
     );
   }

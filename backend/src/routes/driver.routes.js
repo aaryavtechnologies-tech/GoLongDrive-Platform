@@ -21,6 +21,7 @@ const {
   changePassword,
   uploadDocument,
   submitRegistration,
+  getVehicleTypes,
 } = require('../controllers/driver.controller');
 
 const { authenticate } = require('../middleware/auth.middleware');
@@ -72,6 +73,18 @@ const isDriver = [authenticate, requireRole(ROLES.DRIVER)];
  *         description: Validation error
  */
 router.post('/register', V.registerDriver, validate, register);
+
+/**
+ * @swagger
+ * /api/driver/vehicle-types:
+ *   get:
+ *     summary: Get all active vehicle types for registration
+ *     tags: [Driver]
+ *     responses:
+ *       200:
+ *         description: List of vehicle types
+ */
+router.get('/vehicle-types', getVehicleTypes);
 
 /**
  * @swagger

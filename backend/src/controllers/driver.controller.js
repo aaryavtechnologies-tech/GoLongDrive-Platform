@@ -3,6 +3,7 @@
 // Mirrors customer.controller.js with driver-specific model and fields.
 
 const Driver = require('../models/Driver.model');
+const VehicleType = require('../models/VehicleType.model');
 const {
   generateTokenPair,
   generatePasswordResetToken,
@@ -344,6 +345,17 @@ const submitRegistration = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, 'Registration submitted successfully. Awaiting approval.', { driver });
 });
 
+// ── Get Vehicle Types ─────────────────────────────────────────────────────────
+
+/**
+ * @route   GET /api/driver/vehicle-types
+ * @access  Public
+ */
+const getVehicleTypes = asyncHandler(async (req, res) => {
+  const vehicleTypes = await VehicleType.find({ isActive: true }).select('name category iconUrl');
+  return sendSuccess(res, 200, 'Vehicle types fetched successfully', { vehicleTypes });
+});
+
 module.exports = {
   register,
   login,
@@ -357,4 +369,5 @@ module.exports = {
   changePassword,
   uploadDocument: uploadDocumentHandler,
   submitRegistration,
+  getVehicleTypes,
 };
