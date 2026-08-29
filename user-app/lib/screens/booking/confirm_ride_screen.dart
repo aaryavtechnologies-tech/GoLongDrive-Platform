@@ -95,7 +95,9 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
       
       if (!mounted) return;
       setState(() => _isProcessing = false);
-      _navigateToBoardingPass(txnId, bookingResult['_id'] ?? 'GLD-XXXX');
+      final booking = bookingResult['booking'] as Map<String, dynamic>? ?? bookingResult;
+      final bookingId = booking['bookingId'] as String? ?? booking['_id'] as String? ?? '';
+      _navigateToBoardingPass(txnId, bookingId);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isProcessing = false);

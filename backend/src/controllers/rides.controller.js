@@ -15,7 +15,9 @@ const { RIDE_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } = require('../utils/const
  * Helper to get the correct query for booking lookup (handles both _id and bookingId)
  */
 const getBookingQuery = (idParam) => {
-  return (idParam && idParam.startsWith('GLD-')) ? { bookingId: idParam } : { _id: idParam };
+  // If the ID is not a 24-char hex string (MongoDB ObjectId), treat it as a bookingId (e.g., GLD-..., CAB-...)
+  const isObjectId = /^[a-fA-F0-9]{24}$/.test(idParam);
+  return isObjectId ? { _id: idParam } : { bookingId: idParam };
 };
 
 /**
