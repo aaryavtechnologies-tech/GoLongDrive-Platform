@@ -5,7 +5,7 @@
 class AppAssets {
   AppAssets._();
 
-  static const String logo = 'assets/images/logo.jpeg';
+  static const String logo = 'assets/images/app_icon.jpg';
   static const googleLogo = 'assets/images/gooogle_logo.png';
   static const String illustrationRideBooking =
       'assets/images/illustrations/ride_booking.svg';

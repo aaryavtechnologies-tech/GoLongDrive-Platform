@@ -157,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen>
                                   ),
                                   clipBehavior: Clip.antiAlias,
                                   child: Image.asset(
-                                    'assets/images/logo.jpeg',
+                                    'assets/images/app_icon.jpg',
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) =>
                                     ColoredBox(
