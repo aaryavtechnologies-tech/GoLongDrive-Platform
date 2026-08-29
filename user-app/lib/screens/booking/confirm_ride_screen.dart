@@ -68,9 +68,18 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
           ? rawDist.toDouble() 
           : (double.tryParse(rawDist.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0);
 
+      final fromParts = _parseAddress(from);
+      final toParts = _parseAddress(to);
+
       final payload = {
         'pickupAddress': from,
+        'pickupCity': fromParts['city'],
+        'pickupState': fromParts['state'],
+        'pickupPincode': fromParts['pincode'],
         'dropAddress': to,
+        'dropCity': toParts['city'],
+        'dropState': toParts['state'],
+        'dropPincode': toParts['pincode'],
         'distance': distance,
         'tripType': 'One Way',
         'pickupDate': dateString,
@@ -516,5 +525,53 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
   String _getMonthName(int month) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
+  }
+
+  /// Parses a Google Places formatted address string to extract city, state,
+  /// and pincode. The typical format ends with:
+  ///   "..., City, ..., State, Pincode, Country"
+  /// e.g. "Vapi Railway Station, Vapi, Daman Road, Vapi, Vapi Taluka, Valsad, Gujarat, 396191, India"
+  Map<String, String> _parseAddress(String address) {
+    final parts = address.split(',').map((s) => s.trim()).toList();
+
+    // Pincode: first part (from the end, before country) that is all digits
+    String pincode = '';
+    String state = '';
+    String city = '';
+
+    // Walk from the end: last part is country, then look for a 6-digit pincode
+    // then state, then city.
+    int idx = parts.length - 1; // start at last
+    // Skip country (last element)
+    if (idx >= 0) idx--;
+
+    // Find pincode
+    while (idx >= 0) {
+      if (RegExp(r'^\d{4,6}$').hasMatch(parts[idx])) {
+        pincode = parts[idx];
+        idx--;
+        break;
+      }
+      idx--;
+    }
+
+    // State is immediately before the pincode
+    if (idx >= 0) {
+      state = parts[idx];
+      idx--;
+    }
+
+    // City: walk backwards to find the first non-landmark part that looks like
+    // a city (not a road/taluka qualifier). Simplified: take the next part.
+    if (idx >= 0) {
+      city = parts[idx];
+    }
+
+    // Fallback: if parsing failed, use first segment as city
+    if (city.isEmpty && parts.isNotEmpty) city = parts.first;
+    if (state.isEmpty) state = city;
+    if (pincode.isEmpty) pincode = '000000';
+
+    return {'city': city, 'state': state, 'pincode': pincode};
   }
 }
