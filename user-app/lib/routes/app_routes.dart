@@ -41,6 +41,7 @@ class AppRoutes {
   static const String tripDetails = '/trip-details';
   static const String confirmRide = '/confirm-ride';
   static const String driverAssigned = '/driver-assigned';
+  static const String findingDriver = '/finding-driver';  // NEW: post-booking flow
   static const String searchResults = '/search-results';
   static const String boardingPass = '/boarding-pass';
   static const String accountDetails = '/account-details';
@@ -134,11 +135,10 @@ class AppRoutes {
         return _page(BoardingPassScreen(bookingData: args), settings);
 
       case driverAssigned:
-        final args = settings.arguments;
-        if (args is! RideRequest) {
-          return _page(_missingArgsScreen('Driver Assigned needs a RideRequest'), settings);
-        }
-        return _page(DriverAssignedScreen(request: args), settings);
+      case '/finding-driver':
+        // Both routes show the same DriverAssignedScreen.
+        // Args passed as Map<String, dynamic> via ModalRoute.
+        return _page(const DriverAssignedScreen(), settings);
 
       default:
         return _page(

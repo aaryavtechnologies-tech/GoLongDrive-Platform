@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
 import '../../core/services/booking_service.dart';
+import '../../core/services/socket_service.dart';
 import 'journey_date_time_sheet.dart';
 
 class ConfirmRideScreen extends StatefulWidget {
@@ -97,7 +98,12 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
       setState(() => _isProcessing = false);
       final booking = bookingResult['booking'] as Map<String, dynamic>? ?? bookingResult;
       final bookingId = booking['bookingId'] as String? ?? booking['_id'] as String? ?? '';
-      _navigateToBoardingPass(txnId, bookingId);
+
+      // Init socket so the user gets real-time driver assignment notifications
+      await UserSocketService.init();
+
+      // Navigate to "Finding Driver" screen — NOT boarding pass yet
+      _navigateToFindingDriver(txnId, bookingId, booking);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isProcessing = false);
@@ -131,6 +137,20 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     setState(() => _isProcessing = false);
+  }
+
+  void _navigateToFindingDriver(String txnId, String bookingId, Map<String, dynamic> booking) {
+    final args = Map<String, dynamic>.from(widget.bookingArgs);
+    args['txnId'] = txnId;
+    args['bookingId'] = bookingId;
+    args['booking'] = booking;
+    args['date'] = _journeyDate;
+    args['time'] = _pickupTime;
+    args['passengers'] = _passengers;
+    args['luggage'] = _luggage;
+    args['advancePaid'] = widget.bookingArgs['car']?['advanceAmount'] ?? 500;
+    // Navigate to the finding-driver screen (replaces this screen on the stack)
+    Navigator.of(context).pushReplacementNamed('/finding-driver', arguments: args);
   }
 
   void _navigateToBoardingPass(String txnId, String bookingId) {

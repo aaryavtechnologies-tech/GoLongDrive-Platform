@@ -1,11 +1,13 @@
 // src/config/socket.js
-// Socket.io initialisation — scaffolded for future ride-event implementation.
-// Phase 1: setup only.  No ride events are wired here.
+// Socket.io — handles driver & customer real-time connections.
 
 const { Server } = require('socket.io');
 
 let io = null;
+// Maps driverId (string) → socket.id
 const driverSockets = new Map();
+// Maps customerId (string) → socket.id
+const customerSockets = new Map();
 
 /**
  * Attaches Socket.io to the existing HTTP server.
@@ -15,7 +17,7 @@ const driverSockets = new Map();
 const initSocket = (httpServer) => {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || '*',
+      origin: '*', // mobile apps don't have a fixed origin
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -27,7 +29,7 @@ const initSocket = (httpServer) => {
   io.on('connection', (socket) => {
     console.log(`🔌  Socket connected: ${socket.id}`);
 
-    // Register a driver's socket connection
+    // ── Driver registers ─────────────────────────────────────────────────────
     socket.on('driver:join', ({ driverId }) => {
       if (driverId) {
         driverSockets.set(driverId.toString(), socket.id);
@@ -35,12 +37,29 @@ const initSocket = (httpServer) => {
       }
     });
 
+    // ── Customer registers ───────────────────────────────────────────────────
+    socket.on('customer:join', ({ customerId }) => {
+      if (customerId) {
+        customerSockets.set(customerId.toString(), socket.id);
+        console.log(`✅  Customer ${customerId} joined with socket ${socket.id}`);
+      }
+    });
+
+    // ── Cleanup on disconnect ────────────────────────────────────────────────
     socket.on('disconnect', (reason) => {
-      // Remove from map if it was a driver
+      // Remove driver if disconnected
       for (const [driverId, sockId] of driverSockets.entries()) {
         if (sockId === socket.id) {
           driverSockets.delete(driverId);
           console.log(`❌  Driver ${driverId} disconnected`);
+          break;
+        }
+      }
+      // Remove customer if disconnected
+      for (const [customerId, sockId] of customerSockets.entries()) {
+        if (sockId === socket.id) {
+          customerSockets.delete(customerId);
+          console.log(`❌  Customer ${customerId} disconnected`);
           break;
         }
       }
@@ -63,11 +82,20 @@ const getIO = () => {
 
 /**
  * Get the socket ID for a specific driver
- * @param {string} driverId 
+ * @param {string|ObjectId} driverId
  * @returns {string|undefined}
  */
 const getDriverSocket = (driverId) => {
   return driverSockets.get(driverId.toString());
 };
 
-module.exports = { initSocket, getIO, getDriverSocket };
+/**
+ * Get the socket ID for a specific customer
+ * @param {string|ObjectId} customerId
+ * @returns {string|undefined}
+ */
+const getCustomerSocket = (customerId) => {
+  return customerSockets.get(customerId.toString());
+};
+
+module.exports = { initSocket, getIO, getDriverSocket, getCustomerSocket };

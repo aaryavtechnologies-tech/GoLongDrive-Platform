@@ -5,7 +5,7 @@ const VehicleType = require('../models/VehicleType.model');
 const Setting = require('../models/Setting.model');
 const mapsService = require('../services/maps.service');
 const paymentService = require('../services/payment.service');
-const { generateBookingId, addTimelineEntry, emitBookingEvent } = require('../services/booking.service');
+const { generateBookingId, addTimelineEntry, emitBookingEvent, broadcastRideRequest } = require('../services/booking.service');
 const { sendSuccess } = require('../helpers/response.helper');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
@@ -210,6 +210,11 @@ const bookRide = asyncHandler(async (req, res) => {
 
   await addTimelineEntry(booking._id, 'Booking Drafted', customerId, 'Customer created a long-distance ride booking');
   emitBookingEvent('booking:created', { bookingId: booking.bookingId, status: booking.rideStatus });
+
+  // ── Trigger real-time driver search (fire and forget) ──────────────────────
+  broadcastRideRequest(booking._id).catch((err) =>
+    console.error('broadcastRideRequest error in bookRide:', err)
+  );
 
   return sendSuccess(res, 201, 'Booking created successfully', { booking });
 });

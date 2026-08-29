@@ -2,7 +2,7 @@
 
 const Booking = require('../models/Booking.model');
 const Driver = require('../models/Driver.model');
-const { addTimelineEntry, emitBookingEvent, handleDriverRejection, clearAssignmentTimer } = require('../services/booking.service');
+const { addTimelineEntry, emitBookingEvent, handleDriverRejection, clearAssignmentTimer, notifyCustomerDriverAssigned, notifyOtherDriversRideTaken } = require('../services/booking.service');
 const { generateEarningRecord } = require('../services/earning.service');
 const Payment = require('../models/Payment.model');
 const { sendSuccess } = require('../helpers/response.helper');
@@ -93,8 +93,20 @@ const acceptRide = asyncHandler(async (req, res) => {
     await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.BUSY });
 
     await addTimelineEntry(updatedBooking._id, 'Driver Accepted', driverId, 'Driver accepted the broadcasted ride');
-    emitBookingEvent('driver:accepted', { bookingId: updatedBooking.bookingId, driverId });
     
+    // Notify other drivers who got the same broadcast that the ride is taken
+    const broadcastedIds = global._broadcastMap?.get(updatedBooking._id.toString()) || [];
+    notifyOtherDriversRideTaken(broadcastedIds, driverId, updatedBooking.bookingId);
+    if (global._broadcastMap) global._broadcastMap.delete(updatedBooking._id.toString());
+
+    // Notify the customer in real time that a driver has been assigned
+    if (updatedBooking.customer) {
+      const driverDoc = await Driver.findById(driverId).select('fullName phoneNumber profileImage vehicle');
+      if (driverDoc) {
+        await notifyCustomerDriverAssigned(updatedBooking.customer, updatedBooking, driverDoc);
+      }
+    }
+
     // Stop the 2-minute fallback timer
     clearAssignmentTimer(updatedBooking._id);
 
@@ -119,8 +131,15 @@ const acceptRide = asyncHandler(async (req, res) => {
 
     await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.BUSY });
 
-    await addTimelineEntry(booking._id, 'Driver Accepted', driverId, 'Driver accepted the ride');
-    emitBookingEvent('driver:accepted', { bookingId: booking.bookingId, driverId });
+    await addTimelineEntry(booking._id, 'Driver Accepted', driverId, 'Driver accepted the manually assigned ride');
+
+    // Notify the customer in real time
+    if (booking.customer) {
+      const driverDoc = await Driver.findById(driverId).select('fullName phoneNumber profileImage vehicle');
+      if (driverDoc) {
+        await notifyCustomerDriverAssigned(booking.customer, booking, driverDoc);
+      }
+    }
 
     return sendSuccess(res, 200, 'Ride accepted successfully', { booking });
   }

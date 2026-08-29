@@ -19,6 +19,25 @@ class AuthService {
     return prefs.getString(_tokenKey);
   }
 
+  /// Extracts the user's _id from the stored JWT token.
+  /// JWT payload is base64url encoded — we decode it without a library.
+  static Future<String?> getUserId() async {
+    final token = await getToken();
+    if (token == null) return null;
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      // Pad base64 string to a valid length
+      String payload = parts[1];
+      while (payload.length % 4 != 0) payload += '=';
+      final decoded = utf8.decode(base64Url.decode(payload));
+      final Map<String, dynamic> json = jsonDecode(decoded);
+      return json['id']?.toString() ?? json['_id']?.toString() ?? json['userId']?.toString();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Clears the stored token
   static Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();

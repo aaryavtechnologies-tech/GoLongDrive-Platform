@@ -1,364 +1,533 @@
 // lib/screens/booking/driver_assigned_screen.dart
+//
+// "Finding Driver" screen — shown immediately after a booking is confirmed.
+//
+// Strategy:
+//  1. Primary: Listen for `booking:driver_assigned` socket event (instant)
+//  2. Fallback: Poll `GET /rides/:bookingId` every 5 seconds
+//  3. Timeout: After 10 minutes show "No driver found" message
+//
+// When a driver is assigned → navigate to /boarding-pass.
+
 import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../../core/data/api_client.dart';
+import '../../core/services/booking_service.dart';
+import '../../core/services/socket_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../models/ride_request.dart';
-import '../../widgets/secondary_button.dart';
-import '../../routes/app_routes.dart';
 
-/// Step 4 (final) of booking. There's no real driver-matching backend yet,
-/// so this screen simulates one: a short "Finding your driver…" search,
-/// then reveals a randomly generated mock driver — consistent with how the
-/// rest of this app marks backend-dependent actions (SnackBar placeholders)
-/// while still giving the flow a real, complete-feeling end state to land
-/// on.
-///
-/// Once wired to a real backend, replace [_findDriver] with a socket/poll
-/// against the actual matching service and this screen's UI (states,
-/// layout, cancel flow) shouldn't need to change.
-///
-/// NOTE: the *vehicle* shown here is the car the rider actually selected on
-/// ConfirmRideScreen (`request.selectedCar`) — only the driver's name,
-/// rating, plate number, and ETA are mocked. Trip length and estimated
-/// fare (`request.numberOfDays` / `request.estimatedFare`) are shown too so
-/// the rider has a full trip summary at the end of the flow.
 class DriverAssignedScreen extends StatefulWidget {
-  final RideRequest request;
-
-  const DriverAssignedScreen({super.key, required this.request});
+  const DriverAssignedScreen({super.key});
 
   @override
   State<DriverAssignedScreen> createState() => _DriverAssignedScreenState();
 }
 
-class _DriverAssignedScreenState extends State<DriverAssignedScreen> {
-  AssignedDriver? _driver;
-  GoogleMapController? _mapController;
+class _DriverAssignedScreenState extends State<DriverAssignedScreen>
+    with TickerProviderStateMixin {
+  // ── Passed from ConfirmRideScreen ──────────────────────────────────────────
+  Map<String, dynamic>? _args;
+  String? _bookingId;
+  String? _mongoBookingId;
 
-  static const _mockNames = ['Ramesh Kumar', 'Suresh Patil', 'Arjun Nair', 'Vikram Singh', 'Manoj Yadav'];
+  // ── State ──────────────────────────────────────────────────────────────────
+  bool _driverFound = false;
+  bool _timedOut = false;
+  bool _noDriverAvailable = false;
+  Map<String, dynamic>? _driverData;
+
+  // ── Timers / subscriptions ─────────────────────────────────────────────────
+  Timer? _pollTimer;
+  Timer? _timeoutTimer;
+  StreamSubscription? _driverAssignedSub;
+  StreamSubscription? _noDriverSub;
+
+  // ── Animation ──────────────────────────────────────────────────────────────
+  late final AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
-    _findDriver();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    // Read args in next frame (ModalRoute not available yet in initState)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
-  Future<void> _findDriver() async {
-    await Future.delayed(const Duration(milliseconds: 2200));
-    if (!mounted) return;
-    final rand = Random();
-    setState(() {
-      _driver = AssignedDriver(
-        name: _mockNames[rand.nextInt(_mockNames.length)],
-        rating: 4.5 + rand.nextInt(5) / 10,
-        // Real car the rider picked on ConfirmRideScreen — not mocked.
-        // Fallback string only covers the (should-never-happen) case of
-        // this screen being reached without a car selected.
-        vehicleModel: widget.request.selectedCar?.name ?? 'Assigned vehicle',
-        plateNumber: 'KA ${1 + rand.nextInt(9)}${String.fromCharCode(65 + rand.nextInt(26))}'
-            '${String.fromCharCode(65 + rand.nextInt(26))} ${1000 + rand.nextInt(8999)}',
-        etaMinutes: 3 + rand.nextInt(6),
-      );
+  void _init() {
+    _args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (_args == null) return;
+
+    _bookingId = _args!['bookingId']?.toString(); // e.g., "CAB-20260829-0001"
+    _mongoBookingId =
+        (_args!['booking'] as Map<String, dynamic>?)?['_id']?.toString();
+
+    // Subscribe to real-time driver assignment (socket)
+    _driverAssignedSub = UserSocketService.onDriverAssigned.listen((data) {
+      if (data['bookingId'] == _bookingId) {
+        _onDriverAssigned(data['driver'] as Map<String, dynamic>?);
+      }
+    });
+
+    // Subscribe to no-driver event
+    _noDriverSub = UserSocketService.onNoDriver.listen((data) {
+      if (data['bookingId'] == _bookingId && mounted) {
+        setState(() => _noDriverAvailable = true);
+      }
+    });
+
+    // Fallback: poll every 5 seconds
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _pollStatus());
+
+    // Overall timeout: 10 minutes
+    _timeoutTimer = Timer(const Duration(minutes: 10), () {
+      if (!_driverFound && mounted) {
+        setState(() => _timedOut = true);
+        _cleanup();
+      }
     });
   }
 
-  void _call() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Calling driver — coming soon')),
-    );
-  }
-
-  Future<void> _cancel() async {
-    final colors = AppColors.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: colors.surface,
-        title: Text('Cancel this ride?', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
-        content: Text(
-          'Your driver is already on the way. Cancelling now may still be fine, but please confirm.',
-          style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text('Keep ride', style: AppTextStyles.link),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text('Cancel ride', style: AppTextStyles.errorText),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) {
-      Navigator.of(context).popUntil((route) => route.settings.name == AppRoutes.home);
+  /// Called when we get a driver assigned — either via socket or poll
+  void _onDriverAssigned(Map<String, dynamic>? driver) {
+    if (_driverFound) return;
+    _driverFound = true;
+    _cleanup();
+    if (mounted) {
+      setState(() => _driverData = driver);
+      // Short delay so user can see the "Driver Found!" state before navigating
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        final args = Map<String, dynamic>.from(_args!);
+        if (driver != null) args['driverInfo'] = driver;
+        Navigator.of(context).pushReplacementNamed('/boarding-pass', arguments: args);
+      });
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Scaffold(
-      backgroundColor: colors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            SizedBox(
-              height: 280,
-              width: double.infinity,
-              child: GoogleMap(
-                initialCameraPosition: CameraPosition(target: widget.request.pickupLatLng, zoom: 14),
-                onMapCreated: (c) => _mapController = c,
-                markers: {
-                  Marker(
-                    markerId: const MarkerId('pickup'),
-                    position: widget.request.pickupLatLng,
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow),
-                    infoWindow: InfoWindow(title: 'Pickup', snippet: widget.request.pickupAddress),
-                  ),
-                },
-                myLocationButtonEnabled: false,
-                zoomControlsEnabled: false,
-                mapToolbarEnabled: false,
-                compassEnabled: false,
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                child: _driver == null ? _SearchingState(request: widget.request) : _AssignedState(
-                  driver: _driver!,
-                  request: widget.request,
-                  onCall: _call,
-                  onCancel: _cancel,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  /// Poll the booking status from the API
+  Future<void> _pollStatus() async {
+    if (_driverFound || _timedOut || _mongoBookingId == null) return;
+    try {
+      final result = await BookingService.getRideDetails(_mongoBookingId!);
+      final status = result['rideStatus']?.toString() ?? '';
+      // Any of these statuses means a driver has been assigned
+      if (['Driver Accepted', 'Driver Assigned', 'DRIVER_ASSIGNED',
+          'DRIVER_ACCEPTED', 'driver_accepted', 'driver_assigned']
+          .contains(status)) {
+        final driver = result['driver'] as Map<String, dynamic>?;
+        _onDriverAssigned(driver);
+      }
+    } catch (e) {
+      debugPrint('DriverAssignedScreen poll error: $e');
+    }
+  }
+
+  void _cleanup() {
+    _pollTimer?.cancel();
+    _timeoutTimer?.cancel();
+    _driverAssignedSub?.cancel();
+    _noDriverSub?.cancel();
   }
 
   @override
   void dispose() {
-    _mapController?.dispose();
+    _cleanup();
+    _pulseController.dispose();
     super.dispose();
   }
-}
 
-class _SearchingState extends StatelessWidget {
-  final RideRequest request;
-  const _SearchingState({required this.request});
+  // ── UI ─────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const SizedBox(
-          width: 46,
-          height: 46,
-          child: CircularProgressIndicator(color: AppColors.primaryGold, strokeWidth: 3),
-        ),
-        const SizedBox(height: 20),
-        Text('Finding your driver…', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary), textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        Text(
-          'Matching you with a nearby driver for\n${request.pickupAddress} → ${request.dropAddress}',
-          style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ).animate().fadeIn(duration: 250.ms);
+
+    if (_timedOut) return _buildTimeoutState(colors);
+    if (_noDriverAvailable) return _buildNoDriverState(colors);
+    if (_driverFound && _driverData != null) return _buildFoundState(colors);
+    return _buildSearchingState(colors);
   }
-}
 
-class _AssignedState extends StatelessWidget {
-  final AssignedDriver driver;
-  final RideRequest request;
-  final VoidCallback onCall;
-  final VoidCallback onCancel;
-
-  const _AssignedState({
-    required this.driver,
-    required this.request,
-    required this.onCall,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppColors.success.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.success),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.success, size: 20),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Driver assigned — arriving in ${driver.etaMinutes} min',
-                    style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: colors.textPrimary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
+  Widget _buildSearchingState(AppColors colors) {
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                height: 56,
-                width: 56,
-                decoration: BoxDecoration(color: colors.surface, shape: BoxShape.circle),
-                child: Icon(Icons.person, color: colors.accentIcon, size: 28),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const Spacer(),
+
+              // Animated radar rings
+              SizedBox(
+                width: 200,
+                height: 200,
+                child: Stack(
+                  alignment: Alignment.center,
                   children: [
-                    Text(driver.name, style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.star, color: AppColors.primaryGold, size: 14),
-                        const SizedBox(width: 4),
-                        Text(driver.rating.toStringAsFixed(1), style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-                      ],
+                    // Outer ring
+                    AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (_, __) => Container(
+                        width: 180 + 20 * _pulseController.value,
+                        height: 180 + 20 * _pulseController.value,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primaryGold
+                                .withOpacity(0.15 * (1 - _pulseController.value)),
+                            width: 2,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Middle ring
+                    AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (_, __) => Container(
+                        width: 130 + 15 * _pulseController.value,
+                        height: 130 + 15 * _pulseController.value,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.primaryGold
+                                .withOpacity(0.3 * (1 - _pulseController.value)),
+                            width: 1.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Center icon
+                    Container(
+                      width: 90,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppColors.primaryGold.withOpacity(0.15),
+                        border: Border.all(
+                          color: AppColors.primaryGold.withOpacity(0.4),
+                          width: 2,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.directions_car_rounded,
+                        color: AppColors.primaryGold,
+                        size: 42,
+                      ),
                     ),
                   ],
                 ),
+              )
+                  .animate(onPlay: (c) => c.repeat())
+                  .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1),
+                      duration: 1500.ms, curve: Curves.easeInOut),
+
+              const SizedBox(height: 40),
+
+              Text(
+                'Finding Your Driver',
+                style: AppTextStyles.headline.copyWith(
+                  color: colors.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
               ),
-              Material(
-                color: colors.surface,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: onCall,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Icon(Icons.call, color: colors.accentIcon, size: 20),
+
+              const SizedBox(height: 12),
+
+              Text(
+                'We\'re looking for the best available driver\nnear you. This usually takes under a minute.',
+                style: AppTextStyles.body.copyWith(
+                    color: colors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 32),
+
+              // Booking reference
+              if (_bookingId != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Booking Reference',
+                          style: AppTextStyles.caption
+                              .copyWith(color: colors.textSecondary)),
+                      const SizedBox(height: 4),
+                      Text(
+                        _bookingId!,
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: AppColors.primaryGold,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+
+              const Spacer(),
+
+              // Animated dots progress indicator
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(3, (i) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    child: AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (_, __) => Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.primaryGold.withOpacity(
+                            i == 0
+                                ? _pulseController.value
+                                : i == 1
+                                    ? 0.6
+                                    : 1 - _pulseController.value,
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
               ),
+
+              const SizedBox(height: 24),
+
+              Text(
+                'Please keep the app open',
+                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+              ),
+
+              const SizedBox(height: 8),
             ],
           ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14)),
-            child: Row(
-              children: [
-                Icon(Icons.directions_car_filled_outlined, color: colors.accentIcon, size: 20),
-                const SizedBox(width: 10),
-                Expanded(child: Text(driver.vehicleModel, style: AppTextStyles.body.copyWith(color: colors.textPrimary))),
-                Text(driver.plateNumber, style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: colors.textPrimary)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Column(
-                children: [
-                  const Icon(Icons.circle, size: 10, color: AppColors.primaryGold),
-                  Container(width: 1.5, height: 24, color: colors.divider),
-                  Icon(Icons.square, size: 10, color: colors.textSecondary),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(request.pickupAddress, style: AppTextStyles.body.copyWith(color: colors.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 10),
-                    Text(request.dropAddress, style: AppTextStyles.body.copyWith(color: colors.textPrimary), maxLines: 2, overflow: TextOverflow.ellipsis),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          if (request.numberOfDays != null && request.estimatedFare != null) ...[
-            const SizedBox(height: 18),
-            _TripFareSummary(request: request),
-          ],
-          const SizedBox(height: 28),
-          SecondaryButton(label: 'Cancel Ride', onPressed: onCancel),
-        ],
+        ),
       ),
-    ).animate().fadeIn(duration: 300.ms);
+    );
   }
-}
 
-/// Final trip recap — date range, day count, and the estimated total fare
-/// (see RideRequest.estimatedFare / file-level BACKEND HOOKUP note in
-/// models/ride_request.dart: this is a client-side estimate, replace with a
-/// real quote-endpoint value once one exists).
-class _TripFareSummary extends StatelessWidget {
-  final RideRequest request;
-  const _TripFareSummary({required this.request});
+  Widget _buildFoundState(AppColors colors) {
+    final driver = _driverData!;
+    final driverName = driver['fullName'] ?? 'Your Driver';
+    final vehicle = driver['vehicle'] as Map<String, dynamic>? ?? {};
+    final vehicleModel = vehicle['model'] ?? vehicle['type'] ?? 'Vehicle';
 
-  static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-
-  String _format(DateTime d) => '${d.day} ${_months[d.month - 1]}';
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final days = request.numberOfDays!;
-    final fare = request.estimatedFare!.round();
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(color: colors.surface, borderRadius: BorderRadius.circular(14)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.calendar_today_rounded, color: colors.accentIcon, size: 16),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${_format(request.startDate!)} → ${_format(request.returnDate!)} · $days day${days == 1 ? '' : 's'}',
-                  style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-                  overflow: TextOverflow.ellipsis,
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.green.withOpacity(0.12),
+                ),
+                child: const Icon(Icons.check_circle_rounded,
+                    color: Colors.green, size: 60),
+              )
+                  .animate()
+                  .scale(
+                      begin: const Offset(0, 0), duration: 400.ms,
+                      curve: Curves.elasticOut),
+
+              const SizedBox(height: 24),
+
+              Text('Driver Found!',
+                  style: AppTextStyles.headline.copyWith(
+                      color: colors.textPrimary,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700))
+                  .animate()
+                  .fadeIn(delay: 200.ms),
+
+              const SizedBox(height: 8),
+              Text(driverName,
+                  style: AppTextStyles.subtitle.copyWith(
+                      color: AppColors.primaryGold,
+                      fontWeight: FontWeight.w600))
+                  .animate()
+                  .fadeIn(delay: 300.ms),
+
+              const SizedBox(height: 4),
+              Text(vehicleModel,
+                  style: AppTextStyles.body
+                      .copyWith(color: colors.textSecondary))
+                  .animate()
+                  .fadeIn(delay: 400.ms),
+
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                valueColor:
+                    AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
+                strokeWidth: 2,
+              ),
+              const SizedBox(height: 12),
+              Text('Loading your boarding pass...',
+                  style: AppTextStyles.caption
+                      .copyWith(color: colors.textSecondary)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeoutState(AppColors colors) {
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colors.surface,
+                ),
+                child:
+                    Icon(Icons.timer_off_outlined, color: colors.textSecondary, size: 44),
+              ),
+              const SizedBox(height: 24),
+              Text('Taking Longer Than Expected',
+                  style: AppTextStyles.headline.copyWith(
+                      color: colors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              Text(
+                'Our team is manually assigning a driver for you. You will receive a confirmation shortly.',
+                style: AppTextStyles.body
+                    .copyWith(color: colors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              if (_bookingId != null)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Keep your booking ID',
+                          style: AppTextStyles.caption
+                              .copyWith(color: colors.textSecondary)),
+                      const SizedBox(height: 4),
+                      Text(_bookingId!,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.primaryGold,
+                            fontWeight: FontWeight.w700,
+                          )),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).popUntil(
+                    (route) => route.settings.name == '/home' || route.isFirst,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Back to Home',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoDriverState(AppColors colors) {
+    return Scaffold(
+      backgroundColor: colors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Estimated total fare', style: AppTextStyles.body.copyWith(color: colors.textPrimary)),
-              Text('₹$fare', style: AppTextStyles.mediumHeading.copyWith(fontSize: 20, color: colors.textPrimary)),
+              Icon(Icons.directions_car_outlined,
+                  color: colors.textSecondary, size: 64),
+              const SizedBox(height: 24),
+              Text('No Drivers Available Right Now',
+                  style: AppTextStyles.headline.copyWith(
+                      color: colors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700),
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 12),
+              Text(
+                'All drivers are currently busy. Our team will manually assign a driver for your booking. Please check back shortly.',
+                style: AppTextStyles.body
+                    .copyWith(color: colors.textSecondary, height: 1.5),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).popUntil(
+                    (route) => route.settings.name == '/home' || route.isFirst,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryGold,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Back to Home',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, fontSize: 16)),
+                ),
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
 import '../../core/data/api_service.dart';
+import '../../core/data/socket_service.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
@@ -31,10 +33,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
   dynamic _nextRide;
   List<dynamic> _recentTxns = [];
 
+  StreamSubscription<Map<String, dynamic>>? _rideRequestSub;
+
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _initSocket();
+  }
+
+  /// Initialise socket and listen for incoming ride requests.
+  Future<void> _initSocket() async {
+    await SocketService.init();
+    _rideRequestSub = SocketService.onRideRequest.listen((booking) {
+      if (!mounted) return;
+      // Navigate to IncomingRequestScreen with the booking data
+      context.push('/rides/incoming', extra: {'booking': booking});
+    });
+  }
+
+  @override
+  void dispose() {
+    _rideRequestSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchData() async {

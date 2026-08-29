@@ -16,3 +16,13 @@ Driver Login :
 email : driver@gmail.com
 password : driver123
 
+before making any changes on the system check my current booking system and explain me my logical error and 
+thing which i miss and make a plan with my suggestions and with yours too 
+
+okey so when i try to book the ride is getting book but is not asgin the drive if he is online or avaliable so for that
+fix it and also make the driver finding screen for the user app if the driver is asgin or finding and also play the
+sound on the driver app if the new ride request is come for the driver and make the all thing real time and also if the 
+on one take the ride request and asgin a random driver base on the user needs and car type so make that 
+ and get the confirmation it should also update on the user side. 
+
+ so make that 
