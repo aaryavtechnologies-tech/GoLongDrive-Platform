@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/geocoding_service.dart';
@@ -89,8 +90,6 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     setState(() => _actionLoading = true);
 
     try {
-      final previousStage = _stage;
-      
       if (_stage == _TripStage.arriving) {
         // Just local state transition, no API for "arrived" in the current backend
         setState(() => _stage = _TripStage.arrived);
@@ -106,9 +105,9 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         final res = await ApiService.post(
           '/driver/rides/${_ride!.id}/start',
           body: {
-            'pin': pin,
-            'startLat': 23.0225, // Ahmedabad lat fallback
-            'startLng': 72.5714  // Ahmedabad lng fallback
+            'otp': pin, // Backend expects 'otp' which matches customer.ridePin
+            'startLat': 23.0225, // Fallback lat
+            'startLng': 72.5714  // Fallback lng
           },
         );
         if (res.statusCode == 200) {
@@ -236,6 +235,37 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     );
   }
 
+  Future<void> _openGoogleMaps() async {
+    if (_ride == null) return;
+    
+    String url = '';
+    
+    // If heading to pickup, set destination as pickup.
+    // If in progress, set destination as drop-off.
+    if (_stage == _TripStage.arriving || _stage == _TripStage.arrived) {
+      if (_ride!.pickupLat != null && _ride!.pickupLng != null) {
+        url = 'https://www.google.com/maps/dir/?api=1&destination=${_ride!.pickupLat},${_ride!.pickupLng}';
+      } else {
+        url = 'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.pickupAddress)}';
+      }
+    } else if (_stage == _TripStage.inProgress) {
+      if (_ride!.dropLat != null && _ride!.dropLng != null) {
+        url = 'https://www.google.com/maps/dir/?api=1&destination=${_ride!.dropLat},${_ride!.dropLng}';
+      } else {
+        url = 'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.dropAddress)}';
+      }
+    }
+
+    if (url.isNotEmpty) {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Google Maps')));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -311,24 +341,34 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                       const SizedBox(height: 16),
 
                       // --- RideRouteMap (Phase 6) ---
-                      // Shows pickup (gold marker) + drop (blue marker) with
-                      // the driver's live location dot on top. Falls back to
-                      // the old icon placeholder automatically if this ride
-                      // has no coordinates (ride.hasRouteCoordinates).
-                      // Tappable (Phase 8) — opens the big in-app Navigation
-                      // card so the driver can see the full route.
                       RideRouteMapTappable(
                         ride: ride,
                         height: 180,
                         showDriverLocation: true,
-                        // Before the rider is picked up, "Start Navigation"
-                        // should head to the pickup; once the trip is
-                        // underway, it should head to the drop instead.
                         navTarget: _stage == _TripStage.inProgress || _stage == _TripStage.completed
                             ? NavTarget.drop
                             : NavTarget.pickup,
                       ),
                       const SizedBox(height: 16),
+
+                      // --- Google Maps Button ---
+                      if (_stage != _TripStage.completed)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _openGoogleMaps,
+                              icon: const Icon(Icons.map, color: Colors.white),
+                              label: const Text('Open in Google Maps', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                side: BorderSide(color: AppColors.gold.withOpacity(0.5)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ),
 
                       // --- RideTimeline (pickup / drop) ---
                       Container(

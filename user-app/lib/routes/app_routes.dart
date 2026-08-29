@@ -22,6 +22,8 @@ import '../screens/booking/confirm_ride_screen.dart';
 import '../screens/booking/driver_assigned_screen.dart';
 import '../screens/booking/search_results_screen.dart';
 import '../screens/booking/boarding_pass_screen.dart';
+import '../screens/booking/active_ride_screen.dart';
+import '../screens/booking/ride_summary_screen.dart';
 import '../models/ride_request.dart';
 import '../models/ride_history_item.dart';
 
@@ -44,6 +46,8 @@ class AppRoutes {
   static const String findingDriver = '/finding-driver';  // NEW: post-booking flow
   static const String searchResults = '/search-results';
   static const String boardingPass = '/boarding-pass';
+  static const String activeRide = '/active-ride';
+  static const String rideSummary = '/ride-summary';
   static const String accountDetails = '/account-details';
   static const String paymentMethods = '/payment-methods';
   static const String rideHistory = '/ride-history';
@@ -133,6 +137,14 @@ class AppRoutes {
       case boardingPass:
         final args = settings.arguments as Map<String, dynamic>? ?? {};
         return _page(BoardingPassScreen(bookingData: args), settings);
+
+      case activeRide:
+        final args = settings.arguments as String? ?? '';
+        return _page(ActiveRideScreen(bookingId: args), settings);
+
+      case rideSummary:
+        final args = settings.arguments as String? ?? '';
+        return _page(RideSummaryScreen(bookingId: args), settings);
 
       case driverAssigned:
       case '/finding-driver':

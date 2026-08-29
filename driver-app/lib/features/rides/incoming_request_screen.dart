@@ -139,7 +139,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
     if (bookingMongoId != null) {
       ApiService.post('/driver/rides/$bookingMongoId/reject',
               body: {'reason': 'Manually declined by driver'})
-          .catchError((e) => debugPrint('Reject API error: $e'));
+          .then((_) {}, onError: (e) => debugPrint('Reject API error: $e'));
     }
 
     if (mounted) context.pop();

@@ -43,6 +43,16 @@ class UserSocketService {
   static Stream<Map<String, dynamic>> get onStatusUpdate =>
       _statusUpdateCtrl.stream;
 
+  static final StreamController<Map<String, dynamic>> _rideStartedCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideStarted =>
+      _rideStartedCtrl.stream;
+
+  static final StreamController<Map<String, dynamic>> _rideCompletedCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideCompleted =>
+      _rideCompletedCtrl.stream;
+
   // ── Public API ─────────────────────────────────────────────────────────────
 
   static bool get isConnected => _socket?.connected ?? false;
@@ -112,6 +122,21 @@ class UserSocketService {
       print('📥 booking:status_update: $data');
       if (data is Map) {
         _statusUpdateCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    /// Specific trip lifecycle events
+    _socket!.on('ride:started', (data) {
+      print('📥 ride:started: $data');
+      if (data is Map) {
+        _rideStartedCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('ride:completed', (data) {
+      print('📥 ride:completed: $data');
+      if (data is Map) {
+        _rideCompletedCtrl.add(Map<String, dynamic>.from(data));
       }
     });
   }

@@ -167,11 +167,21 @@ const rejectRide = asyncHandler(async (req, res) => {
  */
 const startRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId });
+  const { otp } = req.body;
+  
+  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (![RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
     throw ApiError.badRequest(`Cannot start trip. Current status is ${booking.rideStatus}`);
+  }
+
+  // Validate OTP against customer's ridePin
+  if (!otp) {
+    throw ApiError.badRequest('OTP (Ride PIN) is required to start the trip');
+  }
+  if (booking.customer && booking.customer.ridePin !== otp) {
+    throw ApiError.badRequest('Invalid OTP. Please check with the passenger.');
   }
 
   booking.rideStatus = RIDE_STATUS.TRIP_STARTED;

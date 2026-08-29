@@ -1,8 +1,8 @@
-// lib/screens/booking/boarding_pass_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
+import '../../core/services/socket_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
@@ -20,13 +20,29 @@ class BoardingPassScreen extends StatefulWidget {
 class _BoardingPassScreenState extends State<BoardingPassScreen> {
   Map<String, dynamic>? _passData;
   bool _isLoading = true;
-  bool _showPin = false;
+  bool _showPin = true;
   String? _errorMsg;
+  StreamSubscription? _rideStartedSub;
 
   @override
   void initState() {
     super.initState();
     _loadBoardingPass();
+    _rideStartedSub = UserSocketService.onRideStarted.listen((data) {
+      if (!mounted) return;
+      if (data['bookingId'] == widget.bookingData['bookingId']) {
+        Navigator.of(context).pushReplacementNamed(
+          '/active-ride',
+          arguments: data['bookingId'],
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _rideStartedSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadBoardingPass() async {
@@ -127,9 +143,6 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
     final double advancePaid = (_passData!['pricing']?['advancePaid'] ?? 0).toDouble();
     final double remainingAmount = (_passData!['pricing']?['remainingAmount'] ?? 0).toDouble();
     final String paymentStatus = _passData!['paymentStatus'] ?? 'Pending';
-
-    // QR data string
-    final String qrData = 'ID:$bookingId|Pass:$passengerName|Route:$from-$to|Date:$dateString|PIN:$ridePin';
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -367,21 +380,27 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                               ),
                               const SizedBox(height: 32),
                               
-                              // QR Code
+                              // PIN Code Display
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  color: AppColors.primaryGold.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: AppColors.primaryGold, width: 2),
                                 ),
-                                child: QrImageView(
-                                  data: qrData,
-                                  version: QrVersions.auto,
-                                  size: 140.0,
+                                child: Column(
+                                  children: [
+                                    Text('SHARE THIS PIN WITH DRIVER', style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      ridePin,
+                                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: 12, color: Colors.white),
+                                    ),
+                                  ],
                                 ),
                               ).animate().fadeIn(delay: 400.ms, duration: 400.ms),
                               const SizedBox(height: 12),
-                              Text('Show this code to the driver', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                              Text('The trip will start once the driver enters this PIN.', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                             ],
                           ),
                         ),

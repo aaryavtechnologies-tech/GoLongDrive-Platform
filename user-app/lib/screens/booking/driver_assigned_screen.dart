@@ -156,7 +156,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     return _buildSearchingState(colors);
   }
 
-  Widget _buildSearchingState(AppColors colors) {
+  Widget _buildSearchingState(AppColorPalette colors) {
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -236,7 +236,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
 
               Text(
                 'Finding Your Driver',
-                style: AppTextStyles.headline.copyWith(
+                style: AppTextStyles.largeHeading.copyWith(
                   color: colors.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
@@ -263,7 +263,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.border),
+                    border: Border.all(color: colors.inputBorder),
                   ),
                   child: Column(
                     children: [
@@ -327,7 +327,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     );
   }
 
-  Widget _buildFoundState(AppColors colors) {
+  Widget _buildFoundState(AppColorPalette colors) {
     final driver = _driverData!;
     final driverName = driver['fullName'] ?? 'Your Driver';
     final vehicle = driver['vehicle'] as Map<String, dynamic>? ?? {};
@@ -359,7 +359,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
               const SizedBox(height: 24),
 
               Text('Driver Found!',
-                  style: AppTextStyles.headline.copyWith(
+                  style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 26,
                       fontWeight: FontWeight.w700))
@@ -398,7 +398,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     );
   }
 
-  Widget _buildTimeoutState(AppColors colors) {
+  Widget _buildTimeoutState(AppColorPalette colors) {
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -419,7 +419,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
               ),
               const SizedBox(height: 24),
               Text('Taking Longer Than Expected',
-                  style: AppTextStyles.headline.copyWith(
+                  style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w700),
@@ -439,7 +439,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                   decoration: BoxDecoration(
                     color: colors.surface,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.border),
+                    border: Border.all(color: colors.inputBorder),
                   ),
                   child: Column(
                     children: [
@@ -481,7 +481,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     );
   }
 
-  Widget _buildNoDriverState(AppColors colors) {
+  Widget _buildNoDriverState(AppColorPalette colors) {
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
@@ -494,7 +494,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                   color: colors.textSecondary, size: 64),
               const SizedBox(height: 24),
               Text('No Drivers Available Right Now',
-                  style: AppTextStyles.headline.copyWith(
+                  style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w700),
