@@ -12,6 +12,13 @@ const asyncHandler = require('../utils/asyncHandler');
 const { RIDE_STATUS, PAYMENT_STATUS, PAYMENT_METHODS } = require('../utils/constants');
 
 /**
+ * Helper to get the correct query for booking lookup (handles both _id and bookingId)
+ */
+const getBookingQuery = (idParam) => {
+  return (idParam && idParam.startsWith('GLD-')) ? { bookingId: idParam } : { _id: idParam };
+};
+
+/**
  * Helper to calculate fare and advance based on global settings & vehicle details
  */
 const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec) => {
@@ -209,7 +216,7 @@ const bookRide = asyncHandler(async (req, res) => {
  * GET /api/v1/rides/:id
  */
 const getRideDetails = asyncHandler(async (req, res) => {
-  const booking = await Booking.findById(req.params.id)
+  const booking = await Booking.findOne(getBookingQuery(req.params.id))
     .populate('customer', 'fullName email phoneNumber ridePin')
     .populate('driver', 'fullName phoneNumber profileImage vehicleType');
 
@@ -222,7 +229,7 @@ const getRideDetails = asyncHandler(async (req, res) => {
  * GET /api/v1/rides/:id/boarding-pass
  */
 const getBoardingPass = asyncHandler(async (req, res) => {
-  const booking = await Booking.findById(req.params.id)
+  const booking = await Booking.findOne(getBookingQuery(req.params.id))
     .populate('customer', 'fullName email phoneNumber ridePin')
     .populate('driver', 'fullName phoneNumber profileImage vehicleType');
 
@@ -296,7 +303,7 @@ const initiateRidePayment = asyncHandler(async (req, res) => {
   const bookingId = req.params.id;
   const customerId = req.user._id;
 
-  const booking = await Booking.findById(bookingId);
+  const booking = await Booking.findOne(getBookingQuery(bookingId));
   if (!booking) throw ApiError.notFound('Booking not found');
 
   let advanceAmount = booking.advanceAmount;
@@ -327,7 +334,7 @@ const startRide = asyncHandler(async (req, res) => {
   const bookingId = req.params.id;
   const driverId = req.user._id; // authenticated driver
 
-  const booking = await Booking.findById(bookingId).populate('customer');
+  const booking = await Booking.findOne(getBookingQuery(bookingId)).populate('customer');
   if (!booking) throw ApiError.notFound('Booking not found');
 
   // Verify driver is assigned to booking
@@ -388,7 +395,7 @@ const completeRide = asyncHandler(async (req, res) => {
   const bookingId = req.params.id;
   const driverId = req.user._id;
 
-  const booking = await Booking.findById(bookingId);
+  const booking = await Booking.findOne(getBookingQuery(bookingId));
   if (!booking) throw ApiError.notFound('Booking not found');
 
   if (!booking.driver || booking.driver.toString() !== driverId.toString()) {

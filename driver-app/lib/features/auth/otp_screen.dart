@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
+import '../../core/config/env_config.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/otp_input.dart';
 import '../../core/widgets/screen_header.dart';
@@ -47,11 +50,51 @@ class _OtpScreenState extends State<OtpScreen> {
     });
   }
 
-  Future<void> _handleResend(String phone) async {
-    // TODO: call AuthService.sendOtp(phone) here.
+  Future<void> _handleResend(String identifier) async {
     _otpKey.currentState?.clear();
-    setState(() => _errorText = null);
-    _startResendTimer();
+    setState(() {
+      _errorText = null;
+      _isLoading = true;
+    });
+    
+    try {
+      final isEmail = identifier.contains('@');
+      final url = Uri.parse('${EnvConfig.apiUrl}/driver/forgot-password');
+      final requestBody = isEmail ? {'email': identifier} : {'phone': identifier};
+
+      debugPrint('>>> API REQUEST: POST $url');
+      debugPrint('>>> PAYLOAD: $requestBody');
+
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(requestBody),
+      );
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('OTP has been resent.')),
+        );
+        _startResendTimer();
+      } else {
+        final errorMsg = jsonDecode(response.body)['message'] ?? 'Failed to resend OTP';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg)),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Network error. Please try again.')),
+      );
+    }
   }
 
   Future<void> _handleVerify(Map<String, dynamic>? args) async {

@@ -30,19 +30,31 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _handleSendResetLink() async {
     final email = _emailController.text.trim();
+    debugPrint('>>> BUTTON TAPPED: email="$email"');
     final emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
     setState(() => _emailError = !emailRegex.hasMatch(email) ? 'Enter a valid email address' : null);
-    if (_emailError != null) return;
+    if (_emailError != null) {
+      debugPrint('>>> VALIDATION FAILED: emailError=$_emailError');
+      return;
+    }
 
     setState(() => _isLoading = true);
     
     try {
       final url = Uri.parse('${EnvConfig.apiUrl}/driver/forgot-password');
+      final requestBody = {'email': email};
+      
+      debugPrint('>>> API REQUEST: POST $url');
+      debugPrint('>>> PAYLOAD: $requestBody');
+
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email}),
+        body: jsonEncode(requestBody),
       );
+
+      debugPrint('<<< API RESPONSE: ${response.statusCode}');
+      debugPrint('<<< BODY: ${response.body}');
 
       if (!mounted) return;
       setState(() => _isLoading = false);
