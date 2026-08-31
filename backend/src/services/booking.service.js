@@ -147,7 +147,7 @@ const emitBookingEvent = (event, data, socketId = null) => {
  */
 const notifyCustomerDriverAssigned = async (customerId, booking, driver) => {
   try {
-    const customerSocketId = getCustomerSocket(customerId);
+    const customerSocketId = getCustomerSocket(customerId._id ? customerId._id : customerId);
     if (customerSocketId) {
       const io = getIO();
       io.to(customerSocketId).emit('booking:driver_assigned', {
@@ -233,7 +233,7 @@ const broadcastRideRequest = async (bookingId) => {
     const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS, ONLINE_STATUS } = require('../utils/constants');
     const Driver = require('../models/Driver.model');
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate('customer', 'fullName phoneNumber profileImage');
     if (!booking) return;
 
     if (![RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER].includes(booking.rideStatus)) {
@@ -315,7 +315,7 @@ const randomFallbackAssign = async (bookingId) => {
     const { RIDE_STATUS, AVAILABILITY_STATUS, DRIVER_STATUS, ONLINE_STATUS } = require('../utils/constants');
     const Driver = require('../models/Driver.model');
 
-    const booking = await Booking.findById(bookingId);
+    const booking = await Booking.findById(bookingId).populate('customer', 'fullName phoneNumber profileImage');
     if (!booking || booking.rideStatus !== RIDE_STATUS.SEARCHING_DRIVER) return;
 
     const startOfDay = new Date(booking.pickupDate);
@@ -389,7 +389,8 @@ const randomFallbackAssign = async (bookingId) => {
 
     // ── Notify customer in real time (NEW) ──────────────────────────────────
     if (booking.customer) {
-      await notifyCustomerDriverAssigned(booking.customer, booking, selectedDriver);
+      const customerId = booking.customer._id ? booking.customer._id : booking.customer;
+      await notifyCustomerDriverAssigned(customerId, booking, selectedDriver);
     }
 
     // Legacy admin-panel broadcast (no customer/driver targeting)

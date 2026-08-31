@@ -101,7 +101,7 @@ const getCancelledBookings = asyncHandler(async (req, res) => {
  */
 const getBookingDetails = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId }).populate('driver', 'fullName phoneNumber profileImage');
+  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId }).populate('driver', 'fullName phoneNumber profileImage vehicle rating');
   
   if (!booking) throw ApiError.notFound('Booking not found');
 
@@ -209,7 +209,7 @@ const getCurrentRide = asyncHandler(async (req, res) => {
         RIDE_STATUS.TRIP_STARTED
       ] 
     }
-  }).populate('driver', 'fullName phoneNumber profileImage vehicleType');
+  }).populate('driver', 'fullName phoneNumber profileImage vehicle rating');
 
   return sendSuccess(res, 200, 'Current ride fetched', { ride });
 });
@@ -221,7 +221,7 @@ const getCurrentRide = asyncHandler(async (req, res) => {
 const getDriverDetails = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
   const booking = await Booking.findOne({ _id: req.params.id, customer: customerId })
-    .populate('driver', 'fullName phoneNumber profileImage vehicleType');
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating');
   
   if (!booking) throw ApiError.notFound('Booking not found');
   if (!booking.driver) throw ApiError.notFound('Driver not assigned yet');

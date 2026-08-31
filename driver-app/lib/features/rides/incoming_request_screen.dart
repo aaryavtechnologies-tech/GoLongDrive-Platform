@@ -207,7 +207,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
     }
 
     final b = _booking!;
-    final customer = b['customer'] ?? {};
+    final customer = b['customer'] is Map ? b['customer'] : {};
 
     // ── FIXED BUG 8: Backend sends pickupAddress / dropAddress directly ─────
     final pickupAddress =
