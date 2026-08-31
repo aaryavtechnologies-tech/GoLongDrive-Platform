@@ -135,7 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Image.asset(
-                              'assets/images/logo.jpeg',
+                              'assets/images/app_icon.jpg',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) => ColoredBox(
                                 color: AppColors.surface,
