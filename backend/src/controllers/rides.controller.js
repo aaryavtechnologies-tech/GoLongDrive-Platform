@@ -25,7 +25,7 @@ const getBookingQuery = (idParam) => {
  */
 const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec) => {
   const vehicle = await VehicleType.findOne({ name: vehicleTypeName });
-  const baseFare = vehicle ? vehicle.baseFare : 2000;
+  const baseFare = vehicle ? vehicle.baseFare : 500;
   const pricePerKm = vehicle ? vehicle.pricePerKm : 12;
 
   let calculatedFare = distanceKm * pricePerKm;
@@ -90,12 +90,12 @@ const estimateRide = asyncHandler(async (req, res) => {
   let dLng = destinationLng;
 
   // Resolve coordinates if missing
-  if (pLat === undefined || pLng === undefined) {
+  if (pLat == null || pLng == null) {
     const geo = await mapsService.geocode(pickupAddress);
     pLat = geo.lat;
     pLng = geo.lng;
   }
-  if (dLat === undefined || dLng === undefined) {
+  if (dLat == null || dLng == null) {
     const geo = await mapsService.geocode(dropAddress);
     dLat = geo.lat;
     dLng = geo.lng;
@@ -158,12 +158,12 @@ const bookRide = asyncHandler(async (req, res) => {
   let dLng = destinationLng;
 
   // Geocode if coords not provided
-  if (pLat === undefined || pLng === undefined) {
+  if (pLat == null || pLng == null) {
     const geo = await mapsService.geocode(pickupAddress);
     pLat = geo.lat;
     pLng = geo.lng;
   }
-  if (dLat === undefined || dLng === undefined) {
+  if (dLat == null || dLng == null) {
     const geo = await mapsService.geocode(dropAddress);
     dLat = geo.lat;
     dLng = geo.lng;

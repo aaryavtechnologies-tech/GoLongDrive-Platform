@@ -22,10 +22,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     _rideCompletedSub = UserSocketService.onRideCompleted.listen((data) {
       if (!mounted) return;
       if (data['bookingId'] == widget.bookingId) {
-        Navigator.of(context).pushReplacementNamed(
-          '/ride-summary',
-          arguments: widget.bookingId,
-        );
+        Navigator.of(
+          context,
+        ).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
       }
     });
   }
@@ -41,26 +40,40 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     return Scaffold(
       backgroundColor: AppColors.of(context).background,
       appBar: AppBar(
-        title: Text('Trip in Progress', style: AppTextStyles.h2.copyWith(color: AppColors.of(context).textPrimary)),
+        title: Text(
+          'Trip in Progress',
+          style: AppTextStyles.mediumHeading.copyWith(
+            color: AppColors.of(context).textPrimary,
+          ),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        automaticallyImplyLeading: false, // User shouldn't navigate back during active ride
+        automaticallyImplyLeading:
+            false, // User shouldn't navigate back during active ride
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.directions_car, size: 80, color: AppColors.primaryGold),
+            const Icon(
+              Icons.directions_car,
+              size: 80,
+              color: AppColors.primaryGold,
+            ),
             const SizedBox(height: 24),
             Text(
               'Your ride is in progress.',
-              style: AppTextStyles.largeHeading.copyWith(color: AppColors.of(context).textPrimary),
+              style: AppTextStyles.largeHeading.copyWith(
+                color: AppColors.of(context).textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Sit back and relax.\nThe trip will complete automatically when you arrive.',
-              style: AppTextStyles.bodySecondary.copyWith(color: AppColors.of(context).textSecondary),
+              style: AppTextStyles.bodySecondary.copyWith(
+                color: AppColors.of(context).textSecondary,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),

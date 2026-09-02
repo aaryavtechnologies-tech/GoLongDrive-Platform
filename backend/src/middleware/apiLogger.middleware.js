@@ -4,31 +4,42 @@ const logger = require('../utils/logger');
 
 const maskSensitiveData = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
-  const masked = { ...obj };
   const sensitiveKeys = ['password', 'token', 'authorization', 'newpassword', 'currentpassword', 'otp'];
   
-  for (const key in masked) {
+  const replacer = (key, value) => {
     if (sensitiveKeys.includes(key.toLowerCase())) {
-      masked[key] = '***MASKED***';
-    } else if (typeof masked[key] === 'object' && masked[key] !== null) {
-      masked[key] = maskSensitiveData(masked[key]);
+      return '***MASKED***';
     }
-  }
-  return masked;
+    return value;
+  };
+
+  // Safe stringify handling circular references
+  const cache = new Set();
+  const safeStringified = JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (cache.has(value)) {
+        return '[Circular]';
+      }
+      cache.add(value);
+    }
+    return replacer(key, value);
+  });
+  
+  return safeStringified;
 };
 
 const apiLogger = (req, res, next) => {
   const reqData = {
     query: req.query,
-    body: maskSensitiveData(req.body),
+    body: req.body, // Will be stringified safely
   };
   
-  logger.info(`[API Request] ${req.method} ${req.originalUrl} - Payload: ${JSON.stringify(reqData)}`);
+  logger.info(`[API Request] ${req.method} ${req.originalUrl} - Payload: ${maskSensitiveData(reqData)}`);
 
   // Intercept res.json
   const originalJson = res.json;
   res.json = function (body) {
-    logger.info(`[API Response JSON] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Payload: ${JSON.stringify(maskSensitiveData(body))}`);
+    logger.info(`[API Response JSON] ${req.method} ${req.originalUrl} - Status: ${res.statusCode} - Payload: ${maskSensitiveData(body)}`);
     return originalJson.call(this, body);
   };
 
