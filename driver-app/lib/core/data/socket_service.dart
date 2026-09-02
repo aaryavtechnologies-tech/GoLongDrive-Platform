@@ -34,6 +34,7 @@ class SocketService {
   static bool _intentionalDisconnect = false;
   static int _reconnectDelaySeconds = 2;
   static Timer? _reconnectTimer;
+  static bool _isInitializing = false;
 
   // ── Public API ───────────────────────────────────────────────────────────────
 
@@ -41,10 +42,16 @@ class SocketService {
 
   /// Initialise and connect the socket. Safe to call multiple times.
   static Future<void> init() async {
-    if (_socket != null && _socket!.connected) return;
+    if (_socket != null) {
+      if (!_socket!.connected) _socket!.connect();
+      return;
+    }
+    if (_isInitializing) return;
+    _isInitializing = true;
 
-    final token = await AuthService.getToken();
-    final driverId = await AuthService.getUserId();
+    try {
+      final token = await AuthService.getToken();
+      final driverId = await AuthService.getUserId();
 
     if (token == null || driverId == null) {
       print('SocketService: No auth token or driverId — skipping init');
@@ -103,6 +110,9 @@ class SocketService {
         _rideTakenController.add(bookingId);
       }
     });
+    } finally {
+      _isInitializing = false;
+    }
   }
 
   /// Gracefully disconnect — call on logout or going offline
