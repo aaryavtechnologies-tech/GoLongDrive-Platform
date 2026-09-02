@@ -55,7 +55,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
 
   Future<void> _fetchCurrentRide() async {
     try {
-      final res = await ApiService.get('/driver/rides/current');
+      final res = await ApiService.get('/driver/bookings/rides/current');
       if (res.statusCode == 200) {
         final d = jsonDecode(res.body)['data'];
         if (d != null && d['ride'] != null) {
@@ -103,7 +103,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
 
         // Start Trip
         final res = await ApiService.post(
-          '/driver/rides/${_ride!.id}/start',
+          '/driver/bookings/rides/${_ride!.id}/start',
           body: {
             'otp': pin, // Backend expects 'otp' which matches customer.ridePin
             'startLat': 23.0225, // Fallback lat
@@ -125,7 +125,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         }
       } else if (_stage == _TripStage.inProgress) {
         // Complete Trip
-        final res = await ApiService.post('/driver/rides/${_ride!.id}/complete');
+        final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/complete');
         if (res.statusCode == 200) {
           setState(() => _stage = _TripStage.completed);
           context.pop();

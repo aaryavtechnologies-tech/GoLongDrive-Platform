@@ -100,7 +100,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
     final bookingMongoId = booking['_id']?.toString() ?? '';
 
     try {
-      final res = await ApiService.post('/driver/rides/$bookingMongoId/accept');
+      final res = await ApiService.post('/driver/bookings/rides/$bookingMongoId/accept');
 
       if (!mounted) return;
       setState(() => _loading = false);
@@ -137,8 +137,8 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
     // Fire-and-forget reject API call
     final bookingMongoId = booking?['_id']?.toString();
     if (bookingMongoId != null) {
-      ApiService.post('/driver/rides/$bookingMongoId/reject',
-              body: {'reason': 'Manually declined by driver'})
+      ApiService.post('/driver/bookings/rides/$bookingMongoId/reject',
+              body: {'reason': 'Driver declined'})
           .then((_) {}, onError: (e) => debugPrint('Reject API error: $e'));
     }
 
