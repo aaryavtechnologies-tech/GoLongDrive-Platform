@@ -41,14 +41,14 @@ class EmptyState extends StatelessWidget {
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           if (subtitle != null) ...[
             const SizedBox(height: 8),
             Text(
               subtitle!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textFaint, fontSize: 14, height: 1.5),
+              style: TextStyle(color: AppColors.textFaint, fontSize: 14, height: 1.5),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
