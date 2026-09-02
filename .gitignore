@@ -16,6 +16,7 @@ backend/uploads/**/*
 
 # Logs
 *.log
+*.log.gz
 npm-debug.log*
 
 # OS
