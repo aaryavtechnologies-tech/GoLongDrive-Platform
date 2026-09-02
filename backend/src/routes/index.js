@@ -39,16 +39,19 @@ router.use('/health', healthRoutes);
 
 const apiLogger = require('../middleware/apiLogger.middleware');
 
+// Apply API logger to all routes below this point
+router.use(apiLogger);
+
 // ── Route mounting ────────────────────────────────────────────────────────────
 router.use('/maps',     mapsRoutes);
 router.use('/rides',    ridesRoutes);
 router.use('/admin',    adminRoutes);
 router.use('/admin/bookings', adminBookingRoutes);
-router.use('/customer', apiLogger, customerRoutes);
-router.use('/customer/bookings', apiLogger, customerBookingRoutes);
-router.use('/customer/vehicles', apiLogger, customerVehicleRoutes);
-router.use('/driver/bookings', apiLogger, driverBookingRoutes);
-router.use('/driver', apiLogger, driverRoutes);
+router.use('/customer', customerRoutes);
+router.use('/customer/bookings', customerBookingRoutes);
+router.use('/customer/vehicles', customerVehicleRoutes);
+router.use('/driver/bookings', driverBookingRoutes);
+router.use('/driver', driverRoutes);
 router.use('/auth',     authRoutes);
 
 // Financial routes
