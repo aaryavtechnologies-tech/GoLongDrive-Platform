@@ -380,15 +380,31 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: colors.textSecondary, size: 40),
-          const SizedBox(height: 12),
-          Text(message, style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
-          if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: onAction,
-              child: Text(actionLabel, style: AppTextStyles.button.copyWith(color: AppColors.primaryGold)),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: colors.surfaceElevated,
+              shape: BoxShape.circle,
             ),
+            child: Icon(icon, color: colors.textSecondary, size: 48),
+          ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+          const SizedBox(height: 24),
+          Text(message, 
+              style: AppTextStyles.body.copyWith(color: colors.textSecondary, height: 1.5),
+              textAlign: TextAlign.center,
+          ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 32),
+            OutlinedButton(
+              onPressed: onAction,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primaryGold,
+                side: const BorderSide(color: AppColors.primaryGold),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(actionLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ).animate().fadeIn(delay: 200.ms),
           ],
         ],
       ),

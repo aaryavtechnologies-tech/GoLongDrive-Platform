@@ -28,6 +28,7 @@ class ErrorStateWidget extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColors.error.withOpacity(0.1),
                 shape: BoxShape.circle,
+                border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1),
               ),
               child: Icon(
                 isNoInternet ? Icons.wifi_off_rounded : Icons.error_outline_rounded, 
@@ -38,17 +39,17 @@ class ErrorStateWidget extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               title,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Text(
               message,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
                 height: 1.5,
@@ -66,6 +67,7 @@ class ErrorStateWidget extends StatelessWidget {
                     backgroundColor: AppColors.gold,
                     foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
                   ),
                   child: const Text('Try Again', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),

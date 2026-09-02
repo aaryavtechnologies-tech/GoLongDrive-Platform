@@ -29,30 +29,39 @@ class EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.surfaceAlt2),
-            child: Icon(icon, color: AppColors.textFaint, size: 28),
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle, 
+              color: AppColors.surfaceAlt2,
+              border: Border.all(color: AppColors.divider, width: 1),
+            ),
+            child: Icon(icon, color: AppColors.textFaint, size: 40),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w600),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 18, fontWeight: FontWeight.bold),
           ),
           if (subtitle != null) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             Text(
               subtitle!,
               textAlign: TextAlign.center,
-              style: TextStyle(color: AppColors.textFaint, fontSize: 12, height: 1.4),
+              style: const TextStyle(color: AppColors.textFaint, fontSize: 14, height: 1.5),
             ),
           ],
           if (actionLabel != null && onAction != null) ...[
-            const SizedBox(height: 16),
-            TextButton(
+            const SizedBox(height: 24),
+            OutlinedButton(
               onPressed: onAction,
-              child: Text(actionLabel!, style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.gold,
+                side: const BorderSide(color: AppColors.gold),
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(actionLabel!, style: const TextStyle(fontWeight: FontWeight.bold)),
             ),
           ],
         ],

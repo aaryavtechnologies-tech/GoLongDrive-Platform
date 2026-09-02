@@ -262,40 +262,39 @@ const broadcastRideRequest = async (bookingId) => {
     });
 
     if (availableDrivers.length === 0) {
-      await addTimelineEntry(booking._id, 'Broadcast Failed', 'System',
-        `No online drivers found for vehicle type "${booking.vehicleType}" (normalised: "${normalised}"). Falling back.`);
-      return randomFallbackAssign(booking._id);
+      await addTimelineEntry(booking._id, 'Broadcast Pending', 'System',
+        `No online drivers found for vehicle type "${booking.vehicleType}" (normalised: "${normalised}"). Waiting for timeout to assign randomly.`);
+    } else {
+      await addTimelineEntry(booking._id, 'Ride Broadcasted', 'System',
+        `Broadcasted to ${availableDrivers.length} online drivers for type "${normalised}"`);
+      
+      const io = getIO();
+      // Store which drivers received this broadcast so we can notify them when taken
+      const broadcastedDriverIds = [];
+
+      availableDrivers.forEach((driver) => {
+        const socketId = getDriverSocket(driver._id);
+        if (socketId) {
+          io.to(socketId).emit('ride:request', { booking });
+          broadcastedDriverIds.push(driver._id);
+          console.log(`📤  Sent ride:request to driver ${driver.fullName} (${driver._id})`);
+        }
+      });
+
+      // Store broadcasted driver IDs in memory for this booking (for race-condition cleanup)
+      if (!global._broadcastMap) global._broadcastMap = new Map();
+      global._broadcastMap.set(booking._id.toString(), broadcastedDriverIds);
     }
 
-    await addTimelineEntry(booking._id, 'Ride Broadcasted', 'System',
-      `Broadcasted to ${availableDrivers.length} online drivers for type "${normalised}"`);
-    
-    const io = getIO();
-    // Store which drivers received this broadcast so we can notify them when taken
-    const broadcastedDriverIds = [];
-
-    availableDrivers.forEach((driver) => {
-      const socketId = getDriverSocket(driver._id);
-      if (socketId) {
-        io.to(socketId).emit('ride:request', { booking });
-        broadcastedDriverIds.push(driver._id);
-        console.log(`📤  Sent ride:request to driver ${driver.fullName} (${driver._id})`);
-      }
-    });
-
-    // Store broadcasted driver IDs in memory for this booking (for race-condition cleanup)
-    if (!global._broadcastMap) global._broadcastMap = new Map();
-    global._broadcastMap.set(booking._id.toString(), broadcastedDriverIds);
-
-    // 2-Minute Timer — if no one accepts, fall back to random assign
+    // 1-Minute Timer — if no one accepts, fall back to random assign
     const timer = setTimeout(async () => {
       assignmentTimers.delete(booking._id.toString());
       const b = await Booking.findById(booking._id);
       if (b && b.rideStatus === RIDE_STATUS.SEARCHING_DRIVER) {
-        await addTimelineEntry(b._id, 'Broadcast Timeout', 'System', 'No driver accepted in 2 minutes. Falling back to random assignment.');
+        await addTimelineEntry(b._id, 'Broadcast Timeout', 'System', 'No driver accepted in 1 minute (or none available). Falling back to random assignment.');
         randomFallbackAssign(b._id);
       }
-    }, 120000);
+    }, 60000);
 
     assignmentTimers.set(booking._id.toString(), timer);
 

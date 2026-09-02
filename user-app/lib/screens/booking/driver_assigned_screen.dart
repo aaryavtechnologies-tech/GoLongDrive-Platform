@@ -54,8 +54,8 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
 
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat(reverse: true);
+      duration: const Duration(milliseconds: 2500),
+    )..repeat();
 
     // Read args in next frame (ModalRoute not available yet in initState)
     WidgetsBinding.instance.addPostFrameCallback((_) => _init());
@@ -168,54 +168,36 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
             children: [
               const Spacer(),
 
-              // Animated radar rings
+              // Animated sweeping radar rings
               SizedBox(
-                width: 200,
-                height: 200,
+                width: 280,
+                height: 280,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Outer ring
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (_, __) => Container(
-                        width: 180 + 20 * _pulseController.value,
-                        height: 180 + 20 * _pulseController.value,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primaryGold
-                                .withOpacity(0.15 * (1 - _pulseController.value)),
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Middle ring
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (_, __) => Container(
-                        width: 130 + 15 * _pulseController.value,
-                        height: 130 + 15 * _pulseController.value,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primaryGold
-                                .withOpacity(0.3 * (1 - _pulseController.value)),
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Center icon
+                    // Outer Ring (Phase 0.0)
+                    _buildRippleRing(0.0),
+                    // Middle Ring (Phase 0.33)
+                    _buildRippleRing(0.33),
+                    // Inner Ring (Phase 0.66)
+                    _buildRippleRing(0.66),
+                    
+                    // Center glowing icon
                     Container(
                       width: 90,
                       height: 90,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppColors.primaryGold.withOpacity(0.15),
+                        color: colors.surface,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryGold.withValues(alpha: 0.3),
+                            blurRadius: 20,
+                            spreadRadius: 5,
+                          ),
+                        ],
                         border: Border.all(
-                          color: AppColors.primaryGold.withOpacity(0.4),
+                          color: AppColors.primaryGold.withValues(alpha: 0.8),
                           width: 2,
                         ),
                       ),
@@ -223,107 +205,147 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                         Icons.directions_car_rounded,
                         color: AppColors.primaryGold,
                         size: 42,
-                      ),
+                      )
+                          .animate(onPlay: (c) => c.repeat(reverse: true))
+                          .scale(begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), duration: 1000.ms, curve: Curves.easeInOut),
                     ),
                   ],
                 ),
-              )
-                  .animate(onPlay: (c) => c.repeat())
-                  .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1),
-                      duration: 1500.ms, curve: Curves.easeInOut),
+              ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 50),
 
               Text(
                 'Finding Your Driver',
                 style: AppTextStyles.largeHeading.copyWith(
                   color: colors.textPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
                 ),
                 textAlign: TextAlign.center,
-              ),
+              )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .shimmer(duration: 2000.ms, color: AppColors.primaryGold.withValues(alpha: 0.3)),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               Text(
-                'We\'re looking for the best available driver\nnear you. This usually takes under a minute.',
+                'Searching for the best available driver near you.\nPlease wait a moment...',
                 style: AppTextStyles.body.copyWith(
-                    color: colors.textSecondary, height: 1.5),
+                    color: colors.textSecondary, height: 1.6, fontSize: 15),
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 36),
 
-              // Booking reference
+              // Booking reference pill
               if (_bookingId != null)
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   decoration: BoxDecoration(
-                    color: colors.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.inputBorder),
+                    color: colors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(30), // Pill shape
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
                   ),
-                  child: Column(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('Booking Reference',
-                          style: AppTextStyles.caption
-                              .copyWith(color: colors.textSecondary)),
-                      const SizedBox(height: 4),
+                      Icon(Icons.confirmation_num_outlined, size: 16, color: colors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Booking: ',
+                        style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                      ),
                       Text(
                         _bookingId!,
                         style: AppTextStyles.subtitle.copyWith(
                           color: AppColors.primaryGold,
                           fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
+                          fontSize: 14,
                         ),
                       ),
                     ],
                   ),
-                ),
+                )
+                    .animate()
+                    .fadeIn(delay: 300.ms)
+                    .slideY(begin: 0.5, end: 0, duration: 400.ms),
 
               const Spacer(),
 
-              // Animated dots progress indicator
+              // Animated dots progress indicator using flutter_animate
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(3, (i) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (_, __) => Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppColors.primaryGold.withOpacity(
-                            i == 0
-                                ? _pulseController.value
-                                : i == 1
-                                    ? 0.6
-                                    : 1 - _pulseController.value,
-                          ),
-                        ),
-                      ),
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 6),
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColors.primaryGold,
                     ),
-                  );
+                  )
+                      .animate(onPlay: (c) => c.repeat())
+                      .scale(
+                        begin: const Offset(0.5, 0.5),
+                        end: const Offset(1.2, 1.2),
+                        duration: 600.ms,
+                        curve: Curves.easeInOut,
+                        delay: (i * 200).ms,
+                      )
+                      .then(duration: 600.ms)
+                      .scale(
+                        begin: const Offset(1.2, 1.2),
+                        end: const Offset(0.5, 0.5),
+                        curve: Curves.easeInOut,
+                      );
                 }),
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
 
               Text(
                 'Please keep the app open',
-                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                style: AppTextStyles.caption.copyWith(
+                  color: colors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildRippleRing(double delayFactor) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        double phase = (_pulseController.value + delayFactor) % 1.0;
+        double size = 90 + (190 * phase);
+        double opacity = 1.0 - phase;
+        opacity = Curves.easeOut.transform(opacity);
+
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.primaryGold.withValues(alpha: 0.5 * opacity),
+              width: 1.5 + (1.5 * opacity),
+            ),
+            color: AppColors.primaryGold.withValues(alpha: 0.05 * opacity),
+          ),
+        );
+      },
     );
   }
 
@@ -408,38 +430,47 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 90,
-                height: 90,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: colors.surface,
+                  color: AppColors.primaryGold.withValues(alpha: 0.1),
                 ),
-                child:
-                    Icon(Icons.timer_off_outlined, color: colors.textSecondary, size: 44),
-              ),
+                child: Icon(Icons.timer_off_outlined, color: AppColors.primaryGold, size: 48),
+              ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
+              
               const SizedBox(height: 24),
               Text('Taking Longer Than Expected',
                   style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center),
+                  textAlign: TextAlign.center)
+                  .animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
+                  
               const SizedBox(height: 12),
               Text(
                 'Our team is manually assigning a driver for you. You will receive a confirmation shortly.',
                 style: AppTextStyles.body
                     .copyWith(color: colors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,
-              ),
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+              
               const SizedBox(height: 40),
               if (_bookingId != null)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   decoration: BoxDecoration(
-                    color: colors.surface,
+                    color: colors.surfaceElevated,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.inputBorder),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGold.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      )
+                    ],
                   ),
                   child: Column(
                     children: [
@@ -451,10 +482,12 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                           style: AppTextStyles.subtitle.copyWith(
                             color: AppColors.primaryGold,
                             fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
                           )),
                     ],
                   ),
-                ),
+                ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.95, 0.95)),
+                
               const SizedBox(height: 40),
               SizedBox(
                 width: double.infinity,
@@ -468,12 +501,13 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
+                    elevation: 4,
                   ),
                   child: const Text('Back to Home',
                       style: TextStyle(
                           fontWeight: FontWeight.w700, fontSize: 16)),
                 ),
-              ),
+              ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
             ],
           ),
         ),
@@ -490,23 +524,59 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.directions_car_outlined,
-                  color: colors.textSecondary, size: 64),
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.error.withValues(alpha: 0.1),
+                ),
+                child: Icon(Icons.car_crash_outlined, color: AppColors.error, size: 48),
+              ).animate().shake(duration: 500.ms, hz: 3),
+              
               const SizedBox(height: 24),
-              Text('No Drivers Available Right Now',
+              Text('No Drivers Available',
                   style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
                       fontWeight: FontWeight.w700),
-                  textAlign: TextAlign.center),
+                  textAlign: TextAlign.center)
+                  .animate().fadeIn(delay: 100.ms).slideY(begin: 0.2, end: 0),
+                  
               const SizedBox(height: 12),
               Text(
                 'All drivers are currently busy. Our team will manually assign a driver for your booking. Please check back shortly.',
                 style: AppTextStyles.body
                     .copyWith(color: colors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,
-              ),
+              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
+              
               const SizedBox(height: 40),
+              if (_bookingId != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: colors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Text('Keep your booking ID',
+                          style: AppTextStyles.caption
+                              .copyWith(color: colors.textSecondary)),
+                      const SizedBox(height: 4),
+                      Text(_bookingId!,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          )),
+                    ],
+                  ),
+                ).animate().fadeIn(delay: 300.ms).scale(begin: const Offset(0.95, 0.95)),
+              const SizedBox(height: 40),
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -514,17 +584,17 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                     (route) => route.settings.name == '/home' || route.isFirst,
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: Colors.black,
+                    backgroundColor: colors.surfaceElevated,
+                    foregroundColor: colors.textPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                   ),
                   child: const Text('Back to Home',
                       style: TextStyle(
-                          fontWeight: FontWeight.w700, fontSize: 16)),
+                          fontWeight: FontWeight.w600, fontSize: 16)),
                 ),
-              ),
+              ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, end: 0),
             ],
           ),
         ),

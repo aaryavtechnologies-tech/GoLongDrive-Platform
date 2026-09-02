@@ -17,7 +17,24 @@ exports.searchVehicles = async (req, res) => {
     // 2. Fetch all active vehicle types
     const vehicles = await VehicleType.find({ isActive: true });
 
-    // 3. Calculate fare for each vehicle type
+    // 2.5 Fetch all online and available drivers to indicate real-time availability
+    const Driver = require('../models/Driver.model');
+    const { DRIVER_STATUS, ONLINE_STATUS, AVAILABILITY_STATUS } = require('../utils/constants');
+    const { normaliseVehicleType } = require('../services/booking.service');
+
+    const onlineDrivers = await Driver.find({
+      driverStatus: DRIVER_STATUS.APPROVED,
+      onlineStatus: ONLINE_STATUS.ONLINE,
+      availabilityStatus: AVAILABILITY_STATUS.AVAILABLE,
+    }).select('vehicle');
+
+    const onlineCounts = {};
+    onlineDrivers.forEach(d => {
+      const vType = normaliseVehicleType(d.vehicle?.type);
+      onlineCounts[vType] = (onlineCounts[vType] || 0) + 1;
+    });
+
+    // 3. Calculate fare and availability for each vehicle type
     const searchResults = vehicles.map(vehicle => {
       let calculatedFare = distanceKm * vehicle.pricePerKm;
       
@@ -26,8 +43,9 @@ exports.searchVehicles = async (req, res) => {
         calculatedFare = vehicle.baseFare;
       }
 
-      // Add a 5% GST/Taxes for realism if desired, but we'll stick to simple fare
       const finalFare = Math.round(calculatedFare);
+      const vTypeNormalised = normaliseVehicleType(vehicle.name);
+      const availableNow = (onlineCounts[vTypeNormalised] || 0) > 0;
 
       return {
         id: vehicle._id,
@@ -41,6 +59,8 @@ exports.searchVehicles = async (req, res) => {
         distanceText: distanceData.distanceText,
         distanceValueKm: distanceKm,
         durationText: distanceData.durationText,
+        availableNow: availableNow,
+        onlineCount: onlineCounts[vTypeNormalised] || 0
       };
     });
 
