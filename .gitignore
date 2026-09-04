@@ -26,3 +26,8 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Build artifacts (too large for git)
+*.apk
+*.ipa
+*.aab

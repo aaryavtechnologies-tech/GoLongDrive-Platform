@@ -34,6 +34,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _recentTxns = [];
 
   StreamSubscription<Map<String, dynamic>>? _rideRequestSub;
+  /// Booking IDs this driver has already declined — suppress re-broadcasts
+  final Set<String> _declinedBookingIds = {};
 
   @override
   void initState() {
@@ -47,8 +49,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await SocketService.init();
     _rideRequestSub = SocketService.onRideRequest.listen((booking) {
       if (!mounted) return;
-      // Navigate to IncomingRequestScreen with the booking data
-      context.push('/rides/incoming', extra: {'booking': booking});
+
+      // Get the booking ID to check against declined set
+      final bookingId = (booking['_id'] ?? booking['bookingId'])?.toString() ?? '';
+
+      // Suppress re-broadcasts for rides this driver already declined
+      if (bookingId.isNotEmpty && _declinedBookingIds.contains(bookingId)) {
+        debugPrint('Dashboard: suppressing re-broadcast for declined booking $bookingId');
+        return;
+      }
+
+      // Navigate to IncomingRequestScreen; capture returned declined ID
+      context.push<String>('/rides/incoming', extra: {'booking': booking}).then((declinedId) {
+        if (declinedId != null && declinedId.isNotEmpty) {
+          setState(() => _declinedBookingIds.add(declinedId));
+          debugPrint('Dashboard: added $declinedId to declined set');
+        }
+      });
     });
   }
 

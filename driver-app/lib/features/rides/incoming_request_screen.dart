@@ -94,6 +94,12 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
 
   Future<void> _accept(dynamic booking) async {
     if (_resolved) return;
+    // Mark resolved immediately to prevent timer race condition
+    // (timer could fire _showMissed while the HTTP call is in flight)
+    _resolved = true;
+    _timerController.stop();
+    _audioPlayer.stop();
+
     setState(() => _loading = true);
 
     // Use _id (MongoDB ObjectId) for the API call
@@ -106,9 +112,6 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
       setState(() => _loading = false);
 
       if (res.statusCode == 200) {
-        _resolved = true;
-        _timerController.stop();
-        _audioPlayer.stop();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Ride accepted successfully!')),
@@ -117,11 +120,19 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
           context.pushReplacement('/tabs?tab=1');
         }
       } else {
-        _showMissed('Ride no longer available');
+        // Accept failed (e.g. another driver was faster) — show missed state
+        if (mounted) {
+          setState(() {
+            _showMissedState = true;
+            _missedReason = 'Ride no longer available';
+          });
+        }
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
+      // On network error, re-allow the user to retry by resetting resolved
+      _resolved = false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Network error. Please try again.')),
       );
@@ -142,7 +153,8 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
           .then((_) {}, onError: (e) => debugPrint('Reject API error: $e'));
     }
 
-    if (mounted) context.pop();
+    // Pass back the declined booking ID so the dashboard can suppress re-shows
+    if (mounted) context.pop(bookingMongoId ?? '');
   }
 
   @override
@@ -230,7 +242,8 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
 
     return WillPopScope(
       onWillPop: () async {
-        if (!_loading) _decline(b);
+        // Call _decline which handles the pop with the booking ID
+        if (!_loading && !_resolved) _decline(b);
         return false;
       },
       child: Scaffold(

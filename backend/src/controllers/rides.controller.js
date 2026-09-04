@@ -25,13 +25,11 @@ const getBookingQuery = (idParam) => {
  */
 const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec) => {
   const vehicle = await VehicleType.findOne({ name: vehicleTypeName });
-  const baseFare = vehicle ? vehicle.baseFare : 500;
+  const baseFare = vehicle ? vehicle.baseFare : 2000;
   const pricePerKm = vehicle ? vehicle.pricePerKm : 12;
 
-  let calculatedFare = distanceKm * pricePerKm;
-  if (calculatedFare < baseFare) {
-    calculatedFare = baseFare;
-  }
+  // Base fare is always charged; per-km cost is always added on top
+  const calculatedFare = baseFare + (distanceKm * pricePerKm);
   const totalFare = Math.round(calculatedFare);
 
   // Fetch admin settings for advance payment rules
