@@ -74,6 +74,10 @@ class RideDetailsScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildVehicleInfo(colors),
                   const SizedBox(height: 24),
+                  if (ride.hasFareBreakdown) ...[
+                    _buildPriceInfo(colors),
+                    const SizedBox(height: 24),
+                  ],
                   _buildDriverInfo(colors, context),
                 ],
               ),
@@ -212,6 +216,52 @@ class RideDetailsScreen extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.05, end: 0);
+  }
+
+  Widget _buildPriceInfo(AppColorPalette colors) {
+    if (!ride.hasFareBreakdown) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.inputBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Price Breakdown', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Base Fare', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
+              Text('₹${ride.baseFare!.toStringAsFixed(0)}', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Distance Charge', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
+              Text('₹${ride.distanceCharge!.toStringAsFixed(0)}', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Total Fare', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
+              Text('₹${ride.totalFareAmount.toStringAsFixed(0)}', style: AppTextStyles.subtitle.copyWith(color: AppColors.primaryGold)),
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildDriverInfo(AppColorPalette colors, BuildContext context) {

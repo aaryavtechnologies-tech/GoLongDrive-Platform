@@ -16,6 +16,8 @@ import '../../widgets/back_button.dart';
 /// Replace with a real fetch + a push (FCM/APNs) subscription, and persist
 /// read/unread server-side instead of locally.
 /// ===========================================================================
+import '../../core/services/notification_service.dart';
+
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -24,57 +26,44 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // TODO(backend): GET /api/notifications — see file header.
-  List<NotificationItem> _notifications = const [
-    NotificationItem(
-      id: 'n_1',
-      type: NotificationType.ride,
-      title: 'Driver is on the way',
-      body: 'Rajesh K. is arriving in your Sedan (MH 04 AB 1234) in 4 min.',
-      timeLabel: '2h ago',
-      isRead: false,
-      relatedRideId: 'ride_1',
-    ),
-    NotificationItem(
-      id: 'n_2',
-      type: NotificationType.promo,
-      title: '20% off your next ride',
-      body: 'Use code GOLD20 on rides above ₹150. Valid till Sunday.',
-      timeLabel: '1d ago',
-      isRead: false,
-    ),
-    NotificationItem(
-      id: 'n_3',
-      type: NotificationType.account,
-      title: 'New payment method added',
-      body: 'HDFC Bank •••• 4821 was added to your account.',
-      timeLabel: '3d ago',
-      isRead: true,
-    ),
-    NotificationItem(
-      id: 'n_4',
-      type: NotificationType.system,
-      title: 'App updated',
-      body: 'We\'ve improved live tracking accuracy in this version.',
-      timeLabel: '1w ago',
-      isRead: true,
-    ),
-  ];
+  List<NotificationItem> _notifications = [];
+  bool _isLoading = true;
 
-  void _markAsRead(String id) {
-    // TODO(backend): POST /api/notifications/{id}/read
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  Future<void> _fetchNotifications() async {
+    final notifications = await NotificationService.getMyNotifications();
+    if (mounted) {
+      setState(() {
+        _notifications = notifications;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _markAsRead(String id) async {
     setState(() {
       _notifications = _notifications
           .map((n) => n.id == id ? n.copyWith(isRead: true) : n)
           .toList();
     });
+    await NotificationService.markAsRead(id);
   }
 
-  void _markAllAsRead() {
-    // TODO(backend): POST /api/notifications/read-all
+  Future<void> _markAllAsRead() async {
     setState(() {
       _notifications = _notifications.map((n) => n.copyWith(isRead: true)).toList();
     });
+    // Iterate over unread notifications and mark them as read in the backend
+    for (var n in _notifications) {
+      if (!n.isRead) {
+         await NotificationService.markAsRead(n.id);
+      }
+    }
   }
 
   void _openNotification(NotificationItem item) {
@@ -98,7 +87,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             _buildTopBar(hasUnread),
             const SizedBox(height: 20),
-            if (_notifications.isEmpty)
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.only(top: 100),
+                child: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+              )
+            else if (_notifications.isEmpty)
               _buildEmptyState()
             else
               ..._notifications.map(

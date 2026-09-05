@@ -74,8 +74,9 @@ class RideHistoryItem {
   final String? returnDateLabel; // e.g. "14 Jul 2026"
   final int? numberOfDays;
   final double? distanceKm;
-  final double? perDayRate;
-  final double? perKmRate;
+  final double? baseFare;
+  final double? distanceCharge;
+  final double? pricePerKm;
   final String? driverName;
   final double? driverRating;
   final String? plateNumber;
@@ -95,8 +96,9 @@ class RideHistoryItem {
     this.returnDateLabel,
     this.numberOfDays,
     this.distanceKm,
-    this.perDayRate,
-    this.perKmRate,
+    this.baseFare,
+    this.distanceCharge,
+    this.pricePerKm,
     this.driverName,
     this.driverRating,
     this.plateNumber,
@@ -105,10 +107,8 @@ class RideHistoryItem {
   });
 
   /// True once enough detail fields exist to show a fare breakdown
-  /// (day cost + km cost) on RideDetailsScreen. If false, that screen falls
-  /// back to just showing the flat `fare` string with no breakdown.
-  bool get hasFareBreakdown => numberOfDays != null && distanceKm != null && perDayRate != null && perKmRate != null;
+  /// on RideDetailsScreen.
+  bool get hasFareBreakdown => baseFare != null && distanceCharge != null;
 
-  double get dayCost => (perDayRate ?? 0) * (numberOfDays ?? 0);
-  double get kmCost => (perKmRate ?? 0) * (distanceKm ?? 0);
+  double get totalFareAmount => (baseFare ?? 0) + (distanceCharge ?? 0);
 }

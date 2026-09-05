@@ -6,11 +6,11 @@
  */
 
 const BASE_RATES = {
-  'Sedan': { baseFare: 500, pricePerKm: 12 },
-  'SUV': { baseFare: 800, pricePerKm: 15 },
-  'Innova': { baseFare: 1000, pricePerKm: 18 },
+  'Sedan': { baseFare: 2000, pricePerKm: 12 },
+  'SUV': { baseFare: 2000, pricePerKm: 15 },
+  'Innova': { baseFare: 2000, pricePerKm: 18 },
   // Default fallback
-  'Default': { baseFare: 500, pricePerKm: 15 }
+  'Default': { baseFare: 2000, pricePerKm: 15 }
 };
 
 const DRIVER_ALLOWANCE_PER_DAY = 300;

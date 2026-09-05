@@ -196,6 +196,9 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         'rating': '4.8', // Mock rating
                         'time': car['durationText'] ?? 'N/A',
                         'distance': car['distanceText'] ?? 'N/A',
+                        'baseFare': car['baseFare'] ?? 2000,
+                        'distanceCharge': car['distanceCharge'] ?? 0,
+                        'pricePerKm': car['pricePerKm'] ?? 15,
                         'total': car['fare'],
                         'advanceAmount': car['advanceAmount'] ?? 500,
                         'availableNow': car['availableNow'] ?? false,

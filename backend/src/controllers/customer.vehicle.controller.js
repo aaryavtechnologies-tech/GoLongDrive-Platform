@@ -36,13 +36,10 @@ exports.searchVehicles = async (req, res) => {
 
     // 3. Calculate fare and availability for each vehicle type
     const searchResults = vehicles.map(vehicle => {
-      let calculatedFare = distanceKm * vehicle.pricePerKm;
+      const baseFare = 2000;
+      const distanceCharge = distanceKm * vehicle.pricePerKm;
+      const calculatedFare = baseFare + distanceCharge;
       
-      // Enforce Base Fare
-      if (calculatedFare < vehicle.baseFare) {
-        calculatedFare = vehicle.baseFare;
-      }
-
       const finalFare = Math.round(calculatedFare);
       const vTypeNormalised = normaliseVehicleType(vehicle.name);
       const availableNow = (onlineCounts[vTypeNormalised] || 0) > 0;
@@ -54,6 +51,9 @@ exports.searchVehicles = async (req, res) => {
         seatingCapacity: vehicle.seatingCapacity,
         luggageCapacity: vehicle.luggageCapacity,
         iconUrl: vehicle.iconUrl,
+        baseFare: baseFare,
+        distanceCharge: Math.round(distanceCharge),
+        pricePerKm: vehicle.pricePerKm,
         fare: finalFare,
         advanceAmount: vehicle.advanceAmount,
         distanceText: distanceData.distanceText,

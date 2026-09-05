@@ -1,6 +1,7 @@
 // src/services/coupon.service.js
 
 const Coupon = require('../models/Coupon.model');
+const Booking = require('../models/Booking.model');
 const { DISCOUNT_TYPES } = require('../utils/constants');
 const ApiError = require('../utils/ApiError');
 
@@ -24,8 +25,16 @@ const validateAndCalculateDiscount = async (couponCode, totalFare, customerId) =
     throw ApiError.badRequest(`Minimum booking amount of ${coupon.minimumBookingAmount} required`);
   }
 
-  // TODO: Check per-customer usage by querying Booking collection if needed
-  // For MVP, we skip the exact count query and assume it's valid if usagePerCustomer > 0
+  if (customerId && coupon.usagePerCustomer) {
+    const usageCount = await Booking.countDocuments({
+      customer: customerId,
+      'pricing.coupon': coupon._id,
+      status: { $ne: 'cancelled' }
+    });
+    if (usageCount >= coupon.usagePerCustomer) {
+      throw ApiError.badRequest(`You have already used this coupon the maximum allowed times (${coupon.usagePerCustomer})`);
+    }
+  }
 
   let discount = 0;
   if (coupon.discountType === DISCOUNT_TYPES.FLAT) {

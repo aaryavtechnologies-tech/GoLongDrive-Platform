@@ -203,9 +203,11 @@ const sendOTP = asyncHandler(async (req, res) => {
   const expiry = getOTPExpiry();
 
   // Log OTP in development to bypass email requirement
-  console.log(`\n======================================`);
-  console.log(`[DEV OTP] Driver: ${driver.email} | OTP: ${otp}`);
-  console.log(`======================================\n`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`\n======================================`);
+    console.log(`[DEV OTP] Driver: ${driver.email} | OTP: ${otp}`);
+    console.log(`======================================\n`);
+  }
 
   await Driver.findByIdAndUpdate(driver._id, {
     otp: hashedOTP,

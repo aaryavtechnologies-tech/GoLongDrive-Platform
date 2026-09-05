@@ -360,6 +360,13 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                               const SizedBox(height: 12),
                               Row(
                                 children: [
+                                  Expanded(child: _buildPassDetail(colors, 'Base Fare', '₹${(_passData!['pricing']?['baseFare'] ?? 2000).toDouble().toStringAsFixed(0)}')),
+                                  Expanded(child: _buildPassDetail(colors, 'Distance Charge', '₹${(_passData!['pricing']?['distanceCharge'] ?? 0).toDouble().toStringAsFixed(0)}')),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
                                   Expanded(child: _buildPassDetail(colors, 'Total Fare', '₹${totalFare.toStringAsFixed(0)}')),
                                   Expanded(child: _buildPassDetail(colors, 'Advance Paid', '₹${advancePaid.toStringAsFixed(0)}')),
                                   Expanded(child: _buildPassDetail(colors, 'Remaining', '₹${remainingAmount.toStringAsFixed(0)}')),

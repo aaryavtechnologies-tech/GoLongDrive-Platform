@@ -312,14 +312,44 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           const SizedBox(height: 8),
-                          Text('₹${estimatedFare.toString()}',
-                              style: AppText.balanceAmount
-                                  .copyWith(color: AppColors.gold)),
-                          const SizedBox(height: 4),
-                          Text('Estimated fare',
-                              style: TextStyle(
-                                  color: AppColors.textSecondary,
-                                  fontSize: 13)),
+                          // Price Breakdown Container
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceAlt2,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Base Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    Text('₹${b['baseFare'] ?? 2000}', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('Distance Charge', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                    Text('₹${b['distanceCharge'] ?? 0}', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                const Divider(height: 1, color: AppColors.divider),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Total Estimated Fare', style: TextStyle(color: AppColors.gold, fontSize: 14, fontWeight: FontWeight.bold)),
+                                    Text('₹${estimatedFare.toString()}', style: TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           // Vehicle type badge
                           Container(

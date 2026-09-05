@@ -25,7 +25,7 @@ const getBookingQuery = (idParam) => {
  */
 const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec) => {
   const vehicle = await VehicleType.findOne({ name: vehicleTypeName });
-  const baseFare = vehicle ? vehicle.baseFare : 2000;
+  const baseFare = 2000; // Enforce base price of 2000
   const pricePerKm = vehicle ? vehicle.pricePerKm : 12;
 
   // Base fare is always charged; per-km cost is always added on top
@@ -57,6 +57,9 @@ const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec)
   }
 
   return {
+    baseFare,
+    distanceCharge: distanceKm * pricePerKm,
+    pricePerKm,
     totalFare,
     advanceAmount,
     remainingAmount: totalFare - advanceAmount
@@ -194,6 +197,9 @@ const bookRide = asyncHandler(async (req, res) => {
     numberOfBags: numberOfBags || 0,
     specialInstructions,
     estimatedDistance: route.distanceValueKm,
+    baseFare: pricing.baseFare,
+    distanceCharge: pricing.distanceCharge,
+    pricePerKm: pricing.pricePerKm,
     estimatedFare: pricing.totalFare,
     finalFare: pricing.totalFare,
     advanceAmount: pricing.advanceAmount,
@@ -292,6 +298,9 @@ const getBoardingPass = asyncHandler(async (req, res) => {
       driverPhone: booking.driver.phoneNumber
     } : null,
     pricing: {
+      baseFare: booking.baseFare || 2000,
+      distanceCharge: booking.distanceCharge || 0,
+      pricePerKm: booking.pricePerKm || 0,
       totalFare: booking.finalFare || booking.estimatedFare,
       advancePaid: booking.paymentStatus === PAYMENT_STATUS.PENDING ? 0 : booking.advanceAmount,
       remainingAmount: booking.remainingAmount,
