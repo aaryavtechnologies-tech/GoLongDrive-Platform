@@ -212,6 +212,25 @@ class RideDetailsScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
+                            Text('Base Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                            Text('₹2000', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Distance Charge', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                            Text('₹${(r.fare - 2000).toStringAsFixed(0)}', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Divider(color: AppColors.divider, height: 1),
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
                             Text('Total Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
                             Text('₹${r.fare.toStringAsFixed(0)}',
                                 style: TextStyle(

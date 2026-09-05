@@ -17,8 +17,10 @@
 /// If this is left empty, [DirectionsService] returns null and
 /// `RideRouteMap` silently falls back to the old straight-line polyline —
 /// nothing crashes, the map just looks less realistic.
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class MapsConfig {
-  static const String directionsApiKey = String.fromEnvironment(
+  static String get directionsApiKey => dotenv.env['DIRECTIONS_API_KEY'] ?? const String.fromEnvironment(
     'DIRECTIONS_API_KEY',
     defaultValue: '',
   );

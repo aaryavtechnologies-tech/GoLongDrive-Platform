@@ -4,13 +4,14 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../services/auth_service.dart';
 
 /// Centralized HTTP Client for all User App network communication.
 /// Handles headers, auth tokens, timeouts, and detailed logging for every
 /// API request, response, and error.
 class ApiClient {
-  static const String baseUrl = 'https://api.golongdrive.online/api/v1';
+  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.golongdrive.online/api/v1';
   static const Duration timeoutDuration = Duration(seconds: 30);
   static int _requestCounter = 0;
 

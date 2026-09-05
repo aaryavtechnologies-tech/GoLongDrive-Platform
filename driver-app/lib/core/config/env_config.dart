@@ -1,4 +1,6 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 class EnvConfig {
-  static const String apiUrl = 'https://api.golongdrive.online/api/v1';
-  static const String socketUrl = 'https://api.golongdrive.online';
+  static String get apiUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.golongdrive.online/api/v1';
+  static String get socketUrl => dotenv.env['SOCKET_URL'] ?? 'https://api.golongdrive.online';
 }

@@ -1,17 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
-import '../../core/data/mock_data.dart';
+import '../../core/data/api_service.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/app_button.dart';
 
-/// Settings → Edit Profile.
-/// Prefilled from `MockData.driverProfile`. Local-state only for now —
-/// there's no `PATCH /driver/profile` yet, so Save just shows a
-/// confirmation and pops back (same "no backend yet" pattern used by
-/// `CurrentRideScreen._advance` and the registration wizard's review step;
-/// see BACKEND_API_SPEC.md for where the real call should go).
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -20,21 +15,36 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _phoneCtrl;
-  late final TextEditingController _emailCtrl;
-  late final TextEditingController _vehicleModelCtrl;
-  late final TextEditingController _vehicleNumberCtrl;
+  final TextEditingController _nameCtrl = TextEditingController();
+  final TextEditingController _phoneCtrl = TextEditingController();
+  final TextEditingController _emailCtrl = TextEditingController();
+  final TextEditingController _vehicleModelCtrl = TextEditingController();
+  final TextEditingController _vehicleNumberCtrl = TextEditingController();
+  bool _loading = true;
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    final profile = MockData.driverProfile;
-    _nameCtrl = TextEditingController(text: profile.name);
-    _phoneCtrl = TextEditingController(text: profile.phone);
-    _emailCtrl = TextEditingController(text: profile.email);
-    _vehicleModelCtrl = TextEditingController(text: profile.vehicleModel);
-    _vehicleNumberCtrl = TextEditingController(text: profile.vehicleNumber);
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final res = await ApiService.get('/driver/profile');
+      if (res.statusCode == 200) {
+        final driver = jsonDecode(res.body)['data']['driver'];
+        _nameCtrl.text = driver['fullName'] ?? '';
+        _phoneCtrl.text = driver['phoneNumber'] ?? '';
+        _emailCtrl.text = driver['email'] ?? '';
+        _vehicleModelCtrl.text = driver['vehicleDetails']?['model'] ?? '';
+        _vehicleNumberCtrl.text = driver['vehicleDetails']?['registrationNumber'] ?? '';
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch profile: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -47,12 +57,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  void _save() {
-    // TODO: Backend — PATCH /driver/profile with the edited fields.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Profile updated')),
-    );
-    context.pop();
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      final res = await ApiService.put('/driver/profile', body: {
+        'fullName': _nameCtrl.text,
+        'phoneNumber': _phoneCtrl.text,
+      });
+      if (res.statusCode == 200) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated successfully')),
+          );
+          context.pop();
+        }
+      } else {
+        throw Exception('Failed to update profile');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating profile')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -144,7 +174,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     textCapitalization: TextCapitalization.characters,
                   ),
                   const SizedBox(height: 28),
-                  AppButton(label: 'Save Changes', onPressed: _save),
+                  AppButton(label: 'Save Changes', onPressed: _save, isLoading: _saving),
                 ],
               ),
             ),
