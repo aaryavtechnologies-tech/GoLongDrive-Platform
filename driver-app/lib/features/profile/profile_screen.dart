@@ -120,6 +120,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final vehicle = p['vehicle'] as Map<String, dynamic>? ?? {};
     final vehicleModel = vehicle['model'] ?? vehicle['type'] ?? 'N/A';
     final vehicleNumber = vehicle['registrationNumber'] ?? vehicle['rcNumber'] ?? 'N/A';
+    final vehicleBrand = vehicle['brand'] ?? 'N/A';
+    final vehicleType = vehicle['type'] ?? 'Sedan';
+    final fuelType = vehicle['fuelType'] ?? 'N/A';
+    final year = vehicle['manufacturingYear'] ?? 'N/A';
+    final seats = vehicle['seatingCapacity'] ?? 'N/A';
+    final acAvailable = vehicle['acAvailable'] ?? 'N/A';
     
     // Safely extract documents data
     final docs = p['documents'] as Map<String, dynamic>? ?? {};
@@ -198,14 +204,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.all(20),
             decoration: cardDecoration(radius: 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const Text('Contact Info', style: AppText.sectionTitle),
+                const SizedBox(height: 16),
                 _infoRow(Icons.phone_outlined, 'Phone', phone),
                 Divider(color: AppColors.borderSubtle2, height: 24),
                 _infoRow(Icons.mail_outline, 'Email', email),
+                const SizedBox(height: 24),
+                
+                const Text('Vehicle Info', style: AppText.sectionTitle),
+                const SizedBox(height: 16),
+                _infoRow(Icons.directions_car_outlined, 'Brand & Model', '$vehicleBrand $vehicleModel'),
                 Divider(color: AppColors.borderSubtle2, height: 24),
-                _infoRow(Icons.directions_car_outlined, 'Vehicle', vehicleModel),
+                _infoRow(Icons.confirmation_number_outlined, 'Reg. Number', vehicleNumber),
                 Divider(color: AppColors.borderSubtle2, height: 24),
-                _infoRow(Icons.confirmation_number_outlined, 'Vehicle Number', vehicleNumber),
+                _infoRow(Icons.category_outlined, 'Type', vehicleType),
+                Divider(color: AppColors.borderSubtle2, height: 24),
+                _infoRow(Icons.local_gas_station_outlined, 'Fuel Type', fuelType),
+                Divider(color: AppColors.borderSubtle2, height: 24),
+                _infoRow(Icons.calendar_today_outlined, 'Mfg. Year', year.toString()),
+                Divider(color: AppColors.borderSubtle2, height: 24),
+                _infoRow(Icons.airline_seat_recline_normal_outlined, 'Seating', seats.toString()),
+                Divider(color: AppColors.borderSubtle2, height: 24),
+                _infoRow(Icons.ac_unit_outlined, 'AC Available', acAvailable.toString()),
               ],
             ),
           ),

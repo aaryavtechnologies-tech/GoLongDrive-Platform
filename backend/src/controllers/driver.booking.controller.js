@@ -172,7 +172,7 @@ const startRide = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({ _id: req.params.id, driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
-  if (![RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
+  if (![RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
     throw ApiError.badRequest(`Cannot start trip. Current status is ${booking.rideStatus}`);
   }
 
