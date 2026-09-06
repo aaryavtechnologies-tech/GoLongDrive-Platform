@@ -25,7 +25,8 @@ class IncomingRequestScreen extends StatefulWidget {
 
 class _IncomingRequestScreenState extends State<IncomingRequestScreen>
     with SingleTickerProviderStateMixin {
-  static const _requestSeconds = 120;
+  static const _requestTotalSeconds = 120;
+  int _requestSeconds = 120;
   late final AnimationController _timerController;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _resolved = false;
@@ -39,15 +40,8 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
   @override
   void initState() {
     super.initState();
-
-    _timerController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: _requestSeconds),
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed) _showMissed('Request Expired');
-      });
-    _timerController.forward();
-
+    // Animation controller will be initialized in didChangeDependencies
+    
     // Play notification sound
     _playSound();
 
@@ -61,6 +55,41 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
         }
       }
     });
+  }
+
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      final args = GoRouterState.of(context).extra as Map<String, dynamic>?;
+      _booking = args?['booking'];
+
+      int initialSeconds = _requestTotalSeconds;
+      if (_booking != null && _booking['createdAt'] != null) {
+        final createdAt = DateTime.tryParse(_booking['createdAt'].toString());
+        if (createdAt != null) {
+          final elapsed = DateTime.now().toUtc().difference(createdAt).inSeconds;
+          initialSeconds = _requestTotalSeconds - elapsed;
+        }
+      }
+
+      if (initialSeconds <= 0) {
+        initialSeconds = 1; // Expire immediately in next frame
+      }
+
+      _requestSeconds = initialSeconds;
+
+      _timerController = AnimationController(
+        vsync: this,
+        duration: Duration(seconds: _requestSeconds),
+      )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) _showMissed('Request Expired');
+        });
+      _timerController.forward();
+    }
   }
 
   Future<void> _playSound() async {

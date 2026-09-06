@@ -266,6 +266,7 @@ const updateProfile = asyncHandler(async (req, res) => {
   const updates = {};
   if (req.body.fullName) updates.fullName = req.body.fullName;
   if (req.body.phoneNumber) updates.phoneNumber = req.body.phoneNumber;
+  if (req.body.vehicleDetails) updates.vehicleDetails = req.body.vehicleDetails;
 
   if (req.file) {
     updates.profileImage = `uploads/profile/${req.file.filename}`;

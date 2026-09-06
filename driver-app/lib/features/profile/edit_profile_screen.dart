@@ -62,7 +62,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       final res = await ApiService.put('/driver/profile', body: {
         'fullName': _nameCtrl.text,
-        'phoneNumber': _phoneCtrl.text,
+        'vehicleDetails': {
+          'model': _vehicleModelCtrl.text,
+          'registrationNumber': _vehicleNumberCtrl.text,
+        }
       });
       if (res.statusCode == 200) {
         if (mounted) {
@@ -149,6 +152,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _phoneCtrl,
                     leftIcon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
+                    readOnly: true,
                   ),
                   const SizedBox(height: 16),
                   AppTextField(
@@ -156,6 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     controller: _emailCtrl,
                     leftIcon: Icons.mail_outline,
                     keyboardType: TextInputType.emailAddress,
+                    readOnly: true,
                   ),
                   const SizedBox(height: 24),
                   const Text('Vehicle', style: AppText.sectionTitle),
