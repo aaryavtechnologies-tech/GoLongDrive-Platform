@@ -199,6 +199,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         'baseFare': car['baseFare'] ?? 2000,
                         'distanceCharge': car['distanceCharge'] ?? 0,
                         'pricePerKm': car['pricePerKm'] ?? 15,
+                        'distanceValueKm': car['distanceValueKm'] ?? (_distanceData != null ? _distanceData!['distanceValueKm'] : 0),
                         'total': car['fare'],
                         'advanceAmount': car['advanceAmount'] ?? 500,
                         'availableNow': car['availableNow'] ?? false,
@@ -411,28 +412,55 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
           // Bottom section: Price & CTA
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                // Detailed Price Summary
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('₹${car['total']}', style: AppTextStyles.priceLarge),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹${car['advanceAmount']} advance',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.primaryGold,
-                      ),
-                    ),
+                    Text('Base Fare', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                    Text('₹${car['baseFare']}', style: AppTextStyles.caption.copyWith(color: colors.textPrimary)),
                   ],
                 ),
-                SizedBox(
-                  width: 140,
-                  child: PrimaryButton(
-                    label: 'SELECT CAR →',
-                    onPressed: () => _selectCar(context, car),
-                  ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Distance Charge (${car['distanceValueKm']} km × ₹${car['pricePerKm']}/km)', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                    Text('₹${car['distanceCharge']}', style: AppTextStyles.caption.copyWith(color: colors.textPrimary)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Total Amount', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold)),
+                    Text('₹${car['total']}', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Advance Payment', style: AppTextStyles.caption.copyWith(color: AppColors.success)),
+                    Text('- ₹${car['advanceAmount']}', style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Container(height: 1, color: colors.divider),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Remaining Amount', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary, fontSize: 16)),
+                    Text('₹${(car['total'] ?? 0) - (car['advanceAmount'] ?? 0)}', style: AppTextStyles.priceLarge.copyWith(fontSize: 18)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                PrimaryButton(
+                  label: 'SELECT CAR →',
+                  onPressed: () => _selectCar(context, car),
                 ),
               ],
             ),
