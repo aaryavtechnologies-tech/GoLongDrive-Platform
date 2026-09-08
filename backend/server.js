@@ -3,6 +3,28 @@
 
 require('dotenv').config();
 
+// Globally override console methods to include timestamps for easier debugging
+['log', 'info', 'warn', 'error'].forEach((methodName) => {
+  const originalMethod = console[methodName];
+  console[methodName] = (...args) => {
+    try {
+      // Don't prefix empty strings or ASCII lines (used in startup banner)
+      if (args.length && typeof args[0] === 'string') {
+        if (args[0] === '' || args[0].startsWith('━━━') || args[0].includes('Long Distance Taxi API') || args[0].includes('MongoDB connected') || args[0].includes('Environment') || args[0].includes('Server') || args[0].includes('API Docs') || args[0].includes('Health')) {
+          return originalMethod.apply(console, args);
+        }
+      }
+      const now = new Date();
+      const tzOffset = now.getTimezoneOffset() * 60000;
+      const localISOTime = (new Date(Date.now() - tzOffset)).toISOString().slice(0, 19).replace('T', ' ');
+      const timestamp = `[${localISOTime}]`;
+      originalMethod.apply(console, [timestamp, ...args]);
+    } catch (err) {
+      originalMethod.apply(console, args);
+    }
+  };
+});
+
 const http = require('http');
 const app = require('./app');
 const mongoose = require('mongoose');
