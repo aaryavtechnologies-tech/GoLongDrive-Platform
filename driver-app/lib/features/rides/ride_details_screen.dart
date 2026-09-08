@@ -40,7 +40,8 @@ class RideDetailsScreen extends StatelessWidget {
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Ride Details')),
         body: Center(
-          child: Text('Ride not found', style: TextStyle(color: AppColors.textMuted)),
+          child: Text('Ride not found',
+              style: TextStyle(color: AppColors.textMuted)),
         ),
       );
     }
@@ -85,7 +86,8 @@ class RideDetailsScreen extends StatelessWidget {
                             shape: BoxShape.circle,
                             color: AppColors.goldTint,
                           ),
-                          child: const Icon(Icons.person, color: AppColors.gold, size: 26),
+                          child: const Icon(Icons.person,
+                              color: AppColors.gold, size: 26),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -94,14 +96,19 @@ class RideDetailsScreen extends StatelessWidget {
                             children: [
                               Text(r.customerName,
                                   style: TextStyle(
-                                      color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                                      color: AppColors.textPrimary,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700)),
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.star, size: 14, color: AppColors.gold),
+                                  const Icon(Icons.star,
+                                      size: 14, color: AppColors.gold),
                                   const SizedBox(width: 4),
                                   Text(r.customerRating.toStringAsFixed(1),
-                                      style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                      style: TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13)),
                                 ],
                               ),
                             ],
@@ -115,7 +122,8 @@ class RideDetailsScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(color: AppColors.borderSubtle2),
                           ),
-                          child: const Icon(Icons.call, color: AppColors.gold, size: 20),
+                          child: const Icon(Icons.call,
+                              color: AppColors.gold, size: 20),
                         ),
                       ],
                     ),
@@ -134,9 +142,14 @@ class RideDetailsScreen extends StatelessWidget {
                           children: [
                             Column(
                               children: [
-                                const Icon(Icons.circle, size: 10, color: AppColors.gold),
-                                Container(width: 1.5, height: 36, color: AppColors.divider),
-                                Icon(Icons.location_on, size: 12, color: AppColors.textMuted),
+                                const Icon(Icons.circle,
+                                    size: 10, color: AppColors.gold),
+                                Container(
+                                    width: 1.5,
+                                    height: 36,
+                                    color: AppColors.divider),
+                                Icon(Icons.location_on,
+                                    size: 12, color: AppColors.textMuted),
                               ],
                             ),
                             const SizedBox(width: 14),
@@ -144,15 +157,22 @@ class RideDetailsScreen extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Pickup', style: AppText.smallLabel),
+                                  const Text('Pickup',
+                                      style: AppText.smallLabel),
                                   const SizedBox(height: 4),
                                   Text(r.pickupAddress,
-                                      style: TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.3)),
+                                      style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 14,
+                                          height: 1.3)),
                                   const SizedBox(height: 20),
                                   const Text('Drop', style: AppText.smallLabel),
                                   const SizedBox(height: 4),
                                   Text(r.dropAddress,
-                                      style: TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.3)),
+                                      style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 14,
+                                          height: 1.3)),
                                 ],
                               ),
                             ),
@@ -165,9 +185,11 @@ class RideDetailsScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _tripStat(Icons.route, '${r.distanceKm.toStringAsFixed(1)} km'),
+                            _tripStat(Icons.route,
+                                '${r.distanceKm.toStringAsFixed(1)} km'),
                             _tripStat(Icons.schedule, '${r.durationMin} min'),
-                            _tripStat(Icons.calendar_today, _formatDate(r.dateTime)),
+                            _tripStat(
+                                Icons.calendar_today, _formatDate(r.dateTime)),
                           ],
                         ),
                       ],
@@ -195,7 +217,8 @@ class RideDetailsScreen extends StatelessWidget {
                       children: [
                         const Text('Vehicle', style: AppText.sectionTitle),
                         const SizedBox(height: 14),
-                        _detailRow(Icons.directions_car, 'Model', r.vehicleModel),
+                        _detailRow(
+                            Icons.directions_car, 'Model', r.vehicleModel),
                         const SizedBox(height: 12),
                         _detailRow(Icons.pin, 'Number', r.vehicleNumber),
                       ],
@@ -213,16 +236,28 @@ class RideDetailsScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Base Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                            Text('₹2000', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                            Text('Base Fare',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14)),
+                            Text('₹2000',
+                                style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Distance Charge', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                            Text('₹${(r.fare - 2000).toStringAsFixed(0)}', style: TextStyle(color: AppColors.textPrimary, fontSize: 16)),
+                            Text('Distance Charge',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14)),
+                            Text('₹${(r.fare - 2000).toStringAsFixed(0)}',
+                                style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 16)),
                           ],
                         ),
                         Padding(
@@ -232,19 +267,26 @@ class RideDetailsScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Total Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+                            Text('Total Fare',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 14)),
                             Text('₹${r.fare.toStringAsFixed(0)}',
                                 style: TextStyle(
-                                    color: AppColors.textPrimary, fontSize: 22, fontWeight: FontWeight.w800)),
+                                    color: AppColors.textPrimary,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800)),
                           ],
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
-                            Icon(Icons.account_balance_wallet, size: 14, color: AppColors.textMuted),
+                            Icon(Icons.account_balance_wallet,
+                                size: 14, color: AppColors.textMuted),
                             const SizedBox(width: 6),
                             Text(r.paymentMethod,
-                                style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                                style: TextStyle(
+                                    color: AppColors.textMuted, fontSize: 13)),
                           ],
                         ),
                       ],
@@ -257,24 +299,36 @@ class RideDetailsScreen extends StatelessWidget {
                       label: 'Accept Ride',
                       onPressed: () async {
                         try {
-                          final res = await ApiService.post('/driver/bookings/rides/${r.id}/accept');
+                          final res = await ApiService.post(
+                              '/driver/bookings/rides/${r.id}/accept');
                           if (res.statusCode == 200) {
                             if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride Accepted')));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Ride Accepted')));
                               context.pop();
                             }
                           } else {
-                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to accept ride')));
+                            if (context.mounted)
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Failed to accept ride')));
                           }
                         } catch (e) {
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error accepting ride')));
+                          if (context.mounted)
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Error accepting ride')));
                         }
                       },
                     ),
-                  ] else if (r.status == RideStatus.upcoming || r.status == RideStatus.ongoing) ...[
+                  ] else if (r.status == RideStatus.upcoming ||
+                      r.status == RideStatus.ongoing) ...[
                     const SizedBox(height: 24),
                     AppButton(
-                      label: r.status == RideStatus.ongoing ? 'View Current Ride' : 'Start Ride',
+                      label: r.status == RideStatus.ongoing
+                          ? 'View Current Ride'
+                          : 'Start Ride',
                       onPressed: () => context.push('/rides/current'),
                     ),
                   ],
@@ -292,7 +346,11 @@ class RideDetailsScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: AppColors.gold),
         const SizedBox(height: 6),
-        Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+        Text(value,
+            style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -302,9 +360,14 @@ class RideDetailsScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: AppColors.textMuted),
         const SizedBox(width: 10),
-        Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
+        Text(label,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14)),
         const Spacer(),
-        Text(value, style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+        Text(value,
+            style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 14,
+                fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -319,10 +382,13 @@ class RideDetailsScreen extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(20)),
       child: Text(
         status.label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style:
+            TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
       ),
     );
   }
