@@ -15,6 +15,7 @@ class AppTextField extends StatefulWidget {
   final TextCapitalization textCapitalization;
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
+  final bool readOnly;
 
   const AppTextField({
     super.key,
@@ -29,6 +30,7 @@ class AppTextField extends StatefulWidget {
     this.textCapitalization = TextCapitalization.none,
     this.inputFormatters,
     this.onChanged,
+    this.readOnly = false,
   });
 
   @override
@@ -59,6 +61,7 @@ class _AppTextFieldState extends State<AppTextField> {
             controller: widget.controller,
             obscureText: widget.isPassword && _obscured,
             keyboardType: widget.keyboardType,
+            readOnly: widget.readOnly,
             maxLength: widget.maxLength,
             textCapitalization: widget.textCapitalization,
             inputFormatters: widget.inputFormatters,

@@ -278,7 +278,7 @@ class _RidesScreenState extends State<RidesScreen> {
     String label = 'Unknown';
 
     if (statusStr == 'Searching Driver') {
-      color = AppColors.primary;
+      color = AppColors.info;
       label = 'Available';
     } else if (['driver_accepted', 'driver_arriving', 'confirmed'].contains(statusStr)) {
       color = AppColors.info;

@@ -2,7 +2,7 @@ import 'dart:convert';
 import '../data/api_client.dart';
 
 class BookingService {
-  static const String baseUrl = ApiClient.baseUrl;
+  static String get baseUrl => ApiClient.baseUrl;
 
   /// Searches for available vehicles based on the route and date/time
   static Future<Map<String, dynamic>> searchVehicles({

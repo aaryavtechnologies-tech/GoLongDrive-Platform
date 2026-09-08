@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/data/api_service.dart';
 import '../../app/theme.dart';
 import '../../core/data/mock_data.dart';
 import '../../core/models/ride.dart';
@@ -310,7 +311,7 @@ class RideDetailsScreen extends StatelessWidget {
 
   Widget _statusBadge(RideStatus status) {
     final color = switch (status) {
-      RideStatus.available => AppColors.primary,
+      RideStatus.available => AppColors.info,
       RideStatus.upcoming => AppColors.info,
       RideStatus.ongoing => AppColors.success,
       RideStatus.completed => AppColors.gold,

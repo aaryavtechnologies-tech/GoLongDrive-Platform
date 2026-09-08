@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/api_client.dart';
 
 class AuthService {
-  static const String baseUrl = ApiClient.baseUrl;
+  static String get baseUrl => ApiClient.baseUrl;
   static const String _tokenKey = 'auth_token';
 
   /// Saves the token to local storage

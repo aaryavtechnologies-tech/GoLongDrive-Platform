@@ -21,7 +21,7 @@ class NotificationService {
               break;
             case 'Payment Success':
             case 'Payment Failed':
-              type = NotificationType.payment;
+              type = NotificationType.account;
               break;
             case 'System Notification':
             default:

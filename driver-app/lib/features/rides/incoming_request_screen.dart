@@ -367,7 +367,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                const Divider(height: 1, color: AppColors.divider),
+                                Divider(height: 1, color: AppColors.divider),
                                 const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
