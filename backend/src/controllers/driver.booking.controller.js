@@ -265,6 +265,18 @@ const getRideHistory = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route   GET /api/driver/rides/available
+ * @access  Private (Driver)
+ */
+const getAvailableRides = asyncHandler(async (req, res) => {
+  const driverId = req.user._id;
+  // Get driver details to filter by vehicle type later if needed
+  // For now return all rides in SEARCHING_DRIVER state
+  const rides = await Booking.find({ rideStatus: RIDE_STATUS.SEARCHING_DRIVER }).sort({ createdAt: -1 }).populate('customer', 'fullName');
+  return sendSuccess(res, 200, 'Available rides fetched', { rides });
+});
+
+/**
  * @route   GET /api/driver/dashboard
  * @access  Private (Driver)
  */
@@ -296,5 +308,6 @@ module.exports = {
   completeRide,
   cancelRide,
   getRideHistory,
+  getAvailableRides,
   getDashboardStats
 };

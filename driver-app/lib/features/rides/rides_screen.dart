@@ -42,14 +42,25 @@ class _RidesScreenState extends State<RidesScreen> {
     });
 
     try {
-      final res = await ApiService.get('/driver/bookings/rides/history');
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body)['data'];
+      final futures = await Future.wait([
+        ApiService.get('/driver/bookings/rides/history'),
+        ApiService.get('/driver/bookings/rides/available'),
+      ]);
+
+      if (futures[0].statusCode == 200) {
+        final data = jsonDecode(futures[0].body)['data'];
         if (data != null && data['rides'] != null) {
           _allRides = data['rides'];
         }
       } else {
-        throw Exception('Failed to load rides');
+        throw Exception('Failed to load rides history');
+      }
+
+      if (futures[1].statusCode == 200) {
+        final data = jsonDecode(futures[1].body)['data'];
+        if (data != null && data['rides'] != null) {
+          _allRides.addAll(data['rides']);
+        }
       }
     } catch (e) {
       if (mounted) setState(() => _errorMsg = 'Failed to load rides. Please check your connection.');
@@ -72,6 +83,7 @@ class _RidesScreenState extends State<RidesScreen> {
     if (_filter == null) return _allRides;
     return _allRides.where((r) {
       final status = r['rideStatus'] as String?;
+      if (_filter == 'Available' && status == 'Searching Driver') return true;
       if (_filter == 'Upcoming' && ['driver_accepted', 'driver_arriving', 'confirmed'].contains(status)) return true;
       if (_filter == 'Ongoing' && status == 'in_progress') return true;
       if (_filter == 'Completed' && status == 'trip_completed') return true;
@@ -105,6 +117,8 @@ class _RidesScreenState extends State<RidesScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 24),
               children: [
                 _filterChip('All', null),
+                const SizedBox(width: 8),
+                _filterChip('Available', 'Available'),
                 const SizedBox(width: 8),
                 _filterChip('Upcoming', 'Upcoming'),
                 const SizedBox(width: 8),
@@ -263,7 +277,10 @@ class _RidesScreenState extends State<RidesScreen> {
     Color color = AppColors.textSecondary;
     String label = 'Unknown';
 
-    if (['driver_accepted', 'driver_arriving', 'confirmed'].contains(statusStr)) {
+    if (statusStr == 'Searching Driver') {
+      color = AppColors.primary;
+      label = 'Available';
+    } else if (['driver_accepted', 'driver_arriving', 'confirmed'].contains(statusStr)) {
       color = AppColors.info;
       label = 'Upcoming';
     } else if (statusStr == 'in_progress') {

@@ -51,6 +51,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
         if (isUpcoming) {
           upcoming.add({
             'id': booking['_id'],
+            'bookingId': booking['bookingId'],
             'from': fromAddress,
             'to': toAddress,
             'date': dateStr,
@@ -60,6 +61,8 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
             'total': '₹${booking['fareAmount'] ?? 0}',
             'advance': '₹${booking['advancePaid'] ?? 0}',
             'status': status.toUpperCase(),
+            'passengers': booking['numberOfPassengers'] ?? 1,
+            'luggage': booking['luggageDetails'] ?? 'None',
           });
         } else if (isCancelled) {
           cancelled.add(RideHistoryItem(

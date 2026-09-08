@@ -286,15 +286,15 @@ const broadcastRideRequest = async (bookingId) => {
       global._broadcastMap.set(booking._id.toString(), broadcastedDriverIds);
     }
 
-    // 1-Minute Timer — if no one accepts, fall back to random assign
+    // 5-Minute Timer — if no one accepts, fall back to random assign
     const timer = setTimeout(async () => {
       assignmentTimers.delete(booking._id.toString());
       const b = await Booking.findById(booking._id);
       if (b && b.rideStatus === RIDE_STATUS.SEARCHING_DRIVER) {
-        await addTimelineEntry(b._id, 'Broadcast Timeout', 'System', 'No driver accepted in 1 minute (or none available). Falling back to random assignment.');
+        await addTimelineEntry(b._id, 'Broadcast Timeout', 'System', 'No driver accepted in 5 minutes (or none available). Falling back to random assignment.');
         randomFallbackAssign(b._id);
       }
-    }, 60000);
+    }, 300000);
 
     assignmentTimers.set(booking._id.toString(), timer);
 

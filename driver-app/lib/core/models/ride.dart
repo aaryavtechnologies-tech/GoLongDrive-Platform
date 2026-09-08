@@ -1,9 +1,10 @@
 /// Core ride data model, shared by the Rides tab, Ride Details screen,
 /// Current Ride screen, Earnings tab, and Dashboard.
-enum RideStatus { upcoming, ongoing, completed, cancelled }
+enum RideStatus { available, upcoming, ongoing, completed, cancelled }
 
 extension RideStatusLabel on RideStatus {
   String get label => switch (this) {
+        RideStatus.available => 'Available',
         RideStatus.upcoming => 'Upcoming',
         RideStatus.ongoing => 'Ongoing',
         RideStatus.completed => 'Completed',
@@ -71,6 +72,7 @@ class Ride {
 
   factory Ride.fromJson(Map<String, dynamic> json) {
     RideStatus parseStatus(String? s) {
+      if (s == 'Searching Driver') return RideStatus.available;
       if (s == 'Confirmed' || s == 'Driver Assigned' || s == 'Driver Arriving' || s == 'Driver Accepted') return RideStatus.upcoming;
       if (s == 'Trip Started') return RideStatus.ongoing;
       if (s == 'Trip Completed') return RideStatus.completed;

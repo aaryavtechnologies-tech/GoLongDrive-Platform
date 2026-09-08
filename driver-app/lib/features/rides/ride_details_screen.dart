@@ -250,7 +250,27 @@ class RideDetailsScreen extends StatelessWidget {
                     ),
                   ),
 
-                  if (r.status == RideStatus.upcoming || r.status == RideStatus.ongoing) ...[
+                  if (r.status == RideStatus.available) ...[
+                    const SizedBox(height: 24),
+                    AppButton(
+                      label: 'Accept Ride',
+                      onPressed: () async {
+                        try {
+                          final res = await ApiService.post('/driver/bookings/rides/${r.id}/accept');
+                          if (res.statusCode == 200) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ride Accepted')));
+                              context.pop();
+                            }
+                          } else {
+                            if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to accept ride')));
+                          }
+                        } catch (e) {
+                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error accepting ride')));
+                        }
+                      },
+                    ),
+                  ] else if (r.status == RideStatus.upcoming || r.status == RideStatus.ongoing) ...[
                     const SizedBox(height: 24),
                     AppButton(
                       label: r.status == RideStatus.ongoing ? 'View Current Ride' : 'Start Ride',
@@ -290,6 +310,7 @@ class RideDetailsScreen extends StatelessWidget {
 
   Widget _statusBadge(RideStatus status) {
     final color = switch (status) {
+      RideStatus.available => AppColors.primary,
       RideStatus.upcoming => AppColors.info,
       RideStatus.ongoing => AppColors.success,
       RideStatus.completed => AppColors.gold,
