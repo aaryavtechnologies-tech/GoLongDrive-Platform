@@ -82,20 +82,20 @@ app.use(
   })
 );
 
-// Global rate limiter — 100 requests per 15 minutes
+// Global rate limiter — 100 requests per 15 minutes in prod, 10000 in dev
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100,
+  max: process.env.NODE_ENV === 'production' ? 100 : 10000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many requests. Please try again later.' },
 });
 app.use('/api/v1', globalLimiter);
 
-// Stricter limiter for auth endpoints — 10 per 15 minutes
+// Stricter limiter for auth endpoints — 10 per 15 minutes in prod, 1000 in dev
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === 'production' ? 10 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many authentication attempts. Please try again later.' },
