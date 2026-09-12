@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -224,13 +223,13 @@ class _AccountStepState extends State<AccountStep> {
               children: [
                 TextSpan(
                   text: 'Terms of Service',
-                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
                   recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/terms'),
                 ),
                 const TextSpan(text: ' and '),
                 TextSpan(
                   text: 'Privacy Policy',
-                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
                   recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/privacy'),
                 ),
               ],

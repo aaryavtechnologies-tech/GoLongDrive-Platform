@@ -112,7 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               gradient: AppGradients.iconHalo(),
-                              border: Border.all(color: AppColors.gold.withOpacity(0.3)),
+                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
                             ),
                             child: Stack(
                               alignment: Alignment.center,
@@ -123,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   height: 160 * 1.2,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.gold.withOpacity(0.08)),
+                                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.08)),
                                   ),
                                 ),
                                 Container(
@@ -131,7 +131,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                   height: 160 * 1.4,
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.gold.withOpacity(0.05)),
+                                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.05)),
                                   ),
                                 ),
                                 Icon(item.icon, size: 64, color: AppColors.gold),
@@ -169,7 +169,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 8,
                           width: active ? 32 : 8,
                           decoration: BoxDecoration(
-                            color: AppColors.gold.withOpacity(active ? 1 : 0.3),
+                            color: AppColors.gold.withValues(alpha: active ? 1 : 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );

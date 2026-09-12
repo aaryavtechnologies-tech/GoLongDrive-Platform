@@ -6,7 +6,6 @@ import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/socket_service.dart';
-import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/skeleton_loader.dart';
@@ -101,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           });
         }
       } catch (e) {
-        print('Dashboard Profile Error: $e');
+        debugPrint('Dashboard Profile Error: $e');
       }
 
       final futures = await Future.wait([
@@ -141,7 +140,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
     } catch (e) {
-      print('Dashboard Data Error: $e');
+      debugPrint('Dashboard Data Error: $e');
       if (mounted) {
         setState(() => _errorMsg = 'Failed to load some dashboard data. Tap refresh to retry.');
       }
@@ -272,7 +271,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     Switch(
                       value: _online,
-                      activeColor: Colors.black,
+                      activeThumbColor: Colors.black,
                       activeTrackColor: AppColors.gold,
                       inactiveTrackColor: AppColors.divider,
                       onChanged: _toggleStatus,
@@ -360,7 +359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _quickAction(Icons.notifications_active_outlined, 'New Ride', () => _simulateIncomingRequest(context))),
+                  Expanded(child: _quickAction(Icons.list_alt_rounded, 'Requests', () => context.push('/rides/available'))),
                   const SizedBox(width: 12),
                   Expanded(child: _quickAction(Icons.support_agent, 'Support', () => context.push('/profile/help'))),
                   const SizedBox(width: 12),
@@ -422,29 +421,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Opens the "New Ride Request" screen using the next upcoming mock ride,
-  // as a stand-in for a real incoming-request push (no dispatch/matching
-  // backend exists yet — see BACKEND_API_SPEC.md).
-  void _simulateIncomingRequest(BuildContext context) {
-    if (_nextRide == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No incoming requests right now')),
-      );
-      return;
-    }
-    context.push('/rides/incoming', extra: {'rideId': _nextRide!['_id']});
-  }
+
 
   Widget _dashboardSkeleton() {
-    return SingleChildScrollView(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+    return const SingleChildScrollView(
+      physics: NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(24, 16, 24, 100),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -456,21 +444,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
               SkeletonBox(width: 44, height: 44, radius: 22),
             ],
           ),
-          const SizedBox(height: 24),
-          const SkeletonCard(),
-          const SizedBox(height: 16),
+          SizedBox(height: 24),
+          SkeletonCard(),
+          SizedBox(height: 16),
           Row(
-            children: const [
+            children: [
               Expanded(child: SkeletonCard()),
               SizedBox(width: 16),
               Expanded(child: SkeletonCard()),
             ],
           ),
-          const SizedBox(height: 24),
-          const SkeletonCard(),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
+          SkeletonCard(),
+          SizedBox(height: 24),
           Row(
-            children: const [
+            children: [
               Expanded(child: SkeletonCard()),
               SizedBox(width: 12),
               Expanded(child: SkeletonCard()),
@@ -480,8 +468,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Expanded(child: SkeletonCard()),
             ],
           ),
-          const SizedBox(height: 24),
-          const SkeletonCard(),
+          SizedBox(height: 24),
+          SkeletonCard(),
         ],
       ),
     );

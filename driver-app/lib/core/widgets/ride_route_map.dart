@@ -259,7 +259,7 @@ void showFullMapCard(
 
   showDialog(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.7),
+    barrierColor: Colors.black.withValues(alpha: 0.7),
     builder: (dialogContext) {
       final screenHeight = MediaQuery.of(dialogContext).size.height;
       final destination = navTarget == NavTarget.pickup
@@ -286,7 +286,7 @@ void showFullMapCard(
                       padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
                       child: Row(
                         children: [
-                          Icon(Icons.navigation_outlined, color: AppColors.gold, size: 20),
+                          const Icon(Icons.navigation_outlined, color: AppColors.gold, size: 20),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(

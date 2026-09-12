@@ -323,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Switch(
                             value: item.toggleValue ?? false,
                             onChanged: item.onToggle,
-                            activeColor: AppColors.primaryGold,
+                            activeThumbColor: AppColors.primaryGold,
                           )
                         else
                           Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
@@ -389,9 +389,8 @@ class _MenuItem {
     required this.icon,
     required this.label,
     this.route,
-    this.onTap,
     this.isToggle = false,
     this.toggleValue,
     this.onToggle,
-  });
+  }) : onTap = null;
 }

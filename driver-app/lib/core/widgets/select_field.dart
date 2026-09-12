@@ -127,7 +127,7 @@ class SelectField extends StatelessWidget {
         ),
         if (hasError) ...[
           const SizedBox(height: 6),
-          Text(errorText!, style: TextStyle(color: AppColors.error, fontSize: 12)),
+          Text(errorText!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
         ],
       ],
     );

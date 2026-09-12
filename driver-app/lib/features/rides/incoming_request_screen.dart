@@ -217,7 +217,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.error.withOpacity(0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                   ),
                   child: const Icon(Icons.timer_off_outlined,
                       color: AppColors.error, size: 40),
@@ -269,11 +269,12 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
         : null;
     final pickupTime = b['pickupTime'] ?? '';
 
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         // Call _decline which handles the pop with the booking ID
         if (!_loading && !_resolved) _decline(b);
-        return false;
       },
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -347,7 +348,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                             decoration: BoxDecoration(
                               color: AppColors.surfaceAlt2,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.divider.withOpacity(0.5)),
+                              border: Border.all(color: AppColors.divider.withValues(alpha: 0.5)),
                             ),
                             child: Column(
                               children: [
@@ -373,7 +374,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Text('Total Estimated Fare', style: TextStyle(color: AppColors.gold, fontSize: 14, fontWeight: FontWeight.bold)),
-                                    Text('₹${estimatedFare.toString()}', style: TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.bold)),
+                                    Text('₹${estimatedFare.toString()}', style: const TextStyle(color: AppColors.gold, fontSize: 16, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                               ],
@@ -389,7 +390,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(vehicleType,
-                                style: TextStyle(
+                                style: const TextStyle(
                                     color: AppColors.gold,
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600)),

@@ -41,7 +41,7 @@ class AppButton extends StatelessWidget {
         ? null
         : Border.all(
             color: variant == AppButtonVariant.outline
-                ? AppColors.gold.withOpacity(0.5)
+                ? AppColors.gold.withValues(alpha: 0.5)
                 : AppColors.dividerStrong,
           );
     final disabled = onPressed == null && !isLoading;

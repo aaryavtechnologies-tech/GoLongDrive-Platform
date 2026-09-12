@@ -29,7 +29,9 @@ class AuthService {
       if (parts.length < 2) return null;
       // Pad base64 string to a valid length
       String payload = parts[1];
-      while (payload.length % 4 != 0) payload += '=';
+      while (payload.length % 4 != 0) {
+        payload += '=';
+      }
       final decoded = utf8.decode(base64Url.decode(payload));
       final Map<String, dynamic> json = jsonDecode(decoded);
       return json['id']?.toString() ?? json['_id']?.toString() ?? json['userId']?.toString();

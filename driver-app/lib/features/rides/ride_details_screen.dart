@@ -309,16 +309,18 @@ class RideDetailsScreen extends StatelessWidget {
                               context.pop();
                             }
                           } else {
-                            if (context.mounted)
+                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                       content: Text('Failed to accept ride')));
+                            }
                           }
                         } catch (e) {
-                          if (context.mounted)
+                          if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                     content: Text('Error accepting ride')));
+                          }
                         }
                       },
                     ),
@@ -383,7 +385,7 @@ class RideDetailsScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-          color: color.withOpacity(0.15),
+          color: color.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20)),
       child: Text(
         status.label,

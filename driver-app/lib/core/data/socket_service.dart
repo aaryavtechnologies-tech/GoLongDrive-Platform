@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../config/env_config.dart';
 import 'auth_service.dart';
@@ -54,7 +55,7 @@ class SocketService {
       final driverId = await AuthService.getUserId();
 
     if (token == null || driverId == null) {
-      print('SocketService: No auth token or driverId — skipping init');
+      debugPrint('SocketService: No auth token or driverId — skipping init');
       return;
     }
 
@@ -74,19 +75,19 @@ class SocketService {
     // ── Connection events ──────────────────────────────────────────────────────
 
     _socket!.onConnect((_) {
-      print('✅ SocketService connected: ${_socket!.id}');
+      debugPrint('✅ SocketService connected: ${_socket!.id}');
       _reconnectDelaySeconds = 2; // reset back-off on successful connect
       // Register this driver so the server can target them
       _socket!.emit('driver:join', {'driverId': driverId});
     });
 
     _socket!.onDisconnect((_) {
-      print('❌ SocketService disconnected');
+      debugPrint('❌ SocketService disconnected');
       if (!_intentionalDisconnect) _scheduleReconnect();
     });
 
     _socket!.onConnectError((err) {
-      print('⚠️  SocketService connect error: $err');
+      debugPrint('⚠️  SocketService connect error: $err');
       if (!_intentionalDisconnect) _scheduleReconnect();
     });
 
@@ -94,7 +95,7 @@ class SocketService {
 
     /// New ride request broadcast — show IncomingRequestScreen + play sound
     _socket!.on('ride:request', (data) {
-      print('📥 ride:request received: $data');
+      debugPrint('📥 ride:request received: $data');
       final booking = data is Map ? (data['booking'] ?? data) : null;
       if (booking != null) {
         _playRequestSound();
@@ -104,7 +105,7 @@ class SocketService {
 
     /// Another driver accepted the same ride — dismiss IncomingRequestScreen
     _socket!.on('ride:request_taken', (data) {
-      print('📥 ride:request_taken: $data');
+      debugPrint('📥 ride:request_taken: $data');
       final bookingId = data is Map ? data['bookingId']?.toString() : null;
       if (bookingId != null) {
         _rideTakenController.add(bookingId);
@@ -122,7 +123,7 @@ class SocketService {
     _reconnectTimer = null;
     _socket?.disconnect();
     _socket = null;
-    print('SocketService: intentionally disconnected');
+    debugPrint('SocketService: intentionally disconnected');
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
@@ -131,7 +132,7 @@ class SocketService {
   static void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: _reconnectDelaySeconds), () async {
-      print('🔄 SocketService: reconnecting...');
+      debugPrint('🔄 SocketService: reconnecting...');
       _reconnectDelaySeconds = (_reconnectDelaySeconds * 2).clamp(2, 30);
       _socket?.connect();
     });
@@ -143,7 +144,7 @@ class SocketService {
       await _audioPlayer.stop();
       await _audioPlayer.play(AssetSource('sounds/ride_request.mp3'));
     } catch (e) {
-      print('SocketService: audio play error: $e');
+      debugPrint('SocketService: audio play error: $e');
     }
   }
 }

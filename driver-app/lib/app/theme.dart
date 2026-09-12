@@ -112,8 +112,8 @@ class AppGradients {
 
   /// Radial halo behind the onboarding icon badge.
   static RadialGradient iconHalo() => RadialGradient(colors: [
-        AppColors.gold.withOpacity(0.2),
-        AppColors.gold.withOpacity(0.05),
+        AppColors.gold.withValues(alpha: 0.2),
+        AppColors.gold.withValues(alpha: 0.05),
       ]);
 }
 

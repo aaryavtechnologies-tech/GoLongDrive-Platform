@@ -16,7 +16,7 @@ BoxDecoration cardDecoration({
     border: Border.all(color: borderColor ?? (isDark ? AppColors.borderSubtle : AppColors.borderSubtleLight)),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
         blurRadius: 8,
         offset: const Offset(0, 4),
       ),
@@ -32,8 +32,8 @@ BoxDecoration rideCardDecoration({double radius = 24, BuildContext? context}) {
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
       color: (context != null && Theme.of(context).brightness == Brightness.dark)
-          ? Colors.white.withOpacity(0.08)
-          : Colors.black.withOpacity(0.05),
+          ? Colors.white.withValues(alpha: 0.08)
+          : Colors.black.withValues(alpha: 0.05),
     ),
   );
 }
@@ -45,7 +45,7 @@ BoxDecoration formSectionDecoration({BuildContext? context}) {
     color: isDark ? AppColors.surface : AppColors.surfaceLight,
     borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
     ),
   );
 }

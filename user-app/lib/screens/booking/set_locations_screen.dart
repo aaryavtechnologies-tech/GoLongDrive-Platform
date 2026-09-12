@@ -1,7 +1,7 @@
 // lib/screens/booking/set_locations_screen.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -68,43 +68,10 @@ class _SetLocationsScreenState extends State<SetLocationsScreen> {
   }
 
   Future<void> _loadCurrentLocationAsPickup() async {
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        setState(() {
-          _locatingPickup = false;
-          _locationError = 'Turn on location services, or search a pickup point below.';
-        });
-        return;
-      }
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
-        setState(() {
-          _locatingPickup = false;
-          _locationError = 'Location permission denied — search a pickup point below.';
-        });
-        return;
-      }
-
-      final pos = await Geolocator.getCurrentPosition();
-      final latLng = LatLng(pos.latitude, pos.longitude);
-      final address = await PlacesService.reverseGeocode(latLng);
-      if (!mounted) return;
-      setState(() {
-        _pickupLatLng = latLng;
-        _pickupController.text = address ?? 'Your current location';
-        _locatingPickup = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _locatingPickup = false;
-        _locationError = "Couldn't get your location — search a pickup point below.";
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _locatingPickup = false;
+    });
   }
 
   void _onQueryChanged(String query) {

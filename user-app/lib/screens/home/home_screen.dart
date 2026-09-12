@@ -38,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   List<RideHistoryItem> _recentBookings = [];
   Map<String, dynamic>? _previewDistanceData;
   bool _isLoadingPreviewDistance = false;
+  Map<String, dynamic>? _activeBooking;
 
   late final AnimationController _swapController = AnimationController(
     vsync: this,
@@ -59,12 +60,22 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     try {
       final bookings = await BookingService.getMyBookings();
       final List<RideHistoryItem> items = [];
-      for (final b in bookings.take(5)) {
+      Map<String, dynamic>? activeRide;
+
+      for (final b in bookings) {
+        final statusStr = (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '').toLowerCase();
+        
+        if (statusStr == 'pending' || statusStr == 'searching driver') {
+          activeRide ??= b;
+          continue;
+        }
+
+        if (items.length >= 5) continue;
+
         final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
         final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
-        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total'] ?? '');
+        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total']?.toString() ?? '');
         final date = b['pickupDate'] ?? b['date'] ?? '';
-        final statusStr = b['status']?.toString().toLowerCase() ?? '';
         final status = statusStr.contains('cancel') 
             ? RideStatus.cancelled 
             : RideStatus.completed;
@@ -83,6 +94,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (mounted) {
         setState(() {
           _recentBookings = items;
+          _activeBooking = activeRide;
         });
       }
     } catch (_) {}
@@ -590,17 +602,77 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-          children: [
-            _buildHeader(colors),
-            const SizedBox(height: 32),
-            _buildSearchCard(colors),
-            const SizedBox(height: 40),
-            _buildRecentRidesSection(colors),
-          ],
+        child: RefreshIndicator(
+          onRefresh: _fetchRecentBookings,
+          color: AppColors.primaryGold,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            children: [
+              _buildHeader(colors),
+              if (_activeBooking != null) ...[
+                const SizedBox(height: 24),
+                _buildActiveBookingBanner(colors),
+              ],
+              const SizedBox(height: 32),
+              _buildSearchCard(colors),
+              const SizedBox(height: 40),
+              _buildRecentRidesSection(colors),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _buildActiveBookingBanner(AppColorPalette colors) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushNamed('/driver-assigned', arguments: {
+          'bookingId': _activeBooking!['bookingId'] ?? _activeBooking!['_id'],
+          'booking': _activeBooking,
+        }).then((_) => _fetchRecentBookings()); // refresh on return
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryGold.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colors.background,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.car_rental, color: AppColors.primaryGold),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Ride Request Sent',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Waiting for drivers to accept...',
+                    style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: AppColors.primaryGold),
+          ],
+        ),
+      ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
     );
   }
 

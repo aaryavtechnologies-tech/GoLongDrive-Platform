@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/theme.dart';
@@ -137,7 +136,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard> {
           color: AppColors.inputFill,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: hasImage ? AppColors.gold.withOpacity(0.4) : AppColors.divider,
+            color: hasImage ? AppColors.gold.withValues(alpha: 0.4) : AppColors.divider,
           ),
         ),
         child: Row(

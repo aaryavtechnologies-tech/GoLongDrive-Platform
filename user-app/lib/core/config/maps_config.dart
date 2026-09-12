@@ -17,6 +17,8 @@
 /// If this is left empty, [DirectionsService] and [GeocodingService] both
 /// return null/empty results — nothing crashes, search just won't return
 /// suggestions and the map falls back to a straight line.
+library;
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapsConfig {

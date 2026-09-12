@@ -97,8 +97,7 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
           onPrimary: AppColors.textOnGold,
           surface: colors.surface,
           onSurface: colors.textPrimary,
-        ),
-        dialogBackgroundColor: colors.surface,
+        ), dialogTheme: DialogThemeData(backgroundColor: colors.surface),
       ),
       child: child!,
     );
@@ -278,7 +277,7 @@ class _DateCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: hasValue ? AppColors.primaryGold.withOpacity(0.5) : colors.inputBorder,
+                color: hasValue ? AppColors.primaryGold.withValues(alpha: 0.5) : colors.inputBorder,
               ),
             ),
             child: Row(
@@ -330,9 +329,9 @@ class _TripLengthBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.primaryGold.withOpacity(0.10),
+        color: AppColors.primaryGold.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.primaryGold.withOpacity(0.35)),
+        border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.35)),
       ),
       child: Row(
         children: [

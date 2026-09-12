@@ -125,8 +125,8 @@ class _SplashScreenState extends State<SplashScreen>
                                   shape: BoxShape.circle,
                                   gradient: RadialGradient(
                                     colors: [
-                                      AppColors.gold.withOpacity(0.4),
-                                      AppColors.gold.withOpacity(0.0),
+                                      AppColors.gold.withValues(alpha: 0.4),
+                                      AppColors.gold.withValues(alpha: 0.0),
                                     ],
                                   ),
                                 ),
@@ -143,13 +143,13 @@ class _SplashScreenState extends State<SplashScreen>
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(32),
                                     border: Border.all(
-                                      color: AppColors.gold.withOpacity(0.2),
+                                      color: AppColors.gold.withValues(alpha: 0.2),
                                       width: 2,
                                     ),
                                     boxShadow: [
                                       BoxShadow(
                                         color: AppColors.gold
-                                            .withOpacity(0.15 * _logoOpacity.value),
+                                            .withValues(alpha: 0.15 * _logoOpacity.value),
                                         blurRadius: 40,
                                         spreadRadius: 5,
                                       ),
@@ -162,7 +162,7 @@ class _SplashScreenState extends State<SplashScreen>
                                     errorBuilder: (context, error, stackTrace) =>
                                     ColoredBox(
                                       color: AppColors.surface,
-                                      child: Icon(
+                                      child: const Icon(
                                         Icons.directions_car,
                                         color: AppColors.gold,
                                         size: 50,

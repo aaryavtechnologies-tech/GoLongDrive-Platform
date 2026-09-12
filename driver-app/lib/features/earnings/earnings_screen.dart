@@ -190,7 +190,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                       
                       final title = txn['type'] ?? 'Ride Earnings';
                       final amount = (txn['amount'] ?? 0).toDouble();
-                      final isCredit = true; // In driver app, usually it's all credit except withdrawals
+                      final bool isCredit = txn['type'] != 'Withdrawal'; // In driver app, usually it's all credit except withdrawals
                       final dateStr = txn['createdAt'] ?? txn['date'];
                       final date = dateStr != null ? DateTime.tryParse(dateStr) ?? DateTime.now() : DateTime.now();
 
@@ -205,7 +205,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
                               width: 36,
                               height: 36,
                               decoration: BoxDecoration(
-                                color: (isCredit ? AppColors.success : AppColors.error).withOpacity(0.15),
+                                color: (isCredit ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(

@@ -233,7 +233,7 @@ class _PaymentMethodTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: AppColors.primaryGold.withOpacity(0.15),
+                color: AppColors.primaryGold.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

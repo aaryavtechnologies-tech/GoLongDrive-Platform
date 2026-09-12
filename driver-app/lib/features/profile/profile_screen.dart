@@ -7,7 +7,6 @@ import '../../core/data/api_service.dart';
 import '../../core/data/auth_service.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/error_state.dart';
-import '../../core/widgets/skeleton_loader.dart';
 
 /// Matches app/(tabs)/profile.tsx (§5.11) — Profile tab.
 /// Avatar + name/rating header, stat row, and a settings-style menu list.
@@ -48,7 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         throw Exception('Failed to load profile (Status: ${res.statusCode})');
       }
     } catch (e) {
-      print('Profile fetch error: $e');
+      debugPrint('Profile fetch error: $e');
       if (mounted) setState(() => _errorMsg = 'Failed to load profile: $e');
     } finally {
       if (mounted) {
@@ -91,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 56,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.error.withOpacity(0.1),
+                    backgroundColor: AppColors.error.withValues(alpha: 0.1),
                     foregroundColor: AppColors.error,
                     elevation: 0,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -289,7 +288,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: SwitchListTile(
         value: isDark,
         onChanged: (_) => ThemeService.instance.toggleTheme(),
-        activeColor: AppColors.gold,
+        activeThumbColor: AppColors.gold,
         secondary: Icon(isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
             color: AppColors.textMuted, size: 22),
         title: Text('Dark Mode', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),

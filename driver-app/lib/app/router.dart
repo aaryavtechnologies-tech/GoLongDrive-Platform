@@ -20,6 +20,7 @@ import '../features/registration/steps/review_step.dart';
 import '../features/rides/ride_details_screen.dart';
 import '../features/rides/current_ride_screen.dart';
 import '../features/rides/incoming_request_screen.dart';
+import '../features/rides/available_rides_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/profile/documents_screen.dart';
 import '../features/profile/notifications_screen.dart';
@@ -133,6 +134,7 @@ final GoRouter appRouter = GoRouter(
     // extra: {'rideId': String} -- set by RidesScreen's onTap.
     GoRoute(path: '/rides/details', builder: (context, state) => const RideDetailsScreen()),
     GoRoute(path: '/rides/current', builder: (context, state) => const CurrentRideScreen()),
+    GoRoute(path: '/rides/available', builder: (context, state) => const AvailableRidesScreen()),
     // extra: {'rideId': String} -- set by Dashboard's "New Ride" quick action.
     GoRoute(path: '/rides/incoming', builder: (context, state) => const IncomingRequestScreen()),
 

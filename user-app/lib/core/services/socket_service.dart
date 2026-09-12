@@ -10,6 +10,7 @@
 //   UserSocketService.dispose();                // call on logout
 
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 import 'auth_service.dart';
 
@@ -65,7 +66,7 @@ class UserSocketService {
     final customerId = await AuthService.getUserId();
 
     if (token == null || customerId == null) {
-      print('UserSocketService: No auth — skipping socket init');
+      debugPrint('UserSocketService: No auth — skipping socket init');
       return;
     }
 
@@ -83,19 +84,19 @@ class UserSocketService {
     _socket!.connect();
 
     _socket!.onConnect((_) {
-      print('✅ UserSocketService connected: ${_socket!.id}');
+      debugPrint('✅ UserSocketService connected: ${_socket!.id}');
       _reconnectDelay = 2;
       // Register this customer so backend can target them
       _socket!.emit('customer:join', {'customerId': customerId});
     });
 
     _socket!.onDisconnect((_) {
-      print('❌ UserSocketService disconnected');
+      debugPrint('❌ UserSocketService disconnected');
       if (!_intentionalDisconnect) _scheduleReconnect();
     });
 
     _socket!.onConnectError((err) {
-      print('⚠️  UserSocketService connect error: $err');
+      debugPrint('⚠️  UserSocketService connect error: $err');
       if (!_intentionalDisconnect) _scheduleReconnect();
     });
 
@@ -103,7 +104,7 @@ class UserSocketService {
 
     /// Driver successfully assigned — update the UI immediately
     _socket!.on('booking:driver_assigned', (data) {
-      print('📥 booking:driver_assigned: $data');
+      debugPrint('📥 booking:driver_assigned: $data');
       if (data is Map) {
         _driverAssignedCtrl.add(Map<String, dynamic>.from(data));
       }
@@ -111,7 +112,7 @@ class UserSocketService {
 
     /// No driver found — tell user to wait
     _socket!.on('booking:no_driver', (data) {
-      print('📥 booking:no_driver: $data');
+      debugPrint('📥 booking:no_driver: $data');
       if (data is Map) {
         _noDriverCtrl.add(Map<String, dynamic>.from(data));
       }
@@ -119,7 +120,7 @@ class UserSocketService {
 
     /// General booking status updates (started, completed, cancelled)
     _socket!.on('booking:status_update', (data) {
-      print('📥 booking:status_update: $data');
+      debugPrint('📥 booking:status_update: $data');
       if (data is Map) {
         _statusUpdateCtrl.add(Map<String, dynamic>.from(data));
       }
@@ -127,14 +128,14 @@ class UserSocketService {
 
     /// Specific trip lifecycle events
     _socket!.on('ride:started', (data) {
-      print('📥 ride:started: $data');
+      debugPrint('📥 ride:started: $data');
       if (data is Map) {
         _rideStartedCtrl.add(Map<String, dynamic>.from(data));
       }
     });
 
     _socket!.on('ride:completed', (data) {
-      print('📥 ride:completed: $data');
+      debugPrint('📥 ride:completed: $data');
       if (data is Map) {
         _rideCompletedCtrl.add(Map<String, dynamic>.from(data));
       }
@@ -148,7 +149,7 @@ class UserSocketService {
     _reconnectTimer = null;
     _socket?.disconnect();
     _socket = null;
-    print('UserSocketService: disposed');
+    debugPrint('UserSocketService: disposed');
   }
 
   // ── Private ────────────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ class UserSocketService {
   static void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(Duration(seconds: _reconnectDelay), () {
-      print('🔄 UserSocketService: reconnecting...');
+      debugPrint('🔄 UserSocketService: reconnecting...');
       _reconnectDelay = (_reconnectDelay * 2).clamp(2, 30);
       _socket?.connect();
     });

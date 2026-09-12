@@ -10,7 +10,7 @@ class AppLoader extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircularProgressIndicator(
+          const CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.gold),
             strokeWidth: 3,
           ),

@@ -248,7 +248,7 @@ class _RideHistoryTile extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: ride.status.color.withOpacity(0.15),
+                        color: ride.status.color.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

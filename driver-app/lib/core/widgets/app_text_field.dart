@@ -90,7 +90,7 @@ class _AppTextFieldState extends State<AppTextField> {
         ),
         if (hasError) ...[
           const SizedBox(height: 6),
-          Text(widget.errorText!, style: TextStyle(color: AppColors.error, fontSize: 12)),
+          Text(widget.errorText!, style: const TextStyle(color: AppColors.error, fontSize: 12)),
         ],
       ],
     );

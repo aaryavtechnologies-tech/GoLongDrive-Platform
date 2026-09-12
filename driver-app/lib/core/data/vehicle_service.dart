@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'api_service.dart';
 
 class VehicleService {
@@ -13,7 +14,7 @@ class VehicleService {
       }
       return [];
     } catch (e) {
-      print('Error fetching vehicle types: $e');
+      debugPrint('Error fetching vehicle types: $e');
       return [];
     }
   }

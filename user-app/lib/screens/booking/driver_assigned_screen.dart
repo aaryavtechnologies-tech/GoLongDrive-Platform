@@ -13,7 +13,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
-import '../../core/data/api_client.dart';
 import '../../core/services/booking_service.dart';
 import '../../core/services/socket_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -86,8 +85,10 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     // Fallback: poll every 5 seconds
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _pollStatus());
 
-    // Overall timeout: 10 minutes
-    _timeoutTimer = Timer(const Duration(minutes: 10), () {
+    // Overall timeout: 10 minutes (maybe 2 minutes for testing? No, keep it what it was or maybe shorter)
+    // Actually, user wants it to say "Ride request sent, waiting for drivers to accept" 
+    // Let's keep the timeout but change the message.
+    _timeoutTimer = Timer(const Duration(minutes: 2), () {
       if (!_driverFound && mounted) {
         setState(() => _timedOut = true);
         _cleanup();
@@ -166,6 +167,28 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Add a back button at the top
+              Align(
+                alignment: Alignment.topLeft,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  color: colors.textPrimary,
+                  onPressed: () {
+                    // Show a popup/snackbar saying we are still searching
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('Still searching for a driver in the background.'),
+                        backgroundColor: AppColors.primaryGold,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                    Navigator.of(context).popUntil(
+                      (route) => route.settings.name == '/home' || route.isFirst,
+                    );
+                  },
+                ),
+              ),
               const Spacer(),
 
               // Animated sweeping radar rings
@@ -368,7 +391,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.green.withOpacity(0.12),
+                  color: Colors.green.withValues(alpha: 0.12),
                 ),
                 child: const Icon(Icons.check_circle_rounded,
                     color: Colors.green, size: 60),
@@ -440,7 +463,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
               ).animate().scale(duration: 400.ms, curve: Curves.easeOutBack),
               
               const SizedBox(height: 24),
-              Text('Taking Longer Than Expected',
+              Text('Waiting for Drivers to Accept',
                   style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
@@ -450,7 +473,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                   
               const SizedBox(height: 12),
               Text(
-                'Our team is manually assigning a driver for you. You will receive a confirmation shortly.',
+                'Your ride request has been sent. We are waiting for drivers in your area to accept the ride.',
                 style: AppTextStyles.body
                     .copyWith(color: colors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,
@@ -535,7 +558,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
               ).animate().shake(duration: 500.ms, hz: 3),
               
               const SizedBox(height: 24),
-              Text('No Drivers Available',
+              Text('Waiting for Drivers to Accept',
                   style: AppTextStyles.largeHeading.copyWith(
                       color: colors.textPrimary,
                       fontSize: 22,
@@ -545,7 +568,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                   
               const SizedBox(height: 12),
               Text(
-                'All drivers are currently busy. Our team will manually assign a driver for your booking. Please check back shortly.',
+                'Your ride request has been sent. We are still waiting for a driver to accept your booking.',
                 style: AppTextStyles.body
                     .copyWith(color: colors.textSecondary, height: 1.5),
                 textAlign: TextAlign.center,

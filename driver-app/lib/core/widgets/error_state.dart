@@ -26,9 +26,9 @@ class ErrorStateWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.1),
+                color: AppColors.error.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.error.withOpacity(0.3), width: 1),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.3), width: 1),
               ),
               child: Icon(
                 isNoInternet ? Icons.wifi_off_rounded : Icons.error_outline_rounded, 

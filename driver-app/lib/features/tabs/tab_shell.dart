@@ -69,13 +69,13 @@ class _TabShellState extends State<TabShell> {
     // rebuild with fresh colors when the theme changes.
     switch (index) {
       case 0:
-        return DashboardScreen();
+        return const DashboardScreen();
       case 1:
-        return RidesScreen();
+        return const RidesScreen();
       case 2:
-        return EarningsScreen();
+        return const EarningsScreen();
       case 3:
-        return ProfileScreen();
+        return const ProfileScreen();
       default:
         return const SizedBox();
     }

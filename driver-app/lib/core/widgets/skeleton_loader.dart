@@ -79,10 +79,10 @@ class SkeletonCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle),
       ),
-      child: Column(
+      child: const Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           SkeletonBox(width: 120, height: 14),
           SizedBox(height: 12),
           SkeletonBox(width: double.infinity, height: 12),

@@ -66,7 +66,7 @@ extension VehicleCategoryInfo on VehicleCategory {
 
   /// Icon shown on each category header. Swap freely for design changes —
   /// not read by any pricing or backend logic.
-  String get iconAsset => 'category_${name}'; // e.g. asset key placeholder
+  String get iconAsset => 'category_$name'; // e.g. asset key placeholder
 }
 
 /// A single bookable car. One `CarModel` = one row in the pricing sheet.

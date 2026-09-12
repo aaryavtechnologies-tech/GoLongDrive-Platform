@@ -124,7 +124,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: SwitchListTile(
         value: setting.enabled,
         onChanged: (value) => setState(() => setting.enabled = value),
-        activeColor: AppColors.gold,
+        activeThumbColor: AppColors.gold,
         secondary: Icon(setting.icon, color: AppColors.textMuted, size: 22),
         title: Text(setting.title,
             style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),

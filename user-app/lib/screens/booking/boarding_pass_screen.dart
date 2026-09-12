@@ -157,7 +157,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
+                      color: AppColors.success.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.check_circle, color: AppColors.success, size: 48),
@@ -179,10 +179,10 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                     decoration: BoxDecoration(
                       color: colors.surfaceCard,
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
+                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryGold.withOpacity(0.1),
+                          color: AppColors.primaryGold.withValues(alpha: 0.1),
                           blurRadius: 30,
                           offset: const Offset(0, 10),
                         )
@@ -195,7 +195,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.1),
+                            color: AppColors.primaryGold.withValues(alpha: 0.1),
                             borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
                           ),
                           child: Center(
@@ -254,9 +254,9 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                                 color: colors.background,
                                 borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
                                 border: Border(
-                                  right: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
-                                  top: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
-                                  bottom: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
+                                  right: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
+                                  top: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
+                                  bottom: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
                                 ),
                               ),
                             ),
@@ -281,9 +281,9 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                                 color: colors.background,
                                 borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), bottomLeft: Radius.circular(16)),
                                 border: Border(
-                                  left: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
-                                  top: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
-                                  bottom: BorderSide(color: AppColors.primaryGold.withOpacity(0.5), width: 2),
+                                  left: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
+                                  top: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
+                                  bottom: BorderSide(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
                                 ),
                               ),
                             ),
@@ -391,7 +391,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                               Container(
                                 padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 32),
                                 decoration: BoxDecoration(
-                                  color: AppColors.primaryGold.withOpacity(0.1),
+                                  color: AppColors.primaryGold.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
                                   border: Border.all(color: AppColors.primaryGold, width: 2),
                                 ),

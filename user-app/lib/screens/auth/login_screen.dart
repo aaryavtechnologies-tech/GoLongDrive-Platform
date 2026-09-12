@@ -7,11 +7,9 @@ import '../../core/utils/validators.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/password_field.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/app_checkbox.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/user_scope.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -25,29 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  bool _rememberMe = false;
   bool _isLoading = false;
   String? _authError;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedCredentials();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedEmail = prefs.getString('remembered_email');
-    final savedPassword = prefs.getString('remembered_password');
-    
-    if (savedEmail != null && savedPassword != null) {
-      setState(() {
-        _emailController.text = savedEmail;
-        _passwordController.text = savedPassword;
-        _rememberMe = true;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -78,16 +55,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _isLoading = false);
 
       if (userController.isLoggedIn) {
-        // Save credentials if remember me is checked
-        final prefs = await SharedPreferences.getInstance();
-        if (_rememberMe) {
-          await prefs.setString('remembered_email', enteredEmail);
-          await prefs.setString('remembered_password', enteredPassword);
-        } else {
-          await prefs.remove('remembered_email');
-          await prefs.remove('remembered_password');
-        }
-
         final profile = userController.userProfile!;
         final isVerified = profile['emailVerified'] == true;
 
@@ -171,13 +138,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
 
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    AppCheckbox(
-                      value: _rememberMe,
-                      onChanged: (v) => setState(() => _rememberMe = v),
-                      label: const Text('Remember me'),
-                    ),
                     TextButton(
                       onPressed: _goToForgotPassword,
                       child: Text('Forgot password?', style: AppTextStyles.link),

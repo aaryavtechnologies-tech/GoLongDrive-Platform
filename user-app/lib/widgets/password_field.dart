@@ -157,8 +157,7 @@ class _CornerStrengthPainter extends CustomPainter {
     required this.color,
     required this.armFraction,
     required this.radius,
-    this.strokeWidth = 1.6,
-  });
+  }) : strokeWidth = 1.6;
 
   @override
   void paint(Canvas canvas, Size size) {

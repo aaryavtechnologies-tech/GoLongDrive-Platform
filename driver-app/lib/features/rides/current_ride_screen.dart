@@ -78,7 +78,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         }
       }
     } catch (e) {
-      print('Error fetching current ride: $e');
+      debugPrint('Error fetching current ride: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -121,23 +121,33 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
               errorText = body['message'];
             }
           } catch (_) {}
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorText)));
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorText)));
+          }
         }
       } else if (_stage == _TripStage.inProgress) {
         // Complete Trip
         final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/complete');
         if (res.statusCode == 200) {
+        if (mounted) {
           setState(() => _stage = _TripStage.completed);
           context.pop();
-        } else {
+        }
+      } else {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to complete trip')));
         }
-      } else if (_stage == _TripStage.completed) {
+      }
+    } else if (_stage == _TripStage.completed) {
+      if (mounted) {
         context.pop();
       }
-    } catch (e) {
+    }
+  } catch (e) {
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error')));
-    } finally {
+    }
+  } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
   }
@@ -170,8 +180,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                   counterText: '',
                   hintText: '••••',
                   hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 24, letterSpacing: 8),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
+                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
                 ),
               ),
             ],
@@ -261,7 +271,9 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Google Maps')));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Google Maps')));
+        }
       }
     }
   }
@@ -363,7 +375,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                               label: const Text('Open in Google Maps', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                               style: OutlinedButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 16),
-                                side: BorderSide(color: AppColors.gold.withOpacity(0.5)),
+                                side: BorderSide(color: AppColors.gold.withValues(alpha: 0.5)),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
@@ -474,7 +486,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                   color: AppColors.background,
                   border: Border(top: BorderSide(color: AppColors.borderSubtle2)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, -4)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, -4)),
                   ],
                 ),
                 child: AppButton(
@@ -490,7 +502,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   }
 
   Widget _stageStepper() {
-    final stages = _TripStage.values;
+    const stages = _TripStage.values;
     final currentIndex = stages.indexOf(_stage);
     return Row(
       children: List.generate(stages.length * 2 - 1, (i) {

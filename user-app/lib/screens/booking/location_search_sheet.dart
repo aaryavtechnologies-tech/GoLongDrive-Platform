@@ -1,7 +1,7 @@
 // lib/screens/booking/location_search_sheet.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -37,7 +37,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
   bool _isSearching = false;
   String? _errorMsg;
   Timer? _debounce;
-  bool _isGettingLocation = false;
+
 
   final List<PlaceSuggestion> _popularDestinations = const [
     PlaceSuggestion(placeId: 'ChIJbZJhwcCEWDkRmi0oV9ZzKIM', mainText: 'Ahmedabad', secondaryText: 'Gujarat, India'),
@@ -113,44 +113,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
     ));
   }
 
-  Future<void> _useCurrentLocation() async {
-    setState(() => _isGettingLocation = true);
-    
-    try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw Exception('Location services are disabled.');
-      }
-      
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw Exception('Location permissions are denied');
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        throw Exception('Location permissions are permanently denied, we cannot request permissions.');
-      }
 
-      final pos = await Geolocator.getCurrentPosition();
-      final latLng = LatLng(pos.latitude, pos.longitude);
-      final address = await PlacesService.reverseGeocode(latLng);
-      
-      if (!mounted) return;
-      
-      Navigator.of(context).pop(LocationSearchResult(
-        address: address ?? 'Current Location',
-        latLng: latLng,
-      ));
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _isGettingLocation = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -244,23 +207,20 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 children: [
-                  // Current Location Button
-                  if (!hasQuery) ...[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: AppColors.primaryGold.withValues(alpha: 0.1), shape: BoxShape.circle),
-                        child: _isGettingLocation
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryGold))
-                            : const Icon(Icons.my_location, color: AppColors.primaryGold, size: 18),
+
+
+                  // Initial State: Popular/Recent Destinations
+                  if (!hasQuery && _popularDestinations.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16, left: 8),
+                      child: Text(
+                        'Recent Searches',
+                        style: AppTextStyles.subtitle.copyWith(
+                          color: colors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      title: Text('Use Current Location', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.w600)),
-                      onTap: _isGettingLocation ? null : _useCurrentLocation,
                     ),
-                    const SizedBox(height: 16),
-                    Text('Popular Destinations', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-                    const SizedBox(height: 8),
                     ..._popularDestinations.map((p) => _buildSuggestionTile(p, colors)),
                   ],
 

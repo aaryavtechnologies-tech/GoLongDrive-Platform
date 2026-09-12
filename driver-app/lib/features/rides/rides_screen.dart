@@ -192,7 +192,7 @@ class _RidesScreenState extends State<RidesScreen> {
         fontSize: 13,
       ),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? AppColors.gold.withOpacity(0.4) : AppColors.divider),
+        side: BorderSide(color: selected ? AppColors.gold.withValues(alpha: 0.4) : AppColors.divider),
       ),
     );
   }
@@ -296,7 +296,7 @@ class _RidesScreenState extends State<RidesScreen> {
     
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
       child: Text(
         label,
         style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),

@@ -119,7 +119,7 @@ class OtpInputState extends State<OtpInput> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: AppColors.gold, width: 1.5),
+                  borderSide: const BorderSide(color: AppColors.gold, width: 1.5),
                 ),
               ),
               onChanged: (v) => _handleChanged(i, v),

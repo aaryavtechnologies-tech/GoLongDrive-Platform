@@ -20,7 +20,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _vehicleModelCtrl = TextEditingController();
   final TextEditingController _vehicleNumberCtrl = TextEditingController();
-  bool _loading = true;
+
   bool _saving = false;
 
   @override
@@ -43,7 +43,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } catch (e) {
       debugPrint('Failed to fetch profile: $e');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() {});
     }
   }
 

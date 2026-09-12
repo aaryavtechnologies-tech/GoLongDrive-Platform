@@ -271,7 +271,7 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
               onClose: () => Navigator.of(context).pop(),
             )
           else if (_loadingRoute || _driverPos == null)
-            Center(child: CircularProgressIndicator(color: AppColors.gold))
+            const Center(child: CircularProgressIndicator(color: AppColors.gold))
           else
             GoogleMap(
               initialCameraPosition: CameraPosition(target: _driverPos!, zoom: 17.5, tilt: 55),
@@ -307,7 +307,7 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
                     rotation: _heading,
                     anchor: const Offset(0.5, 0.5),
                     flat: true,
-                    zIndex: 2,
+                    zIndexInt: 2,
                   ),
               },
               myLocationEnabled: false,
@@ -395,7 +395,7 @@ class _InstructionBanner extends StatelessWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.borderSubtle2),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
         ),
         child: Row(
           children: [
@@ -411,7 +411,7 @@ class _InstructionBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(distanceText,
-                      style: TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700)),
+                      style: const TextStyle(color: AppColors.gold, fontSize: 13, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   Text(
                     instruction,
@@ -442,7 +442,7 @@ class _ArrivedBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.success.withOpacity(0.15),
+          color: AppColors.success.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.success),
         ),
@@ -528,7 +528,7 @@ class _BottomEtaBar extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle2),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, -4))],
       ),
       child: Row(
         children: [

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +8,6 @@ import '../../core/config/env_config.dart';
 import '../../core/data/auth_service.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
-import '../../core/widgets/app_checkbox.dart';
 
 /// Matches app/(auth)/login.tsx — compacted to fit one screen, no scrolling.
 class LoginScreen extends StatefulWidget {
@@ -22,7 +20,6 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
   bool _isLoading = false;
 
   String? _emailError;
@@ -97,9 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleDemoLogin() {
-    context.go('/tabs');
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -128,9 +123,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.gold.withOpacity(0.2), width: 2),
+                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 2),
                               boxShadow: [
-                                BoxShadow(color: AppColors.gold.withOpacity(0.15), blurRadius: 24),
+                                BoxShadow(color: AppColors.gold.withValues(alpha: 0.15), blurRadius: 24),
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
@@ -178,16 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              AppCheckbox(
-                                value: _rememberMe,
-                                onChanged: (v) => setState(() => _rememberMe = v),
-                                label: Text(
-                                  'Remember Me',
-                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                                ),
-                              ),
                               TextButton(
                                 onPressed: () => context.push('/auth/forgot-password'),
                                 style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
@@ -233,13 +220,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 const TextSpan(text: 'By logging in, you agree to our '),
                                 TextSpan(
                                   text: 'Terms',
-                                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
                                   recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/terms'),
                                 ),
                                 const TextSpan(text: ' and '),
                                 TextSpan(
                                   text: 'Privacy Policy',
-                                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
+                                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
                                   recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/privacy'),
                                 ),
                               ],

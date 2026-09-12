@@ -153,19 +153,7 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     Navigator.of(context).pushReplacementNamed('/finding-driver', arguments: args);
   }
 
-  void _navigateToBoardingPass(String txnId, String bookingId) {
-    final args = Map<String, dynamic>.from(widget.bookingArgs);
-    args['txnId'] = txnId;
-    args['bookingId'] = bookingId;
-    args['date'] = _journeyDate;
-    args['time'] = _pickupTime;
-    args['passengers'] = _passengers;
-    args['luggage'] = _luggage;
-    args['advancePaid'] = widget.bookingArgs['car']?['advanceAmount'] ?? 500;
-    
-    // Replace this with the actual navigation
-    Navigator.of(context).pushReplacementNamed('/boarding-pass', arguments: args);
-  }
+
 
   Future<void> _startPayment() async {
     setState(() => _isProcessing = true);
@@ -257,7 +245,7 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                       border: Border.all(color: colors.inputBorder.withValues(alpha: 0.1)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: Colors.black.withValues(alpha: 0.05),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         )
@@ -436,16 +424,16 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withOpacity(0.1),
+                      color: AppColors.primaryGold.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primaryGold.withOpacity(0.3)),
+                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withOpacity(0.2),
+                            color: AppColors.primaryGold.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.security, color: AppColors.primaryGold),
