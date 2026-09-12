@@ -85,10 +85,9 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
     // Fallback: poll every 5 seconds
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) => _pollStatus());
 
-    // Overall timeout: 10 minutes (maybe 2 minutes for testing? No, keep it what it was or maybe shorter)
-    // Actually, user wants it to say "Ride request sent, waiting for drivers to accept" 
-    // Let's keep the timeout but change the message.
-    _timeoutTimer = Timer(const Duration(minutes: 2), () {
+    // Overall timeout: 90 seconds. If backend fallback fails after 60 seconds, 
+    // we show the timeout state here.
+    _timeoutTimer = Timer(const Duration(seconds: 90), () {
       if (!_driverFound && mounted) {
         setState(() => _timedOut = true);
         _cleanup();
