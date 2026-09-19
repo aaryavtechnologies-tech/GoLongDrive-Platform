@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/geocoding_service.dart';
+import '../../core/data/socket_service.dart';
 import '../../core/models/ride.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/app_button.dart';
@@ -23,20 +25,22 @@ class CurrentRideScreen extends StatefulWidget {
   State<CurrentRideScreen> createState() => _CurrentRideScreenState();
 }
 
-enum _TripStage { arriving, arrived, inProgress, completed }
+enum _TripStage { arriving, arrived, inProgress, awaitingPayment, completed }
 
 extension on _TripStage {
   String get label => switch (this) {
         _TripStage.arriving => 'Heading to Pickup',
         _TripStage.arrived => 'Arrived at Pickup',
         _TripStage.inProgress => 'Trip in Progress',
+        _TripStage.awaitingPayment => 'Awaiting Payment',
         _TripStage.completed => 'Trip Completed',
       };
 
   String get actionLabel => switch (this) {
         _TripStage.arriving => "I've Arrived",
         _TripStage.arrived => 'Start Trip',
-        _TripStage.inProgress => 'Complete Trip',
+        _TripStage.inProgress => 'End Trip (Wait for Payment)',
+        _TripStage.awaitingPayment => 'Verify PIN & Complete',
         _TripStage.completed => 'Done',
       };
 }
@@ -46,11 +50,28 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   Ride? _ride;
   bool _loading = true;
   bool _actionLoading = false;
+  StreamSubscription? _paymentSub;
 
   @override
   void initState() {
     super.initState();
     _fetchCurrentRide();
+    _paymentSub = SocketService.onPaymentReceived.listen((data) {
+      if (!mounted) return;
+      if (_ride != null && data['bookingId'] == _ride!.id) {
+        // Payment was received, move to verify PIN & complete
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment received! You can now complete the trip.')),
+        );
+        // Status remains awaitingPayment, but now driver can proceed
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _paymentSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchCurrentRide() async {
@@ -66,6 +87,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
               final status = rideData['rideStatus'];
               if (status == 'Trip Started') {
                 _stage = _TripStage.inProgress;
+              } else if (status == 'Awaiting Payment') {
+                _stage = _TripStage.awaitingPayment;
               } else if (status == 'Trip Completed') {
                 _stage = _TripStage.completed;
               } else if (status == 'Driver Arriving' || status == 'Confirmed') {
@@ -127,18 +150,45 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           }
         }
       } else if (_stage == _TripStage.inProgress) {
-        // Complete Trip
+        // End Trip - transitions to Awaiting Payment
+        final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/end');
+        if (res.statusCode == 200) {
+          if (mounted) {
+            setState(() => _stage = _TripStage.awaitingPayment);
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to end trip')));
+          }
+        }
+      } else if (_stage == _TripStage.awaitingPayment) {
+        // Complete Trip (Requires PIN)
+        setState(() => _actionLoading = false);
+        final pin = await _showPinDialog(isEndRide: true);
+        if (pin == null) return;
+
+        setState(() => _actionLoading = true);
+
         final res = await ApiService.post(
-            '/driver/bookings/rides/${_ride!.id}/complete');
+            '/driver/bookings/rides/${_ride!.id}/complete',
+            body: { 'otp': pin });
         if (res.statusCode == 200) {
           if (mounted) {
             setState(() => _stage = _TripStage.completed);
             context.pop();
           }
         } else {
+          String errorText = 'Failed to complete trip. Has the user paid?';
+          try {
+            final body = jsonDecode(res.body);
+            if (body['message'] != null) {
+              errorText = body['message'];
+            }
+          } catch (_) {}
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Failed to complete trip')));
+                SnackBar(content: Text(errorText)));
           }
         }
       } else if (_stage == _TripStage.completed) {
@@ -156,7 +206,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     }
   }
 
-  Future<String?> _showPinDialog() async {
+  Future<String?> _showPinDialog({bool isEndRide = false}) async {
     final controller = TextEditingController();
     return showDialog<String>(
       context: context,
@@ -164,13 +214,15 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: AppColors.surface,
-          title: const Text('Enter Passenger PIN', style: AppText.cardHeadline),
+          title: Text(isEndRide ? 'Enter Completion PIN' : 'Enter Passenger PIN', style: AppText.cardHeadline),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Please ask the passenger for their 4-digit verification PIN to start the ride.',
-                style: TextStyle(color: Colors.white70, fontSize: 13),
+              Text(
+                isEndRide 
+                  ? 'Please ask the passenger for the 4-digit PIN (shown on their app) to finalize the trip.'
+                  : 'Please ask the passenger for their 4-digit verification PIN to start the ride.',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -276,7 +328,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         url =
             'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.pickupAddress)}';
       }
-    } else if (_stage == _TripStage.inProgress) {
+    } else if (_stage == _TripStage.inProgress || _stage == _TripStage.awaitingPayment) {
       if (_ride!.dropLat != null && _ride!.dropLng != null) {
         url =
             'https://www.google.com/maps/dir/?api=1&destination=${_ride!.dropLat},${_ride!.dropLng}';

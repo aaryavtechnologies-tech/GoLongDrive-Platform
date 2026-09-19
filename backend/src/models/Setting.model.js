@@ -60,7 +60,8 @@ const settingSchema = new mongoose.Schema(
       cancellationRules: { type: String, default: "Free cancellation up to 24 hours before pickup" },
       refundRules: { type: String, default: "Full refund if cancelled before 24 hours, otherwise no refund" },
       longDistanceAvailability: { type: Boolean, default: true },
-    }
+    },
+    platformFeePercentage: { type: Number, default: 10 }
   },
   { timestamps: true }
 );

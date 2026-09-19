@@ -1,7 +1,6 @@
 // lib/screens/booking/confirm_ride_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -20,7 +19,6 @@ class ConfirmRideScreen extends StatefulWidget {
 }
 
 class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
-  late Razorpay _razorpay;
   bool _isProcessing = false;
   
   late DateTime _journeyDate;
@@ -35,24 +33,14 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     _pickupTime = widget.bookingArgs['time'] ?? const TimeOfDay(hour: 8, minute: 30);
     _passengers = widget.bookingArgs['passengers'] ?? 2;
     _luggage = widget.bookingArgs['luggage'] ?? 2;
-    
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
   }
 
   @override
   void dispose() {
-    _razorpay.clear();
     super.dispose();
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    _createBackendBooking(response.paymentId ?? 'TXN_MOCK_123');
-  }
-
-  Future<void> _createBackendBooking(String txnId) async {
+  Future<void> _createBackendBooking() async {
     setState(() => _isProcessing = true);
     try {
       final String from = widget.bookingArgs['from'] ?? 'Ahmedabad';
@@ -86,7 +74,7 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
         'pickupDate': dateString,
         'pickupTime': timeString,
         'fareAmount': car['total'],
-        'advancePaid': car['advanceAmount'] ?? 500,
+        'advancePaid': 0,
         'numberOfPassengers': _passengers,
         'numberOfBags': _luggage,
         'vehicleType': car['name'] ?? car['model'] ?? 'Sedan',
@@ -102,8 +90,8 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
       // Init socket so the user gets real-time driver assignment notifications
       await UserSocketService.init();
 
-      // Navigate to "Finding Driver" screen — NOT boarding pass yet
-      _navigateToFindingDriver(txnId, bookingId, booking);
+      // Navigate to "Finding Driver" screen
+      _navigateToFindingDriver('TXN_NONE', bookingId, booking);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isProcessing = false);
@@ -128,17 +116,6 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     );
   }
 
-  void _handlePaymentError(PaymentFailureResponse response) {
-    setState(() => _isProcessing = false);
-    // For demo purposes, we'll still navigate to success since the key is a dummy
-    // In production, you would show an error message.
-    _createBackendBooking('TXN_DEMO_SUCCESS');
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    setState(() => _isProcessing = false);
-  }
-
   void _navigateToFindingDriver(String txnId, String bookingId, Map<String, dynamic> booking) {
     final args = Map<String, dynamic>.from(widget.bookingArgs);
     args['txnId'] = txnId;
@@ -148,14 +125,12 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     args['time'] = _pickupTime;
     args['passengers'] = _passengers;
     args['luggage'] = _luggage;
-    args['advancePaid'] = widget.bookingArgs['car']?['advanceAmount'] ?? 500;
+    args['advancePaid'] = 0;
     // Navigate to the finding-driver screen (replaces this screen on the stack)
     Navigator.of(context).pushReplacementNamed('/finding-driver', arguments: args);
   }
 
-
-
-  Future<void> _startPayment() async {
+  Future<void> _startBooking() async {
     setState(() => _isProcessing = true);
     
     // Simulate Final Availability Check
@@ -187,24 +162,7 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
       return;
     }
     
-    // Using a dummy key. In production, this should be fetched from backend.
-    var options = {
-      'key': 'rzp_test_dummy_key',
-      'amount': 500 * 100, // amount in paisa (₹500)
-      'name': 'GoLongDrive',
-      'description': 'Advance Payment for Ride',
-      'prefill': {
-        'contact': '9876543210',
-        'email': 'user@example.com'
-      }
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (e) {
-      debugPrint('Error: $e');
-      setState(() => _isProcessing = false);
-    }
+    await _createBackendBooking();
   }
 
   @override
@@ -215,8 +173,6 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     final Map<String, dynamic> car = widget.bookingArgs['car'] ?? {};
 
     final int totalAmount = car['total'] ?? 7800;
-    final int advancePayment = car['advanceAmount'] ?? 500;
-    final int remainingAmount = totalAmount - advancePayment;
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -402,15 +358,9 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                               const SizedBox(height: 16),
                               Container(height: 1, color: colors.divider),
                               const SizedBox(height: 16),
-                              _buildPriceRow(colors, 'Total Ride Amount', '₹$totalAmount', isTotal: false),
+                              _buildPriceRow(colors, 'Total Ride Amount', '₹$totalAmount', isTotal: true),
                               const SizedBox(height: 8),
-                              _buildPriceRow(colors, 'Advance Payment', '- ₹$advancePayment', isHighlight: true),
-                              const SizedBox(height: 16),
-                              Container(height: 1, color: colors.divider),
-                              const SizedBox(height: 16),
-                              _buildPriceRow(colors, 'Remaining Amount', '₹$remainingAmount', isTotal: true),
-                              const SizedBox(height: 8),
-                              Text('To be paid to the driver during the trip.', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                              Text('No advance payment required. Full amount to be paid post-ride.', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                             ],
                           ),
                         ),
@@ -419,39 +369,6 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                   ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
                   
                   const SizedBox(height: 24),
-                  
-                  // Advance Payment Card
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryGold.withValues(alpha: 0.2),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.security, color: AppColors.primaryGold),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Secure Advance Payment', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text('Pay ₹500 advance to confirm your booking.', style: AppTextStyles.caption.copyWith(color: colors.textPrimary)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ).animate().fadeIn(delay: 200.ms, duration: 400.ms),
                 ],
               ),
             ),
@@ -464,8 +381,8 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                 border: Border(top: BorderSide(color: colors.divider)),
               ),
               child: PrimaryButton(
-                label: _isProcessing ? 'Processing...' : 'PAY ₹$advancePayment & CONFIRM',
-                onPressed: _isProcessing ? () {} : _startPayment,
+                label: _isProcessing ? 'Processing...' : 'CONFIRM RIDE',
+                onPressed: _isProcessing ? () {} : _startBooking,
               ),
             ),
           ],

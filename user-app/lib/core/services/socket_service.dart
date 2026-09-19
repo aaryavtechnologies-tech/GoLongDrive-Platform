@@ -54,6 +54,11 @@ class UserSocketService {
   static Stream<Map<String, dynamic>> get onRideCompleted =>
       _rideCompletedCtrl.stream;
 
+  static final StreamController<Map<String, dynamic>> _rideAwaitingPaymentCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideAwaitingPayment =>
+      _rideAwaitingPaymentCtrl.stream;
+
   // ── Public API ─────────────────────────────────────────────────────────────
 
   static bool get isConnected => _socket?.connected ?? false;
@@ -138,6 +143,13 @@ class UserSocketService {
       debugPrint('📥 ride:completed: $data');
       if (data is Map) {
         _rideCompletedCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('ride:awaiting_payment', (data) {
+      debugPrint('📥 ride:awaiting_payment: $data');
+      if (data is Map) {
+        _rideAwaitingPaymentCtrl.add(Map<String, dynamic>.from(data));
       }
     });
   }

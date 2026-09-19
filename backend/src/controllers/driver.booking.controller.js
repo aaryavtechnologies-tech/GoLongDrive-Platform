@@ -195,16 +195,53 @@ const startRide = asyncHandler(async (req, res) => {
 });
 
 /**
- * @route   POST /api/driver/rides/:id/complete
+ * @route   POST /api/driver/rides/:id/end
  * @access  Private (Driver)
  */
-const completeRide = asyncHandler(async (req, res) => {
+const endRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
   const booking = await Booking.findOne({ _id: req.params.id, driver: driverId });
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.rideStatus !== RIDE_STATUS.TRIP_STARTED) {
-    throw ApiError.badRequest('Cannot complete trip. Trip has not started.');
+    throw ApiError.badRequest('Cannot end trip. Trip is not currently in progress.');
+  }
+
+  booking.rideStatus = RIDE_STATUS.AWAITING_PAYMENT;
+  await booking.save();
+
+  await addTimelineEntry(booking._id, 'Awaiting Payment', driverId, 'Driver ended the trip, waiting for customer payment');
+  emitBookingEvent('ride:awaiting_payment', { bookingId: booking.bookingId });
+
+  return sendSuccess(res, 200, 'Trip ended, awaiting payment', { booking });
+});
+
+/**
+ * @route   POST /api/driver/rides/:id/complete
+ * @access  Private (Driver)
+ */
+const completeRide = asyncHandler(async (req, res) => {
+  const driverId = req.user._id;
+  const { otp } = req.body;
+  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId }).populate('customer');
+
+  if (!booking) throw ApiError.notFound('Booking not found');
+  if (booking.rideStatus !== RIDE_STATUS.AWAITING_PAYMENT) {
+    throw ApiError.badRequest('Cannot complete trip. Trip must be awaiting payment first.');
+  }
+
+  // Validate OTP against customer's ridePin again
+  if (!otp) {
+    throw ApiError.badRequest('OTP (Ride PIN) is required to complete the trip');
+  }
+  if (booking.customer && booking.customer.ridePin !== otp) {
+    throw ApiError.badRequest('Invalid OTP. Please check with the passenger.');
+  }
+
+  // Check if payment is completed
+  const payment = await Payment.findOne({ booking: booking._id, paymentStatus: 'Paid' });
+  if (!payment && booking.paymentMethod !== 'Cash') {
+    throw ApiError.badRequest('Payment has not been completed by the customer yet.');
   }
 
   booking.rideStatus = RIDE_STATUS.TRIP_COMPLETED;
@@ -212,10 +249,15 @@ const completeRide = asyncHandler(async (req, res) => {
   await booking.save();
 
   // Generate earning record
-  // Fetch payment to see what advance was paid
-  const payment = await Payment.findOne({ booking: booking._id, paymentStatus: { $in: ['Advance Paid', 'Paid'] } });
-  const advanceAmount = payment ? payment.advanceAmount : 500;
-  await generateEarningRecord(booking, advanceAmount);
+  // Driver gets finalFare minus platform fee (e.g. 10%)
+  const Setting = require('../models/Setting.model');
+  const settings = await Setting.findOne();
+  const feePercent = settings?.platformFeePercentage || 10;
+  const platformFee = (booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare) * (feePercent / 100);
+  
+  // If cash, the driver has collected the full amount. We still generate an earning record, 
+  // but it might reduce their wallet balance by the platform fee.
+  await generateEarningRecord(booking, platformFee, booking.paymentMethod === 'Cash');
 
   // Mark driver available again
   await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
@@ -321,6 +363,7 @@ module.exports = {
   acceptRide,
   rejectRide,
   startRide,
+  endRide,
   completeRide,
   cancelRide,
   getRideHistory,

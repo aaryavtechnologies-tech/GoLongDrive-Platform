@@ -61,8 +61,6 @@ const bookingSchema = new mongoose.Schema(
     pricePerKm: { type: Number, default: 0 },
     estimatedFare: { type: Number, default: 0 },
     finalFare: { type: Number, default: 0 },
-    advanceAmount: { type: Number, default: 0 },
-    remainingAmount: { type: Number, default: 0 },
     coupon: { type: String },
 
     paymentMethod: {

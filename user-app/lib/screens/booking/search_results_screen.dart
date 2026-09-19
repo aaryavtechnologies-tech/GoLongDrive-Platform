@@ -201,7 +201,6 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         'pricePerKm': car['pricePerKm'] ?? 15,
                         'distanceValueKm': car['distanceValueKm'] ?? (_distanceData != null ? _distanceData!['distanceValueKm'] : 0),
                         'total': car['fare'],
-                        'advanceAmount': car['advanceAmount'] ?? 500,
                         'availableNow': car['availableNow'] ?? false,
                       };
                       return Padding(
@@ -439,24 +438,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     Text('₹${car['total']}', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold)),
                   ],
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Advance Payment', style: AppTextStyles.caption.copyWith(color: AppColors.success)),
-                    Text('- ₹${car['advanceAmount']}', style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.bold)),
-                  ],
-                ),
                 const SizedBox(height: 8),
-                Container(height: 1, color: colors.divider),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Remaining Amount', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary, fontSize: 16)),
-                    Text('₹${(car['total'] ?? 0) - (car['advanceAmount'] ?? 0)}', style: AppTextStyles.priceLarge.copyWith(fontSize: 18)),
-                  ],
-                ),
                 const SizedBox(height: 16),
                 PrimaryButton(
                   label: 'SELECT CAR →',

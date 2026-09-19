@@ -45,21 +45,18 @@ const gatewayAdapter = {
 /**
  * Initialize a payment transaction and get gateway order
  */
-const createPaymentOrder = async ({ bookingId, customerId, advanceAmount, totalAmount, paymentMethod }) => {
+const createPaymentOrder = async ({ bookingId, customerId, amount, paymentMethod }) => {
   const paymentIdStr = generatePaymentId();
-  const amountToPay = advanceAmount > 0 ? advanceAmount : totalAmount;
   
   // 1. Call gateway adapter
-  const orderDetails = await gatewayAdapter.createOrder(amountToPay * 100, 'INR', paymentIdStr); // *100 for smallest currency unit usually
+  const orderDetails = await gatewayAdapter.createOrder(amount * 100, 'INR', paymentIdStr); // *100 for smallest currency unit usually
 
   // 2. Save payment record as Pending
   const payment = new Payment({
     paymentId: paymentIdStr,
     booking: bookingId,
     customer: customerId,
-    amount: totalAmount,
-    advanceAmount,
-    remainingAmount: totalAmount - advanceAmount,
+    amount: amount,
     paymentMethod,
     paymentStatus: PAYMENT_STATUS.PENDING,
     gatewayName: 'TEST', // Dynamic when adapter is real
@@ -85,7 +82,7 @@ const verifyPaymentTransaction = async (paymentId, gatewayOrderId, gatewayPaymen
     throw new Error('Payment signature verification failed');
   }
 
-  payment.paymentStatus = payment.advanceAmount > 0 ? PAYMENT_STATUS.ADVANCE_PAID : PAYMENT_STATUS.PAID;
+  payment.paymentStatus = PAYMENT_STATUS.PAID;
   payment.transactionId = gatewayPaymentId;
   payment.paymentDate = new Date();
   await payment.save();

@@ -29,16 +29,6 @@ const paymentSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-    advanceAmount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-    remainingAmount: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
     paymentMethod: {
       type: String,
       enum: Object.values(PAYMENT_METHODS),

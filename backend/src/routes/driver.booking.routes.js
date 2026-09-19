@@ -14,6 +14,7 @@ const {
   acceptRide,
   rejectRide,
   startRide,
+  endRide,
   completeRide,
   cancelRide,
   getRideHistory,
@@ -33,6 +34,7 @@ router.get('/rides/current', isDriver, getCurrentRide);
 router.post('/rides/:id/accept', isDriver, acceptRide);
 router.post('/rides/:id/reject', isDriver, rejectRide);
 router.post('/rides/:id/start', isDriver, startRide);
+router.post('/rides/:id/end', isDriver, endRide);
 router.post('/rides/:id/complete', isDriver, completeRide);
 router.post('/rides/:id/cancel', isDriver, cancelRide);
 router.get('/rides/history', isDriver, getRideHistory);

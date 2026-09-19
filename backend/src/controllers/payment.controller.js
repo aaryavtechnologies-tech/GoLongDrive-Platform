@@ -2,6 +2,7 @@
 
 const { createPaymentOrder, verifyPaymentTransaction } = require('../services/payment.service');
 const { generateInvoice } = require('../services/invoice.service');
+const { emitBookingEvent } = require('../services/booking.service');
 const Booking = require('../models/Booking.model');
 const Payment = require('../models/Payment.model');
 const { sendSuccess } = require('../helpers/response.helper');
@@ -23,24 +24,10 @@ const createOrder = asyncHandler(async (req, res) => {
     throw ApiError.forbidden('Access denied');
   }
 
-  // Determine amount
-  // As per Phase 5: Partial advance is a fixed 500 Rs, rest paid to driver.
-  let advanceAmount = 0;
-  if (paymentMethod === PAYMENT_METHODS.PARTIAL_ADVANCE) {
-    advanceAmount = 500;
-  } else if (paymentMethod === PAYMENT_METHODS.ONLINE) {
-    advanceAmount = booking.estimatedFare;
-  }
-
-  if (advanceAmount === 0 && paymentMethod !== PAYMENT_METHODS.CASH) {
-    throw ApiError.badRequest('Invalid payment configuration');
-  }
-
   const { payment, orderDetails } = await createPaymentOrder({
     bookingId,
     customerId,
-    advanceAmount,
-    totalAmount: booking.estimatedFare,
+    amount: booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare,
     paymentMethod,
   });
 
@@ -64,9 +51,13 @@ const verifyPayment = asyncHandler(async (req, res) => {
     gatewaySignature
   );
 
-  // Generate invoice asynchronously upon successful advance payment
-  if (payment.paymentStatus === 'Advance Paid' || payment.paymentStatus === 'Paid') {
+  // Generate invoice asynchronously upon successful payment
+  if (payment.paymentStatus === 'Paid') {
     generateInvoice(payment.booking, payment._id).catch(err => console.error('Invoice generation failed:', err));
+    const booking = await Booking.findById(payment.booking);
+    if(booking) {
+        emitBookingEvent('payment:received', { bookingId: booking.bookingId, paymentId: payment._id });
+    }
   }
 
   return sendSuccess(res, 200, 'Payment verified successfully', { payment });

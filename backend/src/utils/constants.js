@@ -50,6 +50,7 @@ const RIDE_STATUS = Object.freeze({
   DRIVER_ARRIVING: 'Driver Arriving',
   TRIP_STARTED: 'Trip Started',
   TRIP_COMPLETED: 'Trip Completed',
+  AWAITING_PAYMENT: 'Awaiting Payment',
   CANCELLED_BY_CUSTOMER: 'Cancelled by Customer',
   CANCELLED_BY_DRIVER: 'Cancelled by Driver',
   CANCELLED_BY_ADMIN: 'Cancelled by Admin',
