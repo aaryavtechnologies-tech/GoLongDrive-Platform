@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/data/api_service.dart';
+import '../city_rides/city_ride_model.dart';
+import '../city_rides/city_rides_service.dart';
 
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/empty_state.dart';
@@ -22,6 +24,7 @@ class RidesScreen extends StatefulWidget {
 }
 
 class _RidesScreenState extends State<RidesScreen> {
+  final CityRidesService _cityRidesService = CityRidesService.instance;
   String? _filter; // null means 'All'
   bool _loading = true;
   bool _refreshing = false;
@@ -31,6 +34,7 @@ class _RidesScreenState extends State<RidesScreen> {
   @override
   void initState() {
     super.initState();
+    _cityRidesService.initialize();
     _fetchData();
   }
 
@@ -63,7 +67,10 @@ class _RidesScreenState extends State<RidesScreen> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => _errorMsg = 'Failed to load rides. Please check your connection.');
+      if (mounted) {
+        setState(() =>
+            _errorMsg = 'Failed to load rides. Please check your connection.');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -84,10 +91,18 @@ class _RidesScreenState extends State<RidesScreen> {
     return _allRides.where((r) {
       final status = r['rideStatus'] as String?;
       if (_filter == 'Available' && status == 'Searching Driver') return true;
-      if (_filter == 'Upcoming' && ['driver_accepted', 'driver_arriving', 'confirmed'].contains(status)) return true;
+      if (_filter == 'Upcoming' &&
+          ['driver_accepted', 'driver_arriving', 'confirmed']
+              .contains(status)) {
+        return true;
+      }
       if (_filter == 'Ongoing' && status == 'in_progress') return true;
       if (_filter == 'Completed' && status == 'trip_completed') return true;
-      if (_filter == 'Cancelled' && status != null && status.startsWith('cancelled')) return true;
+      if (_filter == 'Cancelled' &&
+          status != null &&
+          status.startsWith('cancelled')) {
+        return true;
+      }
       return false;
     }).toList();
   }
@@ -126,55 +141,195 @@ class _RidesScreenState extends State<RidesScreen> {
                 const SizedBox(width: 8),
                 _filterChip('Completed', 'Completed'),
                 const SizedBox(width: 8),
+                _filterChip('City Rides', 'City Rides'),
+                const SizedBox(width: 8),
                 _filterChip('Cancelled', 'Cancelled'),
               ],
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: _loading && !_refreshing
-                ? ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                    children: List.generate(
-                      4,
-                      (_) => const Padding(
-                        padding: EdgeInsets.only(bottom: 14),
-                        child: SkeletonCard(height: 90),
-                      ),
-                    ),
+            child: _filter == 'City Rides'
+                ? ValueListenableBuilder<List<CityRideRequest>>(
+                    valueListenable: _cityRidesService.completedRides,
+                    builder: (context, rides, child) {
+                      final completed = rides
+                          .where(
+                              (ride) => ride.status == CityRideStatus.completed)
+                          .toList()
+                        ..sort((a, b) => (b.completedAt ?? b.createdAt)
+                            .compareTo(a.completedAt ?? a.createdAt));
+                      return _buildCityRidesHistory(completed);
+                    },
                   )
-                : _errorMsg.isNotEmpty && !_refreshing
-                    ? ErrorStateWidget(
-                        title: 'Oops!',
-                        message: _errorMsg,
-                        onRetry: _onRefresh,
+                : _loading && !_refreshing
+                    ? ListView(
+                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+                        children: List.generate(
+                          4,
+                          (_) => const Padding(
+                            padding: EdgeInsets.only(bottom: 14),
+                            child: SkeletonCard(height: 90),
+                          ),
+                        ),
                       )
-                    : RefreshIndicator(
-                        color: AppColors.gold,
-                        backgroundColor: AppColors.surface,
-                        onRefresh: _onRefresh,
-                        child: _filtered.isEmpty
-                            ? ListView(
-                                children: const [
-                                  SizedBox(height: 100),
-                                  EmptyState(
-                                    icon: Icons.local_taxi_outlined,
-                                    title: 'No rides found',
-                                    subtitle: 'Rides matching this filter will show up here.',
+                    : _errorMsg.isNotEmpty && !_refreshing
+                        ? ErrorStateWidget(
+                            title: 'Oops!',
+                            message: _errorMsg,
+                            onRetry: _onRefresh,
+                          )
+                        : RefreshIndicator(
+                            color: AppColors.gold,
+                            backgroundColor: AppColors.surface,
+                            onRefresh: _onRefresh,
+                            child: _filtered.isEmpty
+                                ? ListView(
+                                    children: const [
+                                      SizedBox(height: 100),
+                                      EmptyState(
+                                        icon: Icons.local_taxi_outlined,
+                                        title: 'No rides found',
+                                        subtitle:
+                                            'Rides matching this filter will show up here.',
+                                      )
+                                    ],
                                   )
-                                ],
-                              )
-                            : ListView.separated(
-                                padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
-                                itemCount: _filtered.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 14),
-                                itemBuilder: (context, i) => _rideCard(context, _filtered[i]),
-                              ),
-                      ),
+                                : ListView.separated(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        24, 8, 24, 100),
+                                    itemCount: _filtered.length,
+                                    separatorBuilder: (_, __) =>
+                                        const SizedBox(height: 14),
+                                    itemBuilder: (context, i) =>
+                                        _rideCard(context, _filtered[i]),
+                                  ),
+                          ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildCityRidesHistory(List<CityRideRequest> rides) {
+    if (rides.isEmpty) {
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [
+          SizedBox(height: 100),
+          EmptyState(
+            icon: Icons.location_city_rounded,
+            title: 'No completed city rides',
+            subtitle: 'Your completed local trips will appear here.',
+          ),
+        ],
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 100),
+      itemCount: rides.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
+      itemBuilder: (context, index) => _cityRideCard(rides[index]),
+    );
+  }
+
+  Widget _cityRideCard(CityRideRequest ride) {
+    final date = ride.completedAt ?? ride.createdAt;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: cardDecoration(radius: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Text(
+                  'City Ride',
+                  style: TextStyle(
+                    color: AppColors.gold,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '₹${ride.estimatedFare.toStringAsFixed(0)}',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            ride.riderName,
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _cityRouteLine(
+            Icons.circle,
+            AppColors.gold,
+            ride.pickupAddress,
+          ),
+          const SizedBox(height: 8),
+          _cityRouteLine(
+            Icons.location_on,
+            AppColors.textMuted,
+            ride.dropAddress,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${ride.tripDistanceKm.toStringAsFixed(1)} km · ${ride.paymentMethod}',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+              Text(
+                _formatDateTime(date),
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _cityRouteLine(IconData icon, Color color, String address) {
+    return Row(
+      children: [
+        Icon(icon, size: 10, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            address,
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDateTime(DateTime date) {
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '${_formatDate(date)} · $hour:$minute';
   }
 
   Widget _filterChip(String label, String? status) {
@@ -192,7 +347,10 @@ class _RidesScreenState extends State<RidesScreen> {
         fontSize: 13,
       ),
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? AppColors.gold.withValues(alpha: 0.4) : AppColors.divider),
+        side: BorderSide(
+            color: selected
+                ? AppColors.gold.withValues(alpha: 0.4)
+                : AppColors.divider),
       ),
     );
   }
@@ -203,11 +361,14 @@ class _RidesScreenState extends State<RidesScreen> {
     final pickup = ride['pickupLocation']?['address'] ?? 'Unknown Pickup';
     final drop = ride['dropoffLocation']?['address'] ?? 'Unknown Dropoff';
     final dist = (ride['distance'] ?? 0).toDouble();
-    final date = ride['createdAt'] != null ? DateTime.parse(ride['createdAt']) : DateTime.now();
+    final date = ride['createdAt'] != null
+        ? DateTime.parse(ride['createdAt'])
+        : DateTime.now();
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () => context.push('/rides/details', extra: {'rideId': ride['_id']}),
+      onTap: () =>
+          context.push('/rides/details', extra: {'rideId': ride['_id']}),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: cardDecoration(radius: 20),
@@ -220,7 +381,10 @@ class _RidesScreenState extends State<RidesScreen> {
                 _statusBadge(statusStr),
                 Text(
                   '₹${fare.toStringAsFixed(0)}',
-                  style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800),
+                  style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800),
                 ),
               ],
             ),
@@ -231,7 +395,9 @@ class _RidesScreenState extends State<RidesScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(pickup,
-                      style: TextStyle(color: AppColors.textPrimary, fontSize: 14), overflow: TextOverflow.ellipsis),
+                      style:
+                          TextStyle(color: AppColors.textPrimary, fontSize: 14),
+                      overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
@@ -239,7 +405,8 @@ class _RidesScreenState extends State<RidesScreen> {
               padding: const EdgeInsets.only(left: 3.5),
               child: SizedBox(
                 height: 16,
-                child: VerticalDivider(color: AppColors.divider, thickness: 1, width: 1),
+                child: VerticalDivider(
+                    color: AppColors.divider, thickness: 1, width: 1),
               ),
             ),
             Row(
@@ -248,7 +415,8 @@ class _RidesScreenState extends State<RidesScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(drop,
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                      style: TextStyle(
+                          color: AppColors.textSecondary, fontSize: 14),
                       overflow: TextOverflow.ellipsis),
                 ),
               ],
@@ -280,7 +448,8 @@ class _RidesScreenState extends State<RidesScreen> {
     if (statusStr == 'Searching Driver') {
       color = AppColors.info;
       label = 'Available';
-    } else if (['driver_accepted', 'driver_arriving', 'confirmed'].contains(statusStr)) {
+    } else if (['driver_accepted', 'driver_arriving', 'confirmed']
+        .contains(statusStr)) {
       color = AppColors.info;
       label = 'Upcoming';
     } else if (statusStr == 'in_progress') {
@@ -293,13 +462,16 @@ class _RidesScreenState extends State<RidesScreen> {
       color = AppColors.error;
       label = 'Cancelled';
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(20)),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+        style:
+            TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
       ),
     );
   }

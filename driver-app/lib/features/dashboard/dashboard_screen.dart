@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
@@ -9,6 +10,7 @@ import '../../core/data/socket_service.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/skeleton_loader.dart';
+import '../city_rides/city_rides_service.dart';
 
 /// Dashboard Screen - Main hub for the driver.
 class DashboardScreen extends StatefulWidget {
@@ -18,12 +20,18 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen>
+    with SingleTickerProviderStateMixin {
+  final CityRidesService _cityRidesService = CityRidesService.instance;
+  late final AnimationController _cityRideAlertController;
+  late final Animation<double> _cityRideShake;
+  Set<String> _knownCityRideIds = {};
+  int _cityRideRequestCount = 0;
   bool _online = false;
   bool _refreshing = false;
   bool _loading = true;
   String _errorMsg = '';
-  
+
   String _driverName = 'Driver';
   String? _profileImg;
   int _todayEarnings = 0;
@@ -33,14 +41,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<dynamic> _recentTxns = [];
 
   StreamSubscription<Map<String, dynamic>>? _rideRequestSub;
+
   /// Booking IDs this driver has already declined — suppress re-broadcasts
   final Set<String> _declinedBookingIds = {};
 
   @override
   void initState() {
     super.initState();
+    _cityRideAlertController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    );
+    _cityRideShake = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0, end: -7), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -7, end: 7), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 7, end: -5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -5, end: 5), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 5, end: 0), weight: 1),
+    ]).animate(CurvedAnimation(
+      parent: _cityRideAlertController,
+      curve: Curves.easeInOut,
+    ));
+    _cityRidesService.incomingRequests.addListener(_onCityRideRequestsChanged);
+    _cityRidesService.initialize().then((_) {
+      if (mounted) _onCityRideRequestsChanged();
+    });
     _fetchData();
     _initSocket();
+  }
+
+  void _onCityRideRequestsChanged() {
+    if (!mounted) return;
+    final requests = _cityRidesService.incomingRequests.value;
+    final ids = requests.map((request) => request.id).toSet();
+    final hasNewRequest = ids.difference(_knownCityRideIds).isNotEmpty;
+    setState(() {
+      _knownCityRideIds = ids;
+      _cityRideRequestCount = requests.length;
+    });
+    if (hasNewRequest) {
+      _cityRideAlertController.forward(from: 0);
+      HapticFeedback.mediumImpact();
+    }
+  }
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    if (hour < 21) return 'Good Evening';
+    return 'Good Night';
   }
 
   /// Initialise socket and listen for incoming ride requests.
@@ -49,17 +99,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _rideRequestSub = SocketService.onRideRequest.listen((booking) {
       if (!mounted) return;
 
+      if (_cityRidesService.ingestSocketRequest(booking)) {
+        return;
+      }
+
       // Get the booking ID to check against declined set
-      final bookingId = (booking['_id'] ?? booking['bookingId'])?.toString() ?? '';
+      final bookingId =
+          (booking['_id'] ?? booking['bookingId'])?.toString() ?? '';
 
       // Suppress re-broadcasts for rides this driver already declined
       if (bookingId.isNotEmpty && _declinedBookingIds.contains(bookingId)) {
-        debugPrint('Dashboard: suppressing re-broadcast for declined booking $bookingId');
+        debugPrint(
+            'Dashboard: suppressing re-broadcast for declined booking $bookingId');
         return;
       }
 
       // Navigate to IncomingRequestScreen; capture returned declined ID
-      context.push<String>('/rides/incoming', extra: {'booking': booking}).then((declinedId) {
+      context.push<String>('/rides/incoming', extra: {'booking': booking}).then(
+          (declinedId) {
         if (declinedId != null && declinedId.isNotEmpty) {
           setState(() => _declinedBookingIds.add(declinedId));
           debugPrint('Dashboard: added $declinedId to declined set');
@@ -71,6 +128,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void dispose() {
     _rideRequestSub?.cancel();
+    _cityRidesService.incomingRequests
+        .removeListener(_onCityRideRequestsChanged);
+    _cityRideAlertController.dispose();
     super.dispose();
   }
 
@@ -90,9 +150,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           final d = rawData['driver'] ?? rawData;
           setState(() {
             _driverName = d['fullName'] ?? 'Driver';
-            String? imgPath = d['profileImage'] ?? (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
+            String? imgPath = d['profileImage'] ??
+                (d['documents'] != null ? d['documents']['selfiePhoto'] : null);
             if (imgPath != null && imgPath.isNotEmpty) {
-              _profileImg = imgPath.startsWith('http') ? imgPath : '${EnvConfig.socketUrl}/$imgPath';
+              _profileImg = imgPath.startsWith('http')
+                  ? imgPath
+                  : '${EnvConfig.socketUrl}/$imgPath';
             } else {
               _profileImg = null;
             }
@@ -119,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _tripsToday = d['stats']?['todayTrips'] ?? 0;
         });
       }
-      
+
       if (earningsRes.statusCode == 200) {
         final d = jsonDecode(earningsRes.body)['data'];
         setState(() {
@@ -127,7 +190,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _recentTxns = d['recentTransactions'] ?? [];
         });
       }
-      
+
       if (currentRideRes.statusCode == 200) {
         final d = jsonDecode(currentRideRes.body)['data'];
         setState(() {
@@ -138,11 +201,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
           }
         });
       }
-
     } catch (e) {
       debugPrint('Dashboard Data Error: $e');
       if (mounted) {
-        setState(() => _errorMsg = 'Failed to load some dashboard data. Tap refresh to retry.');
+        setState(() => _errorMsg =
+            'Failed to load some dashboard data. Tap refresh to retry.');
       }
     } finally {
       if (mounted) {
@@ -158,9 +221,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final original = _online;
     setState(() => _online = val);
     try {
-      final res = await ApiService.patch('/driver/bookings/status', body: {
-        'onlineStatus': val ? 'online' : 'offline'
-      });
+      final res = await ApiService.patch('/driver/bookings/status',
+          body: {'onlineStatus': val ? 'online' : 'offline'});
       if (res.statusCode != 200) throw Exception();
     } catch (e) {
       setState(() => _online = original);
@@ -211,7 +273,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Good Morning', style: TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+                      Text(_greeting,
+                          style: TextStyle(
+                              fontSize: 14, color: AppColors.textSecondary)),
                       const SizedBox(height: 4),
                       Text(_driverName, style: AppText.cardHeadline),
                     ],
@@ -219,7 +283,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.refresh, color: AppColors.textSecondary),
+                        icon:
+                            Icon(Icons.refresh, color: AppColors.textSecondary),
                         onPressed: _onRefresh,
                       ),
                       InkWell(
@@ -232,10 +297,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(color: AppColors.gold, width: 2),
                             image: _profileImg != null
-                                ? DecorationImage(image: NetworkImage(_profileImg!), fit: BoxFit.cover)
+                                ? DecorationImage(
+                                    image: NetworkImage(_profileImg!),
+                                    fit: BoxFit.cover)
                                 : null,
                           ),
-                          child: _profileImg == null ? const Icon(Icons.person, color: AppColors.gold) : null,
+                          child: _profileImg == null
+                              ? const Icon(Icons.person, color: AppColors.gold)
+                              : null,
                         ),
                       ),
                     ],
@@ -259,19 +328,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           height: 12,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: _online ? AppColors.success : AppColors.textMuted,
+                            color: _online
+                                ? AppColors.success
+                                : AppColors.textMuted,
                           ),
                         ),
                         const SizedBox(width: 12),
-                          Text(
-                            _online ? "You're Online" : "You're Offline",
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-                          ),
+                        Text(
+                          _online ? "You're Online" : "You're Offline",
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w700),
+                        ),
                       ],
                     ),
                     Switch(
                       value: _online,
-                      activeThumbColor: Colors.black,
+                      activeThumbColor: Colors.white,
                       activeTrackColor: AppColors.gold,
                       inactiveTrackColor: AppColors.divider,
                       onChanged: _toggleStatus,
@@ -286,18 +358,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Expanded(
                     child: _statCard(
-                      Icons.trending_up, 
-                      AppColors.gold, 
-                      "Today's Earnings", 
+                      Icons.trending_up,
+                      AppColors.gold,
+                      "Today's Earnings",
                       '₹$_todayEarnings',
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: _statCard(
-                      Icons.local_taxi, 
-                      AppColors.info, 
-                      'Trips Today', 
+                      Icons.local_taxi,
+                      AppColors.info,
+                      'Trips Today',
                       '$_tripsToday',
                     ),
                   ),
@@ -307,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
               if (_ongoingRide != null || _nextRide != null) ...[
                 Text(
-                  _ongoingRide != null ? 'Active Ride' : 'Upcoming Ride', 
+                  _ongoingRide != null ? 'Active Ride' : 'Upcoming Ride',
                   style: AppText.sectionTitle,
                 ),
                 const SizedBox(height: 12),
@@ -316,36 +388,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     if (_ongoingRide != null) {
                       context.push('/rides/current');
                     } else {
-                      context.push('/rides/details', extra: {'rideId': _nextRide!['_id']});
+                      context.push('/rides/details',
+                          extra: {'rideId': _nextRide!['_id']});
                     }
                   },
                   child: Container(
                     padding: const EdgeInsets.all(20),
-                    decoration: rideCardDecoration(radius: 24, context: context),
+                    decoration:
+                        rideCardDecoration(radius: 24, context: context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(children: [
                           Icon(
-                            _ongoingRide != null ? Icons.directions_car : Icons.access_time, 
-                            size: 16, 
+                            _ongoingRide != null
+                                ? Icons.directions_car
+                                : Icons.access_time,
+                            size: 16,
                             color: AppColors.gold,
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            _ongoingRide != null ? 'Trip in progress' : 'Pickup expected soon', 
-                            style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                            _ongoingRide != null
+                                ? 'Trip in progress'
+                                : 'Pickup expected soon',
+                            style: TextStyle(
+                                color: AppColors.textSecondary, fontSize: 13),
                           ),
                         ]),
                         const SizedBox(height: 12),
                         Text(
-                          (_ongoingRide ?? _nextRide)!['pickupLocation']?['address'] ?? 'Unknown', 
+                          (_ongoingRide ?? _nextRide)!['pickupLocation']
+                                  ?['address'] ??
+                              'Unknown',
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '→  ${(_ongoingRide ?? _nextRide)!['dropoffLocation']?['address'] ?? 'Unknown'}', 
-                          style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                          '→  ${(_ongoingRide ?? _nextRide)!['dropoffLocation']?['address'] ?? 'Unknown'}',
+                          style: TextStyle(
+                              color: AppColors.textMuted, fontSize: 13),
                         ),
                       ],
                     ),
@@ -354,18 +436,108 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 const SizedBox(height: 24),
               ],
 
+              // --- City rides ---
+              AnimatedBuilder(
+                animation: _cityRideAlertController,
+                builder: (context, child) => Transform.translate(
+                  offset: Offset(_cityRideShake.value, 0),
+                  child: child,
+                ),
+                child: InkWell(
+                  onTap: () => context.push('/city-rides'),
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.gold, AppColors.goldDark],
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: .16),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.local_taxi_rounded,
+                              color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('City rides',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w900)),
+                              const SizedBox(height: 4),
+                              Text(
+                                  _cityRideRequestCount > 0
+                                      ? '$_cityRideRequestCount new ${_cityRideRequestCount == 1 ? 'request' : 'requests'} nearby'
+                                      : 'Short local trips, built for drivers',
+                                  style: const TextStyle(
+                                      color: Color(0xE6FFFFFF), fontSize: 13)),
+                            ],
+                          ),
+                        ),
+                        if (_cityRideRequestCount > 0)
+                          Container(
+                            constraints: const BoxConstraints(minWidth: 28),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 9, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '$_cityRideRequestCount',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: AppColors.goldDark,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12,
+                              ),
+                            ),
+                          )
+                        else
+                          const Icon(Icons.arrow_forward_rounded,
+                              color: Colors.white),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
               // --- Quick Actions ---
               const Text('Quick Actions', style: AppText.sectionTitle),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _quickAction(Icons.list_alt_rounded, 'Requests', () => context.push('/rides/available'))),
+                  Expanded(
+                      child: _quickAction(Icons.list_alt_rounded, 'Requests',
+                          () => context.push('/rides/available'))),
                   const SizedBox(width: 12),
-                  Expanded(child: _quickAction(Icons.support_agent, 'Support', () => context.push('/profile/help'))),
+                  Expanded(
+                      child: _quickAction(Icons.support_agent, 'Support',
+                          () => context.push('/profile/help'))),
                   const SizedBox(width: 12),
-                  Expanded(child: _quickAction(Icons.receipt_long, 'History', () => context.push('/tabs?tab=1'))),
+                  Expanded(
+                      child: _quickAction(Icons.receipt_long, 'History',
+                          () => context.push('/tabs?tab=1'))),
                   const SizedBox(width: 12),
-                  Expanded(child: _quickAction(Icons.settings, 'Settings', () => context.push('/tabs?tab=3'))),
+                  Expanded(
+                      child: _quickAction(Icons.settings, 'Settings',
+                          () => context.push('/tabs?tab=3'))),
                 ],
               ),
               const SizedBox(height: 24),
@@ -376,11 +548,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               if (_recentTxns.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 24.0),
-                  child: Text('No recent activity', style: TextStyle(color: Colors.grey)),
+                  child: Text('No recent activity',
+                      style: TextStyle(color: Colors.grey)),
                 )
               else
                 Container(
-                  decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
+                  decoration: cardDecoration(
+                      bg: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.surfaceAlt
+                          : AppColors.surfaceAltLight,
+                      radius: 24,
+                      context: context),
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     children: List.generate(_recentTxns.length, (i) {
@@ -389,7 +567,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           border: i < _recentTxns.length - 1
-                              ? Border(bottom: BorderSide(color: Theme.of(context).brightness == Brightness.dark ? AppColors.borderSubtle : AppColors.borderSubtleLight))
+                              ? Border(
+                                  bottom: BorderSide(
+                                      color: Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? AppColors.borderSubtle
+                                          : AppColors.borderSubtleLight))
                               : null,
                         ),
                         child: Row(
@@ -397,16 +580,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Container(
                               width: 36,
                               height: 36,
-                              decoration: const BoxDecoration(color: AppColors.goldTint, shape: BoxShape.circle),
-                              child: const Icon(Icons.check, color: AppColors.gold, size: 18),
+                              decoration: const BoxDecoration(
+                                  color: AppColors.goldTint,
+                                  shape: BoxShape.circle),
+                              child: const Icon(Icons.check,
+                                  color: AppColors.gold, size: 18),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Text(txn['type'] ?? 'Ride Payment', style: const TextStyle(fontSize: 14)),
+                              child: Text(txn['type'] ?? 'Ride Payment',
+                                  style: const TextStyle(fontSize: 14)),
                             ),
                             Text(
-                              '₹${(txn['amount'] ?? 0).toInt()}', 
-                              style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold, fontSize: 13),
+                              '₹${(txn['amount'] ?? 0).toInt()}',
+                              style: const TextStyle(
+                                  color: AppColors.gold,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13),
                             ),
                           ],
                         ),
@@ -420,8 +610,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
     );
   }
-
-
 
   Widget _dashboardSkeleton() {
     return const SingleChildScrollView(
@@ -492,9 +680,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+          Text(value,
+              style:
+                  const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+          Text(label,
+              style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
         ],
       ),
     );
@@ -511,7 +702,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Icon(icon, color: AppColors.gold, size: 22),
             const SizedBox(height: 8),
-            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(label,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
           ],
         ),
       ),

@@ -9,11 +9,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project/app.dart';
 
 void main() {
-  testWidgets('App launches and shows splash screen', (WidgetTester tester) async {
+  testWidgets('App launches and shows splash screen',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const GoLongDriveApp());
 
     // Splash screen should be showing right after launch.
     expect(find.byType(Scaffold), findsOneWidget);
     expect(find.text('Your ride, your journey'), findsOneWidget);
+
+    // Dispose the splash before advancing its delayed startup callback.
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 2));
   });
 }

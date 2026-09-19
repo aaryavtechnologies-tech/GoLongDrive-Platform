@@ -20,7 +20,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
   bool _loading = true;
   bool _refreshing = false;
   String _errorMsg = '';
-  
+
   double _todayEarnings = 0;
   double _weekEarnings = 0;
   double _monthEarnings = 0;
@@ -43,7 +43,8 @@ class _EarningsScreenState extends State<EarningsScreen> {
     try {
       final futures = await Future.wait([
         ApiService.get('/earnings/driver/dashboard'),
-        ApiService.get('/driver/bookings/dashboard'), // needed for tripsToday if not in earnings
+        ApiService.get(
+            '/driver/bookings/dashboard'), // needed for tripsToday if not in earnings
       ]);
 
       final earningsRes = futures[0];
@@ -64,7 +65,10 @@ class _EarningsScreenState extends State<EarningsScreen> {
         _tripsToday = d['stats']?['todayTrips'] ?? 0;
       }
     } catch (e) {
-      if (mounted) setState(() => _errorMsg = 'Failed to load earnings. Please check your connection.');
+      if (mounted) {
+        setState(() => _errorMsg =
+            'Failed to load earnings. Please check your connection.');
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -123,125 +127,161 @@ class _EarningsScreenState extends State<EarningsScreen> {
         backgroundColor: AppColors.surface,
         onRefresh: _onRefresh,
         child: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Earnings', style: AppText.cardHeadline),
-              IconButton(
-                icon: Icon(Icons.refresh, color: AppColors.textSecondary),
-                onPressed: _onRefresh,
-              )
-            ],
-          ),
-          const SizedBox(height: 10),
-
-          // --- Balance card ---
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              gradient: AppGradients.goldBalanceCard,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('This Week', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
-                Text('₹${_weekEarnings.toStringAsFixed(0)}', style: AppText.balanceAmount),
-                const SizedBox(height: 4),
-                const Text('Available for withdrawal', style: TextStyle(color: Colors.black54, fontSize: 13)),
+                const Text('Earnings', style: AppText.cardHeadline),
+                IconButton(
+                  icon: Icon(Icons.refresh, color: AppColors.textSecondary),
+                  onPressed: _onRefresh,
+                )
               ],
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 10),
 
-          // --- Stat row ---
-          Row(
-            children: [
-              Expanded(child: _statCard('Today', _todayEarnings)),
-              const SizedBox(width: 12),
-              Expanded(child: _statCard('This Month', _monthEarnings)),
-              const SizedBox(width: 12),
-              Expanded(child: _tripsCard('Trips Today', _tripsToday)),
-            ],
-          ),
-          const SizedBox(height: 24),
+            // --- Balance card ---
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: AppGradients.goldBalanceCard,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('This Week',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Text('₹${_weekEarnings.toStringAsFixed(0)}',
+                      style: AppText.balanceAmount),
+                  const SizedBox(height: 4),
+                  const Text('Available for withdrawal',
+                      style: TextStyle(color: Color(0xD9FFFFFF), fontSize: 13)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
 
-          const Text('Transaction History', style: AppText.sectionTitle),
-          const SizedBox(height: 12),
-          _transactions.isEmpty
-              ? Container(
-                  decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
-                  child: const EmptyState(
-                    icon: Icons.receipt_long_outlined,
-                    title: 'No transactions yet',
-                    subtitle: 'Your ride earnings and withdrawals will show up here.',
+            // --- Stat row ---
+            Row(
+              children: [
+                Expanded(child: _statCard('Today', _todayEarnings)),
+                const SizedBox(width: 12),
+                Expanded(child: _statCard('This Month', _monthEarnings)),
+                const SizedBox(width: 12),
+                Expanded(child: _tripsCard('Trips Today', _tripsToday)),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            const Text('Transaction History', style: AppText.sectionTitle),
+            const SizedBox(height: 12),
+            _transactions.isEmpty
+                ? Container(
+                    decoration: cardDecoration(
+                        bg: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.surfaceAlt
+                            : AppColors.surfaceAltLight,
+                        radius: 24,
+                        context: context),
+                    child: const EmptyState(
+                      icon: Icons.receipt_long_outlined,
+                      title: 'No transactions yet',
+                      subtitle:
+                          'Your ride earnings and withdrawals will show up here.',
+                    ),
+                  )
+                : Container(
+                    decoration: cardDecoration(
+                        bg: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.surfaceAlt
+                            : AppColors.surfaceAltLight,
+                        radius: 24,
+                        context: context),
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      children: List.generate(_transactions.length, (i) {
+                        final txn = _transactions[i];
+                        final isLast = i == _transactions.length - 1;
+
+                        final title = txn['type'] ?? 'Ride Earnings';
+                        final amount = (txn['amount'] ?? 0).toDouble();
+                        final bool isCredit = txn['type'] !=
+                            'Withdrawal'; // In driver app, usually it's all credit except withdrawals
+                        final dateStr = txn['createdAt'] ?? txn['date'];
+                        final date = dateStr != null
+                            ? DateTime.tryParse(dateStr) ?? DateTime.now()
+                            : DateTime.now();
+
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            border: !isLast
+                                ? Border(
+                                    bottom: BorderSide(
+                                        color: AppColors.borderSubtle))
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: (isCredit
+                                          ? AppColors.success
+                                          : AppColors.error)
+                                      .withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(
+                                  isCredit
+                                      ? Icons.arrow_downward
+                                      : Icons.arrow_upward,
+                                  color: isCredit
+                                      ? AppColors.success
+                                      : AppColors.error,
+                                  size: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(title,
+                                        style: TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 14)),
+                                    const SizedBox(height: 2),
+                                    Text(_formatDate(date),
+                                        style: TextStyle(
+                                            color: AppColors.textMuted,
+                                            fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                '${isCredit ? '+' : '-'}₹${amount.toStringAsFixed(0)}',
+                                style: TextStyle(
+                                  color: isCredit
+                                      ? AppColors.success
+                                      : AppColors.error,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
                   ),
-                )
-              : Container(
-                  decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
-                  padding: const EdgeInsets.all(8),
-                  child: Column(
-                    children: List.generate(_transactions.length, (i) {
-                      final txn = _transactions[i];
-                      final isLast = i == _transactions.length - 1;
-                      
-                      final title = txn['type'] ?? 'Ride Earnings';
-                      final amount = (txn['amount'] ?? 0).toDouble();
-                      final bool isCredit = txn['type'] != 'Withdrawal'; // In driver app, usually it's all credit except withdrawals
-                      final dateStr = txn['createdAt'] ?? txn['date'];
-                      final date = dateStr != null ? DateTime.tryParse(dateStr) ?? DateTime.now() : DateTime.now();
-
-                      return Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: !isLast ? Border(bottom: BorderSide(color: AppColors.borderSubtle)) : null,
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: (isCredit ? AppColors.success : AppColors.error).withValues(alpha: 0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                isCredit ? Icons.arrow_downward : Icons.arrow_upward,
-                                color: isCredit ? AppColors.success : AppColors.error,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(title, style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
-                                  const SizedBox(height: 2),
-                                  Text(_formatDate(date),
-                                      style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              '${isCredit ? '+' : '-'}₹${amount.toStringAsFixed(0)}',
-                              style: TextStyle(
-                                color: isCredit ? AppColors.success : AppColors.error,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -254,9 +294,13 @@ class _EarningsScreenState extends State<EarningsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('₹${value.toStringAsFixed(0)}',
-              style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+          Text(label,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
         ],
       ),
     );
@@ -269,9 +313,14 @@ class _EarningsScreenState extends State<EarningsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$value', style: TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800)),
+          Text('$value',
+              style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+          Text(label,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
         ],
       ),
     );

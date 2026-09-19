@@ -27,6 +27,7 @@ import '../features/profile/notifications_screen.dart';
 import '../features/profile/help_support_screen.dart';
 import '../features/profile/privacy_policy_screen.dart';
 import '../features/profile/terms_screen.dart';
+import '../features/city_rides/city_rides_screen.dart';
 
 /// Phase 6 — replaces the plain `Navigator`/`routes:` map that lived in
 /// `main.dart` through Phase 5. Route *paths* are unchanged (every string
@@ -58,7 +59,9 @@ final GoRouter appRouter = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
-    GoRoute(path: '/onboarding', builder: (context, state) => const OnboardingScreen()),
+    GoRoute(
+        path: '/onboarding',
+        builder: (context, state) => const OnboardingScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/auth/forgot-password',
@@ -83,11 +86,13 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/auth/register/address',
-      builder: (context, state) => AddressStep(registration: state.extra as RegistrationData),
+      builder: (context, state) =>
+          AddressStep(registration: state.extra as RegistrationData),
     ),
     GoRoute(
       path: '/auth/register/account',
-      builder: (context, state) => AccountStep(registration: state.extra as RegistrationData),
+      builder: (context, state) =>
+          AccountStep(registration: state.extra as RegistrationData),
     ),
     GoRoute(
       path: '/auth/register/vehicle-basic',
@@ -111,11 +116,13 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/auth/register/photos',
-      builder: (context, state) => PhotoStep(registration: state.extra as RegistrationData),
+      builder: (context, state) =>
+          PhotoStep(registration: state.extra as RegistrationData),
     ),
     GoRoute(
       path: '/auth/register/review',
-      builder: (context, state) => ReviewStep(registration: state.extra as RegistrationData),
+      builder: (context, state) =>
+          ReviewStep(registration: state.extra as RegistrationData),
     ),
 
     // --- Main app ---
@@ -132,18 +139,41 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // extra: {'rideId': String} -- set by RidesScreen's onTap.
-    GoRoute(path: '/rides/details', builder: (context, state) => const RideDetailsScreen()),
-    GoRoute(path: '/rides/current', builder: (context, state) => const CurrentRideScreen()),
-    GoRoute(path: '/rides/available', builder: (context, state) => const AvailableRidesScreen()),
+    GoRoute(
+        path: '/rides/details',
+        builder: (context, state) => const RideDetailsScreen()),
+    GoRoute(
+        path: '/rides/current',
+        builder: (context, state) => const CurrentRideScreen()),
+    GoRoute(
+        path: '/rides/available',
+        builder: (context, state) => const AvailableRidesScreen()),
     // extra: {'rideId': String} -- set by Dashboard's "New Ride" quick action.
-    GoRoute(path: '/rides/incoming', builder: (context, state) => const IncomingRequestScreen()),
+    GoRoute(
+        path: '/rides/incoming',
+        builder: (context, state) => const IncomingRequestScreen()),
+    GoRoute(
+        path: '/city-rides',
+        builder: (context, state) => const CityRidesScreen()),
 
     // --- Profile > Settings menu screens ---
-    GoRoute(path: '/profile/edit', builder: (context, state) => const EditProfileScreen()),
-    GoRoute(path: '/profile/documents', builder: (context, state) => const DocumentsScreen()),
-    GoRoute(path: '/profile/notifications', builder: (context, state) => const NotificationsScreen()),
-    GoRoute(path: '/profile/help', builder: (context, state) => const HelpSupportScreen()),
-    GoRoute(path: '/profile/privacy', builder: (context, state) => const PrivacyPolicyScreen()),
-    GoRoute(path: '/profile/terms', builder: (context, state) => const TermsScreen()),
+    GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen()),
+    GoRoute(
+        path: '/profile/documents',
+        builder: (context, state) => const DocumentsScreen()),
+    GoRoute(
+        path: '/profile/notifications',
+        builder: (context, state) => const NotificationsScreen()),
+    GoRoute(
+        path: '/profile/help',
+        builder: (context, state) => const HelpSupportScreen()),
+    GoRoute(
+        path: '/profile/privacy',
+        builder: (context, state) => const PrivacyPolicyScreen()),
+    GoRoute(
+        path: '/profile/terms',
+        builder: (context, state) => const TermsScreen()),
   ],
 );

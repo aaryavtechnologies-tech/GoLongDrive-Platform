@@ -95,11 +95,11 @@ class _JourneyDateTimeSheetState extends State<JourneyDateTimeSheet> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
               primary: AppColors.primaryGold,
-              onPrimary: Colors.black,
-              surface: AppColors.nearBlack,
-              onSurface: Colors.white,
+              onPrimary: AppColors.textOnGold,
+              surface: AppColors.of(context).surface,
+              onSurface: AppColors.of(context).textPrimary,
             ),
           ),
           child: child!,

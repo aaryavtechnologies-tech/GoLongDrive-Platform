@@ -47,6 +47,7 @@ dependencies:
   geolocator: any
   http: any
   shared_preferences: any
+  flutter_secure_storage: ^9.2.4
   toastification: any
   qr_flutter: any
   razorpay_flutter: any
@@ -110,14 +111,27 @@ flutter:
 # Matches the app's black background + logo so the native launch screen
 # and the Dart SplashScreen look identical — no white flash between them.
 flutter_native_splash:
-  color: "#000000"
-  image: assets/images/app_icon.jpg
+  color: "#071421"
+  image: assets/images/app_icon.png
   android_12:
-    color: "#000000"
-    image: assets/images/app_icon.jpg
+    color: "#071421"
+    image: assets/images/app_icon.png
 
 flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "assets/images/app_icon.jpg"
+  remove_alpha_ios: true
+  image_path: "assets/images/app_icon.png"
   min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    background_color: "#071421"
+    theme_color: "#071421"
+  windows:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/images/app_icon.png"

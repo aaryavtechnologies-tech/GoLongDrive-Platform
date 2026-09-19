@@ -1,10 +1,12 @@
 // lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/validators.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/app_checkbox.dart';
 import '../../widgets/password_field.dart';
 import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
@@ -19,12 +21,47 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const _storage = FlutterSecureStorage();
+  static const _emailKey = 'rider_saved_login_email';
+  static const _passwordKey = 'rider_saved_login_password';
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _rememberLogin = false;
   String? _authError;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSavedLogin();
+  }
+
+  Future<void> _restoreSavedLogin() async {
+    final values = await Future.wait([
+      _storage.read(key: _emailKey),
+      _storage.read(key: _passwordKey),
+    ]);
+    if (!mounted || values.first == null || values.last == null) return;
+    setState(() {
+      _emailController.text = values.first!;
+      _passwordController.text = values.last!;
+      _rememberLogin = true;
+    });
+  }
+
+  Future<void> _persistLoginChoice() async {
+    if (_rememberLogin) {
+      await _storage.write(key: _emailKey, value: _emailController.text.trim());
+      await _storage.write(key: _passwordKey, value: _passwordController.text);
+      return;
+    }
+    await Future.wait([
+      _storage.delete(key: _emailKey),
+      _storage.delete(key: _passwordKey),
+    ]);
+  }
 
   @override
   void dispose() {
@@ -45,6 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await AuthService.login(enteredEmail, enteredPassword);
+      await _persistLoginChoice();
       if (!mounted) return;
 
       // Fetch profile immediately after login
@@ -102,17 +140,16 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 Text(
                   'Welcome back',
-                  style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary),
-                )
-                    .animate()
-                    .fadeIn(duration: 400.ms),
+                  style: AppTextStyles.largeHeading
+                      .copyWith(color: colors.textPrimary),
+                ).animate().fadeIn(duration: 400.ms),
                 const SizedBox(height: 8),
                 Text(
                   'Log in to continue booking your rides.',
-                  style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+                  style: AppTextStyles.bodySecondary
+                      .copyWith(color: colors.textSecondary),
                 ).animate().fadeIn(delay: 100.ms, duration: 400.ms),
                 const SizedBox(height: 32),
-
                 AppTextField(
                   label: 'Email',
                   hint: 'Enter your email address',
@@ -122,46 +159,48 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: Validators.email,
                 ),
                 const SizedBox(height: 20),
-
                 PasswordField(
                   label: 'Password',
                   hint: 'Enter your password',
                   controller: _passwordController,
                   validator: Validators.passwordRequired,
                 ),
-
                 if (_authError != null) ...[
                   const SizedBox(height: 12),
                   Text(_authError!, style: AppTextStyles.errorText),
                 ],
-
                 const SizedBox(height: 16),
-
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    AppCheckbox(
+                      value: _rememberLogin,
+                      onChanged: (value) =>
+                          setState(() => _rememberLogin = value),
+                      label: const Text('Save login'),
+                    ),
                     TextButton(
                       onPressed: _goToForgotPassword,
-                      child: Text('Forgot password?', style: AppTextStyles.link),
+                      child:
+                          Text('Forgot password?', style: AppTextStyles.link),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
-
                 PrimaryButton(
                   label: 'Log In',
                   isLoading: _isLoading,
                   onPressed: _onLoginPressed,
                 ),
                 const SizedBox(height: 28),
-
                 Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         "Don't have an account? ",
-                        style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+                        style: AppTextStyles.bodySecondary
+                            .copyWith(color: colors.textSecondary),
                       ),
                       GestureDetector(
                         onTap: _goToRegister,

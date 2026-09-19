@@ -3,31 +3,33 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
 /// Text style hierarchy for the whole app.
-/// Poppins is used for headings (bold, brand feel), Inter for body/caption
+/// Inter is used throughout, with tighter headings and relaxed body/caption
 /// text (clean, readable). Every screen/widget must use these — never
 /// reference the font families directly inside a screen file.
 class AppTextStyles {
   AppTextStyles._();
 
-  // Headings — Poppins
+  // Headings — Inter
   static TextStyle largeHeading = const TextStyle(
-    fontFamily: 'Poppins',
-    fontSize: 28,
+    fontFamily: 'Inter',
+    fontSize: 32,
+    letterSpacing: -1.2,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     height: 1.2,
   );
 
   static TextStyle mediumHeading = const TextStyle(
-    fontFamily: 'Poppins',
-    fontSize: 22,
+    fontFamily: 'Inter',
+    fontSize: 24,
+    letterSpacing: -0.7,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     height: 1.25,
   );
 
   static TextStyle priceLarge = const TextStyle(
-    fontFamily: 'Poppins',
+    fontFamily: 'Inter',
     fontSize: 24,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
@@ -35,7 +37,7 @@ class AppTextStyles {
   );
 
   static TextStyle subtitle = const TextStyle(
-    fontFamily: 'Poppins',
+    fontFamily: 'Inter',
     fontSize: 16,
     fontWeight: FontWeight.w500,
     color: AppColors.textPrimary,
@@ -67,9 +69,9 @@ class AppTextStyles {
     height: 1.3,
   );
 
-  // Button label — Poppins, used inside primary/secondary buttons
+  // Button label — Inter, used inside primary/secondary buttons
   static TextStyle button = const TextStyle(
-    fontFamily: 'Poppins',
+    fontFamily: 'Inter',
     fontSize: 16,
     fontWeight: FontWeight.w600,
     color: AppColors.textOnGold,

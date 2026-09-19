@@ -9,14 +9,20 @@ BoxDecoration cardDecoration({
   Color? borderColor,
   BuildContext? context,
 }) {
-  final isDark = context != null ? Theme.of(context).brightness == Brightness.dark : true;
+  final isDark = context != null
+      ? Theme.of(context).brightness == Brightness.dark
+      : ThemeService.instance.isDarkMode;
   return BoxDecoration(
     color: bg ?? (isDark ? AppColors.surface : AppColors.surfaceLight),
     borderRadius: BorderRadius.circular(radius),
-    border: Border.all(color: borderColor ?? (isDark ? AppColors.borderSubtle : AppColors.borderSubtleLight)),
+    border: Border.all(
+        color: borderColor ??
+            (isDark ? AppColors.borderSubtle : AppColors.borderSubtleLight)),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.25)
+            : const Color(0xFF2C2416).withValues(alpha: 0.05),
         blurRadius: 8,
         offset: const Offset(0, 4),
       ),
@@ -26,26 +32,33 @@ BoxDecoration cardDecoration({
 
 /// Diagonal ride-card / stat-card gradient decoration.
 BoxDecoration rideCardDecoration({double radius = 24, BuildContext? context}) {
+  final isDark = context != null
+      ? Theme.of(context).brightness == Brightness.dark
+      : ThemeService.instance.isDarkMode;
   return BoxDecoration(
     gradient: context != null ? AppGradients.rideCard(context) : null,
     color: context == null ? AppColors.surface : null, // Fallback
     borderRadius: BorderRadius.circular(radius),
     border: Border.all(
-      color: (context != null && Theme.of(context).brightness == Brightness.dark)
+      color: isDark
           ? Colors.white.withValues(alpha: 0.08)
-          : Colors.black.withValues(alpha: 0.05),
+          : AppColors.borderSubtleLight,
     ),
   );
 }
 
 /// Form-section card used throughout the registration wizard.
 BoxDecoration formSectionDecoration({BuildContext? context}) {
-  final isDark = context != null ? Theme.of(context).brightness == Brightness.dark : true;
+  final isDark = context != null
+      ? Theme.of(context).brightness == Brightness.dark
+      : ThemeService.instance.isDarkMode;
   return BoxDecoration(
     color: isDark ? AppColors.surface : AppColors.surfaceLight,
     borderRadius: BorderRadius.circular(20),
     border: Border.all(
-      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+      color: isDark
+          ? Colors.white.withValues(alpha: 0.05)
+          : AppColors.borderSubtleLight,
     ),
   );
 }

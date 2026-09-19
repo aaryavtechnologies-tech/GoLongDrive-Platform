@@ -15,13 +15,14 @@ class AppTheme {
   static ThemeData _build(AppColorPalette colors, Brightness brightness) {
     return ThemeData(
       useMaterial3: true,
+      fontFamily: 'Inter',
       brightness: brightness,
       scaffoldBackgroundColor: colors.background,
       primaryColor: AppColors.primaryGold,
 
       colorScheme: brightness == Brightness.dark
           ? ColorScheme.dark(
-              primary: AppColors.primaryGold,
+              primary: colors.accentIcon,
               onPrimary: AppColors.textOnGold,
               secondary: AppColors.primaryGoldDark,
               surface: colors.surface,
@@ -29,7 +30,7 @@ class AppTheme {
               error: AppColors.error,
             )
           : ColorScheme.light(
-              primary: AppColors.primaryGold,
+              primary: colors.accentIcon,
               onPrimary: AppColors.textOnGold,
               secondary: AppColors.primaryGoldDark,
               surface: colors.surface,
@@ -38,11 +39,14 @@ class AppTheme {
             ),
 
       textTheme: TextTheme(
-        headlineLarge: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary),
-        headlineMedium: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary),
+        headlineLarge:
+            AppTextStyles.largeHeading.copyWith(color: colors.textPrimary),
+        headlineMedium:
+            AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary),
         titleMedium: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
         bodyMedium: AppTextStyles.body.copyWith(color: colors.textPrimary),
-        bodySmall: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+        bodySmall:
+            AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
         labelSmall: AppTextStyles.caption.copyWith(color: colors.textSecondary),
       ),
 
@@ -50,8 +54,10 @@ class AppTheme {
         backgroundColor: colors.background,
         elevation: 0,
         centerTitle: true,
+        scrolledUnderElevation: 0,
         iconTheme: IconThemeData(color: colors.textPrimary),
-        titleTextStyle: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+        titleTextStyle:
+            AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
       ),
 
       // Base styling for form fields — screens/widgets can still override
@@ -60,7 +66,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: colors.surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: colors.divider),
@@ -71,13 +78,15 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.inputBorderFocused, width: 1.5),
+          borderSide:
+              const BorderSide(color: AppColors.inputBorderFocused, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        hintStyle: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+        hintStyle:
+            AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
         errorStyle: AppTextStyles.errorText,
       ),
 
@@ -99,6 +108,42 @@ class AppTheme {
       dividerTheme: DividerThemeData(
         color: colors.divider,
         thickness: 1,
+      ),
+      cardTheme: CardThemeData(
+        color: colors.surfaceCard,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: colors.divider),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: colors.surface,
+        modalBackgroundColor: colors.surface,
+        showDragHandle: true,
+        dragHandleColor: colors.inputBorder,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: colors.surfaceElevated,
+        contentTextStyle:
+            AppTextStyles.body.copyWith(color: colors.textPrimary),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: colors.surface,
+        indicatorColor: colors.accentIcon.withValues(alpha: .16),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? colors.accentIcon
+                : colors.textSecondary)),
       ),
     );
   }

@@ -48,7 +48,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _next() {
     if (_index < _items.length - 1) {
-      _controller.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      _controller.nextPage(
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
     } else {
       _completeOnboarding();
     }
@@ -99,9 +100,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   itemBuilder: (context, i) {
                     final item = _items[i];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Center(
-                        child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 32),
+                        child: Center(
+                            child: SingleChildScrollView(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -109,49 +110,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 width: 160,
                                 height: 160,
                                 margin: const EdgeInsets.only(bottom: 48),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: AppGradients.iconHalo(),
-                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-                            ),
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                // two concentric "halo" rings
-                                Container(
-                                  width: 160 * 1.2,
-                                  height: 160 * 1.2,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.08)),
-                                  ),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppGradients.iconHalo(),
+                                  border: Border.all(
+                                      color: AppColors.gold
+                                          .withValues(alpha: 0.3)),
                                 ),
-                                Container(
-                                  width: 160 * 1.4,
-                                  height: 160 * 1.4,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.05)),
-                                  ),
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    // two concentric "halo" rings
+                                    Container(
+                                      width: 160 * 1.2,
+                                      height: 160 * 1.2,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: AppColors.gold
+                                                .withValues(alpha: 0.08)),
+                                      ),
+                                    ),
+                                    Container(
+                                      width: 160 * 1.4,
+                                      height: 160 * 1.4,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                            color: AppColors.gold
+                                                .withValues(alpha: 0.05)),
+                                      ),
+                                    ),
+                                    Icon(item.icon,
+                                        size: 64, color: AppColors.gold),
+                                  ],
                                 ),
-                                Icon(item.icon, size: 64, color: AppColors.gold),
-                              ],
-                            ),
+                              ),
+                              Text(
+                                item.title,
+                                textAlign: TextAlign.center,
+                                style: AppText.onboardingTitle,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                item.description,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    color: AppColors.textSecondary,
+                                    height: 1.75),
+                              ),
+                            ],
                           ),
-                          Text(
-                            item.title,
-                            textAlign: TextAlign.center,
-                            style: AppText.onboardingTitle,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            item.description,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 16, color: AppColors.textSecondary, height: 1.75),
-                          ),
-                        ],
-                      ),
-                    )));
+                        )));
                   },
                 ),
               ),
@@ -169,7 +180,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           height: 8,
                           width: active ? 32 : 8,
                           decoration: BoxDecoration(
-                            color: AppColors.gold.withValues(alpha: active ? 1 : 0.3),
+                            color: AppColors.gold
+                                .withValues(alpha: active ? 1 : 0.3),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -177,10 +189,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                     const SizedBox(height: 40),
                     AppButton(
-                      label: _index == _items.length - 1 ? 'Get Started' : 'Next',
+                      label:
+                          _index == _items.length - 1 ? 'Get Started' : 'Next',
                       onPressed: _next,
                       rightIcon: _index < _items.length - 1
-                          ? const Icon(Icons.chevron_right, color: Colors.black, size: 20)
+                          ? const Icon(Icons.chevron_right,
+                              color: Colors.white, size: 20)
                           : null,
                     ),
                   ],

@@ -14,7 +14,7 @@ import '../navigation/in_app_navigation_screen.dart';
 
 /// Current Ride Screen - Handles the active trip logic.
 /// Wiring this to MockData.currentRide for now.
-/// AI/Backend: this screen is the core of the driver experience. 
+/// AI/Backend: this screen is the core of the driver experience.
 /// We need real-time status updates via WebSockets or long polling eventually.
 class CurrentRideScreen extends StatefulWidget {
   const CurrentRideScreen({super.key});
@@ -107,7 +107,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           body: {
             'otp': pin, // Backend expects 'otp' which matches customer.ridePin
             'startLat': 23.0225, // Fallback lat
-            'startLng': 72.5714  // Fallback lng
+            'startLng': 72.5714 // Fallback lng
           },
         );
         if (res.statusCode == 200) {
@@ -122,32 +122,36 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
             }
           } catch (_) {}
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorText)));
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(errorText)));
           }
         }
       } else if (_stage == _TripStage.inProgress) {
         // Complete Trip
-        final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/complete');
+        final res = await ApiService.post(
+            '/driver/bookings/rides/${_ride!.id}/complete');
         if (res.statusCode == 200) {
+          if (mounted) {
+            setState(() => _stage = _TripStage.completed);
+            context.pop();
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Failed to complete trip')));
+          }
+        }
+      } else if (_stage == _TripStage.completed) {
         if (mounted) {
-          setState(() => _stage = _TripStage.completed);
           context.pop();
         }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to complete trip')));
-        }
       }
-    } else if (_stage == _TripStage.completed) {
+    } catch (e) {
       if (mounted) {
-        context.pop();
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Network error')));
       }
-    }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error')));
-    }
-  } finally {
+    } finally {
       if (mounted) setState(() => _actionLoading = false);
     }
   }
@@ -174,14 +178,23 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 keyboardType: TextInputType.number,
                 maxLength: 4,
                 obscureText: true,
-                style: const TextStyle(color: Colors.white, fontSize: 24, letterSpacing: 8, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    letterSpacing: 8,
+                    fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   counterText: '',
                   hintText: '••••',
-                  hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 24, letterSpacing: 8),
-                  enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold)),
-                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.gold, width: 2)),
+                  hintStyle: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 24,
+                      letterSpacing: 8),
+                  enabledBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.gold)),
+                  focusedBorder: const UnderlineInputBorder(
+                      borderSide: BorderSide(color: AppColors.gold, width: 2)),
                 ),
               ),
             ],
@@ -189,7 +202,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+              child:
+                  Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
             ),
             ElevatedButton(
               onPressed: () {
@@ -203,7 +217,9 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 }
               },
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.gold),
-              child: const Text('Verify', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+              child: const Text('Verify',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -247,22 +263,26 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
 
   Future<void> _openGoogleMaps() async {
     if (_ride == null) return;
-    
+
     String url = '';
-    
+
     // If heading to pickup, set destination as pickup.
     // If in progress, set destination as drop-off.
     if (_stage == _TripStage.arriving || _stage == _TripStage.arrived) {
       if (_ride!.pickupLat != null && _ride!.pickupLng != null) {
-        url = 'https://www.google.com/maps/dir/?api=1&destination=${_ride!.pickupLat},${_ride!.pickupLng}';
+        url =
+            'https://www.google.com/maps/dir/?api=1&destination=${_ride!.pickupLat},${_ride!.pickupLng}';
       } else {
-        url = 'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.pickupAddress)}';
+        url =
+            'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.pickupAddress)}';
       }
     } else if (_stage == _TripStage.inProgress) {
       if (_ride!.dropLat != null && _ride!.dropLng != null) {
-        url = 'https://www.google.com/maps/dir/?api=1&destination=${_ride!.dropLat},${_ride!.dropLng}';
+        url =
+            'https://www.google.com/maps/dir/?api=1&destination=${_ride!.dropLat},${_ride!.dropLng}';
       } else {
-        url = 'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.dropAddress)}';
+        url =
+            'https://www.google.com/maps/dir/?api=1&destination=${Uri.encodeComponent(_ride!.dropAddress)}';
       }
     }
 
@@ -272,7 +292,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open Google Maps')));
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not open Google Maps')));
         }
       }
     }
@@ -284,7 +305,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Current Ride')),
-        body: const Center(child: CircularProgressIndicator(color: AppColors.gold)),
+        body: const Center(
+            child: CircularProgressIndicator(color: AppColors.gold)),
       );
     }
 
@@ -295,7 +317,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Current Ride')),
         body: Center(
-          child: Text('No active ride right now', style: TextStyle(color: AppColors.textMuted)),
+          child: Text('No active ride right now',
+              style: TextStyle(color: AppColors.textMuted)),
         ),
       );
     }
@@ -312,7 +335,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
+                        icon: Icon(Icons.arrow_back,
+                            color: AppColors.textPrimary),
                         onPressed: () => context.pop(),
                       ),
                       const SizedBox(width: 4),
@@ -337,12 +361,15 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                                   width: 10,
                                   height: 10,
                                   decoration: const BoxDecoration(
-                                      shape: BoxShape.circle, color: AppColors.success),
+                                      shape: BoxShape.circle,
+                                      color: AppColors.success),
                                 ),
                                 const SizedBox(width: 10),
                                 Text(_stage.label,
                                     style: TextStyle(
-                                        color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w700)),
+                                        color: AppColors.textPrimary,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w700)),
                               ],
                             ),
                             const SizedBox(height: 16),
@@ -357,7 +384,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                         ride: ride,
                         height: 180,
                         showDriverLocation: true,
-                        navTarget: _stage == _TripStage.inProgress || _stage == _TripStage.completed
+                        navTarget: _stage == _TripStage.inProgress ||
+                                _stage == _TripStage.completed
                             ? NavTarget.drop
                             : NavTarget.pickup,
                       ),
@@ -372,11 +400,18 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                             child: OutlinedButton.icon(
                               onPressed: _openGoogleMaps,
                               icon: const Icon(Icons.map, color: Colors.white),
-                              label: const Text('Open in Google Maps', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              label: const Text('Open in Google Maps',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold)),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                side: BorderSide(color: AppColors.gold.withValues(alpha: 0.5)),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
+                                side: BorderSide(
+                                    color:
+                                        AppColors.gold.withValues(alpha: 0.5)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                             ),
                           ),
@@ -391,9 +426,14 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                           children: [
                             Column(
                               children: [
-                                const Icon(Icons.circle, size: 10, color: AppColors.gold),
-                                Container(width: 1.5, height: 36, color: AppColors.divider),
-                                Icon(Icons.location_on, size: 12, color: AppColors.textMuted),
+                                const Icon(Icons.circle,
+                                    size: 10, color: AppColors.gold),
+                                Container(
+                                    width: 1.5,
+                                    height: 36,
+                                    color: AppColors.divider),
+                                Icon(Icons.location_on,
+                                    size: 12, color: AppColors.textMuted),
                               ],
                             ),
                             const SizedBox(width: 14),
@@ -402,11 +442,16 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(ride.pickupAddress,
-                                      style: TextStyle(color: AppColors.textPrimary, fontSize: 14, height: 1.3)),
+                                      style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 14,
+                                          height: 1.3)),
                                   const SizedBox(height: 20),
                                   Text(ride.dropAddress,
                                       style: TextStyle(
-                                          color: AppColors.textSecondary, fontSize: 14, height: 1.3)),
+                                          color: AppColors.textSecondary,
+                                          fontSize: 14,
+                                          height: 1.3)),
                                 ],
                               ),
                             ),
@@ -424,9 +469,11 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                             Container(
                               width: 44,
                               height: 44,
-                              decoration:
-                                  const BoxDecoration(shape: BoxShape.circle, color: AppColors.goldTint),
-                              child: const Icon(Icons.person, color: AppColors.gold, size: 22),
+                              decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.goldTint),
+                              child: const Icon(Icons.person,
+                                  color: AppColors.gold, size: 22),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -435,9 +482,14 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                                 children: [
                                   Text(ride.customerName,
                                       style: TextStyle(
-                                          color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w700)),
-                                  Text('₹${ride.fare.toStringAsFixed(0)} · ${ride.paymentMethod}',
-                                      style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                                          color: AppColors.textPrimary,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w700)),
+                                  Text(
+                                      '₹${ride.fare.toStringAsFixed(0)} · ${ride.paymentMethod}',
+                                      style: TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 12)),
                                 ],
                               ),
                             ),
@@ -452,19 +504,25 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                       // --- RideSupportCard ---
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: cardDecoration(radius: 20, bg: AppColors.surfaceAlt),
+                        decoration: cardDecoration(
+                            radius: 20, bg: AppColors.surfaceAlt),
                         child: Row(
                           children: [
-                            const Icon(Icons.support_agent, color: AppColors.gold, size: 20),
+                            const Icon(Icons.support_agent,
+                                color: AppColors.gold, size: 20),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text('Need help with this trip?',
-                                  style: TextStyle(color: AppColors.textPrimary, fontSize: 13)),
+                                  style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 13)),
                             ),
                             TextButton(
                               onPressed: () {},
                               child: const Text('Contact Support',
-                                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600)),
+                                  style: TextStyle(
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.w600)),
                             ),
                           ],
                         ),
@@ -484,9 +542,13 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
                 decoration: BoxDecoration(
                   color: AppColors.background,
-                  border: Border(top: BorderSide(color: AppColors.borderSubtle2)),
+                  border:
+                      Border(top: BorderSide(color: AppColors.borderSubtle2)),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 12, offset: const Offset(0, -4)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, -4)),
                   ],
                 ),
                 child: AppButton(
@@ -509,7 +571,9 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         if (i.isOdd) {
           final leftDone = (i - 1) ~/ 2 < currentIndex;
           return Expanded(
-            child: Container(height: 3, color: leftDone ? AppColors.gold : AppColors.divider),
+            child: Container(
+                height: 3,
+                color: leftDone ? AppColors.gold : AppColors.divider),
           );
         }
         final stepIndex = i ~/ 2;
@@ -520,10 +584,11 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: done ? AppColors.gold : AppColors.surfaceAlt2,
-            border: Border.all(color: done ? AppColors.gold : AppColors.dividerStrong),
+            border: Border.all(
+                color: done ? AppColors.gold : AppColors.dividerStrong),
           ),
           child: done
-              ? const Icon(Icons.check, size: 14, color: Colors.black)
+              ? const Icon(Icons.check, size: 14, color: Colors.white)
               : null,
         );
       }),

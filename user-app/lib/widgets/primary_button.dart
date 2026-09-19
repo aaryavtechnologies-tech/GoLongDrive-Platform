@@ -5,7 +5,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
 /// Main call-to-action button used across the app (e.g. "Get Started",
-/// "Login", "Create Account", "Verify"). Gold gradient background matching
+/// "Login", "Create Account", "Verify"). Evergreen background complementing
 /// the logo, with a subtle scale-down animation on press.
 ///
 /// This is UI-only: onPressed just triggers whatever local mock action or
@@ -60,19 +60,22 @@ class _PrimaryButtonState extends State<PrimaryButton> {
               alignment: Alignment.center,
               child: widget.isLoading
                   ? const SizedBox(
-                height: 22,
-                width: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.4,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.textOnGold),
-                ),
-              )
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(AppColors.textOnGold),
+                      ),
+                    )
                   : Text(
-                widget.label,
-                style: AppTextStyles.button.copyWith(
-                  color: disabled ? colors.textSecondary : AppColors.textOnGold,
-                ),
-              ),
+                      widget.label,
+                      style: AppTextStyles.button.copyWith(
+                        color: disabled
+                            ? colors.textSecondary
+                            : AppColors.textOnGold,
+                      ),
+                    ),
             ),
           ),
         ).animate().fadeIn(duration: 300.ms),

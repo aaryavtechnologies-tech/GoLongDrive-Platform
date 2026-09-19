@@ -10,6 +10,7 @@ import '../../models/ride_history_item.dart';
 import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../booking/location_search_sheet.dart';
+import '../city_ride/city_ride_entry.dart';
 import '../booking/journey_date_time_sheet.dart';
 import '../../core/services/user_scope.dart';
 import '../../core/services/booking_service.dart';
@@ -22,19 +23,20 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   // State for the search card
   String _fromLocation = '';
   String _toLocation = '';
   LatLng? _fromLatLng;
   LatLng? _toLatLng;
-  
+
   DateTime? _journeyDate;
   TimeOfDay? _pickupTime;
-  
+
   int _passengers = 2;
   int _luggage = 2;
-  
+
   List<RideHistoryItem> _recentBookings = [];
   Map<String, dynamic>? _previewDistanceData;
   bool _isLoadingPreviewDistance = false;
@@ -63,8 +65,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Map<String, dynamic>? activeRide;
 
       for (final b in bookings) {
-        final statusStr = (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '').toLowerCase();
-        
+        final statusStr =
+            (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '')
+                .toLowerCase();
+
         if (statusStr == 'pending' || statusStr == 'searching driver') {
           activeRide ??= b;
           continue;
@@ -74,10 +78,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
         final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
         final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
-        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total']?.toString() ?? '');
+        final fare = b['fareAmount'] != null
+            ? '₹${b['fareAmount']}'
+            : (b['total']?.toString() ?? '');
         final date = b['pickupDate'] ?? b['date'] ?? '';
-        final status = statusStr.contains('cancel') 
-            ? RideStatus.cancelled 
+        final status = statusStr.contains('cancel')
+            ? RideStatus.cancelled
             : RideStatus.completed;
 
         items.add(RideHistoryItem(
@@ -102,9 +108,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   double _calculateHaversine(LatLng p1, LatLng p2) {
     const p = 0.017453292519943295; // Math.PI / 180
-    final a = 0.5 - math.cos((p2.latitude - p1.latitude) * p) / 2 +
-        math.cos(p1.latitude * p) * math.cos(p2.latitude * p) *
-        (1 - math.cos((p2.longitude - p1.longitude) * p)) / 2;
+    final a = 0.5 -
+        math.cos((p2.latitude - p1.latitude) * p) / 2 +
+        math.cos(p1.latitude * p) *
+            math.cos(p2.latitude * p) *
+            (1 - math.cos((p2.longitude - p1.longitude) * p)) /
+            2;
     return 12742 * math.asin(math.sqrt(a)); // 2 * R (R = 6371 km)
   }
 
@@ -155,9 +164,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _swapLocations(StateSetter? setSheetState) {
     if (_fromLocation.isEmpty && _toLocation.isEmpty) return;
-    
+
     _swapController.forward(from: 0.0);
-    
+
     final newFromLoc = _toLocation;
     final newFromLat = _toLatLng;
     final newToLoc = _fromLocation;
@@ -188,13 +197,15 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void _searchCars() {
     if (_fromLatLng == null || _toLatLng == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both Pickup and Drop locations.')),
+        const SnackBar(
+            content: Text('Please select both Pickup and Drop locations.')),
       );
       return;
     }
     if (_journeyDate == null || _pickupTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select your Journey Date & Time.')),
+        const SnackBar(
+            content: Text('Please select your Journey Date & Time.')),
       );
       return;
     }
@@ -256,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   void _showSearchBottomSheet(BuildContext context) {
     final colors = AppColors.of(context);
-    
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -264,220 +275,250 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       useSafeArea: true,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setSheetState) {
-            final bool hasBothLocations = _fromLatLng != null && _toLatLng != null;
-            
-            return Container(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(context).viewInsets.bottom,
-              ),
-              decoration: BoxDecoration(
-                color: colors.background,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              ),
-              child: SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Handle bar
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: colors.divider,
-                            borderRadius: BorderRadius.circular(2.5),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text('Plan your journey', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary)),
-                      const SizedBox(height: 24),
-                      
-                      // Location Fields Container
-                      Container(
-                        padding: const EdgeInsets.all(16),
+            builder: (BuildContext context, StateSetter setSheetState) {
+          final bool hasBothLocations =
+              _fromLatLng != null && _toLatLng != null;
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: colors.background,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
                         decoration: BoxDecoration(
-                          color: colors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: colors.inputBorder),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Column(
-                              children: [
-                                const Icon(Icons.circle, size: 12, color: AppColors.primaryGold),
-                                Container(width: 2, height: 40, color: colors.divider),
-                                Icon(Icons.location_on, size: 16, color: colors.accentIcon),
-                              ],
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  // FROM FIELD
-                                  GestureDetector(
-                                    onTap: () => _pickLocation(true, setSheetState),
-                                    child: Container(
-                                      color: Colors.transparent, // expand tap area
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              _fromLocation.isEmpty ? 'Where from?' : _fromLocation,
-                                              style: _fromLocation.isEmpty
-                                                  ? AppTextStyles.body.copyWith(color: colors.textSecondary)
-                                                  : AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  Divider(height: 16, color: colors.divider),
-                                  // TO FIELD
-                                  GestureDetector(
-                                    onTap: () => _pickLocation(false, setSheetState),
-                                    child: Container(
-                                      color: Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(vertical: 8),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              _toLocation.isEmpty ? 'Where to?' : _toLocation,
-                                              style: _toLocation.isEmpty
-                                                  ? AppTextStyles.body.copyWith(color: colors.textSecondary)
-                                                  : AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            // SWAP BUTTON
-                            GestureDetector(
-                              onTap: () => _swapLocations(setSheetState),
-                              child: AnimatedBuilder(
-                                animation: _swapController,
-                                builder: (context, child) {
-                                  return Transform.rotate(
-                                    angle: _swapController.value * math.pi,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(8),
-                                      decoration: BoxDecoration(
-                                        color: colors.background,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: colors.divider),
-                                      ),
-                                      child: Icon(Icons.swap_vert, color: colors.textSecondary, size: 20),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
+                          color: colors.divider,
+                          borderRadius: BorderRadius.circular(2.5),
                         ),
                       ),
-                      
-                      if (hasBothLocations) ...[
-                        const SizedBox(height: 24),
-                        _buildMapPreview(colors),
-                      ],
-                      
-                      const SizedBox(height: 24),
-                      // Journey Date & Time Button
-                      GestureDetector(
-                        onTap: () => _pickDateTime(setSheetState),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          decoration: BoxDecoration(
-                            color: colors.surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: colors.inputBorder),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.calendar_month, color: colors.accentIcon, size: 20),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _journeyDate == null
-                                        ? 'Select Date & Time'
-                                        : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)} ${_journeyDate!.year} • ${_pickupTime!.format(context)}',
-                                    style: _journeyDate == null
-                                        ? AppTextStyles.body.copyWith(color: colors.textSecondary)
-                                        : AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600),
-                                  ),
-                                ],
-                              ),
-                              Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
-                            ],
-                          ),
-                        ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text('Plan your journey',
+                        style: AppTextStyles.mediumHeading
+                            .copyWith(color: colors.textPrimary)),
+                    const SizedBox(height: 24),
+
+                    // Location Fields Container
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: colors.inputBorder),
                       ),
-                      
-                      const SizedBox(height: 24),
-                      // Trip Details: Passengers & Luggage
-                      Row(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Expanded(
-                            child: _buildCounter(
-                              colors,
-                              'Passengers',
-                              _passengers,
-                              (val) {
-                                if (val > 0) {
-                                  setSheetState(() => _passengers = val);
-                                  setState(() => _passengers = val);
-                                }
-                              },
-                            ),
+                          Column(
+                            children: [
+                              const Icon(Icons.circle,
+                                  size: 12, color: AppColors.primaryGold),
+                              Container(
+                                  width: 2, height: 40, color: colors.divider),
+                              Icon(Icons.location_on,
+                                  size: 16, color: colors.accentIcon),
+                            ],
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: _buildCounter(
-                              colors,
-                              'Luggage',
-                              _luggage,
-                              (val) {
-                                if (val >= 0) {
-                                  setSheetState(() => _luggage = val);
-                                  setState(() => _luggage = val);
-                                }
+                            child: Column(
+                              children: [
+                                // FROM FIELD
+                                GestureDetector(
+                                  onTap: () =>
+                                      _pickLocation(true, setSheetState),
+                                  child: Container(
+                                    color:
+                                        Colors.transparent, // expand tap area
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _fromLocation.isEmpty
+                                                ? 'Where from?'
+                                                : _fromLocation,
+                                            style: _fromLocation.isEmpty
+                                                ? AppTextStyles.body.copyWith(
+                                                    color: colors.textSecondary)
+                                                : AppTextStyles.body.copyWith(
+                                                    color: colors.textPrimary,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Divider(height: 16, color: colors.divider),
+                                // TO FIELD
+                                GestureDetector(
+                                  onTap: () =>
+                                      _pickLocation(false, setSheetState),
+                                  child: Container(
+                                    color: Colors.transparent,
+                                    padding:
+                                        const EdgeInsets.symmetric(vertical: 8),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            _toLocation.isEmpty
+                                                ? 'Where to?'
+                                                : _toLocation,
+                                            style: _toLocation.isEmpty
+                                                ? AppTextStyles.body.copyWith(
+                                                    color: colors.textSecondary)
+                                                : AppTextStyles.body.copyWith(
+                                                    color: colors.textPrimary,
+                                                    fontWeight:
+                                                        FontWeight.w600),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // SWAP BUTTON
+                          GestureDetector(
+                            onTap: () => _swapLocations(setSheetState),
+                            child: AnimatedBuilder(
+                              animation: _swapController,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: _swapController.value * math.pi,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: colors.background,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: colors.divider),
+                                    ),
+                                    child: Icon(Icons.swap_vert,
+                                        color: colors.textSecondary, size: 20),
+                                  ),
+                                );
                               },
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 32),
-                      
-                      PrimaryButton(
-                        label: 'Search Cars',
-                        onPressed: hasBothLocations ? _searchCars : null,
-                      ),
+                    ),
+
+                    if (hasBothLocations) ...[
+                      const SizedBox(height: 24),
+                      _buildMapPreview(colors),
                     ],
-                  ),
+
+                    const SizedBox(height: 24),
+                    // Journey Date & Time Button
+                    GestureDetector(
+                      onTap: () => _pickDateTime(setSheetState),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: colors.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: colors.inputBorder),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.calendar_month,
+                                    color: colors.accentIcon, size: 20),
+                                const SizedBox(width: 12),
+                                Text(
+                                  _journeyDate == null
+                                      ? 'Select Date & Time'
+                                      : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)} ${_journeyDate!.year} • ${_pickupTime!.format(context)}',
+                                  style: _journeyDate == null
+                                      ? AppTextStyles.body
+                                          .copyWith(color: colors.textSecondary)
+                                      : AppTextStyles.body.copyWith(
+                                          color: colors.textPrimary,
+                                          fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                            Icon(Icons.chevron_right,
+                                color: colors.textSecondary, size: 20),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+                    // Trip Details: Passengers & Luggage
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildCounter(
+                            colors,
+                            'Passengers',
+                            _passengers,
+                            (val) {
+                              if (val > 0) {
+                                setSheetState(() => _passengers = val);
+                                setState(() => _passengers = val);
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildCounter(
+                            colors,
+                            'Luggage',
+                            _luggage,
+                            (val) {
+                              if (val >= 0) {
+                                setSheetState(() => _luggage = val);
+                                setState(() => _luggage = val);
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+
+                    PrimaryButton(
+                      label: 'Search Cars',
+                      onPressed: hasBothLocations ? _searchCars : null,
+                    ),
+                  ],
                 ),
               ),
-            );
-          }
-        );
+            ),
+          );
+        });
       },
     );
   }
@@ -487,8 +528,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     String durationText = 'Calculating route...';
 
     if (_previewDistanceData != null) {
-      final km = _previewDistanceData!['distanceValueKm'] ?? _previewDistanceData!['distance'];
-      final distStr = _previewDistanceData!['distanceText'] ?? (km != null ? '$km KM' : null);
+      final km = _previewDistanceData!['distanceValueKm'] ??
+          _previewDistanceData!['distance'];
+      final distStr = _previewDistanceData!['distanceText'] ??
+          (km != null ? '$km KM' : null);
       final durStr = _previewDistanceData!['durationText'];
       if (distStr != null) distanceText = '~$distStr';
       if (durStr != null) durationText = 'Estimated travel time: $durStr';
@@ -498,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       final estimatedHours = (estimatedRoadKm / 60).floor();
       final estimatedMins = (estimatedRoadKm % 60);
       distanceText = '~$estimatedRoadKm KM';
-      durationText = estimatedHours > 0 
+      durationText = estimatedHours > 0
           ? 'Estimated travel time: $estimatedHours hr $estimatedMins min'
           : 'Estimated travel time: $estimatedMins min';
     }
@@ -519,7 +562,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               color: AppColors.primaryGold.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(Icons.map_outlined, color: AppColors.primaryGold, size: 28),
+            child: const Icon(Icons.map_outlined,
+                color: AppColors.primaryGold, size: 28),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -529,24 +573,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Route Preview', style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
+                    Text('Route Preview',
+                        style: AppTextStyles.body.copyWith(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.w600)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: colors.background,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        _isLoadingPreviewDistance ? 'Calculating...' : distanceText,
-                        style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold),
+                        _isLoadingPreviewDistance
+                            ? 'Calculating...'
+                            : distanceText,
+                        style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primaryGold,
+                            fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _isLoadingPreviewDistance ? 'Fetching optimal route...' : durationText,
-                  style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                  _isLoadingPreviewDistance
+                      ? 'Fetching optimal route...'
+                      : durationText,
+                  style: AppTextStyles.caption
+                      .copyWith(color: colors.textSecondary),
                 ),
               ],
             ),
@@ -556,11 +611,13 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
-  Widget _buildCounter(AppColorPalette colors, String label, int value, Function(int) onChanged) {
+  Widget _buildCounter(AppColorPalette colors, String label, int value,
+      Function(int) onChanged) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+        Text(label,
+            style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -576,16 +633,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 onTap: () => onChanged(value - 1),
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: colors.background),
-                  child: Icon(Icons.remove, size: 16, color: colors.textPrimary),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: colors.background),
+                  child:
+                      Icon(Icons.remove, size: 16, color: colors.textPrimary),
                 ),
               ),
-              Text('$value', style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              Text('$value',
+                  style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w600, color: colors.textPrimary)),
               GestureDetector(
                 onTap: () => onChanged(value + 1),
                 child: Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: colors.background),
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: colors.background),
                   child: Icon(Icons.add, size: 16, color: colors.textPrimary),
                 ),
               ),
@@ -614,6 +676,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 _buildActiveBookingBanner(colors),
               ],
               const SizedBox(height: 32),
+              const CityRideEntry(),
+              const SizedBox(height: 32),
+              Text('Going a little further?',
+                  style: AppTextStyles.mediumHeading
+                      .copyWith(color: colors.textPrimary)),
+              const SizedBox(height: 8),
+              Text('Plan an outstation journey, your way.',
+                  style: AppTextStyles.bodySecondary
+                      .copyWith(color: colors.textSecondary)),
+              const SizedBox(height: 16),
               _buildSearchCard(colors),
               const SizedBox(height: 40),
               _buildRecentRidesSection(colors),
@@ -637,7 +709,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         decoration: BoxDecoration(
           color: AppColors.primaryGold.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+          border:
+              Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
         ),
         child: Row(
           children: [
@@ -664,7 +737,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   const SizedBox(height: 4),
                   Text(
                     'Waiting for drivers to accept...',
-                    style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                    style: AppTextStyles.caption
+                        .copyWith(color: colors.textSecondary),
                   ),
                 ],
               ),
@@ -693,11 +767,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Welcome, $firstName 👋', style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
+              Text('Hello, $firstName',
+                  style: AppTextStyles.bodySecondary
+                      .copyWith(color: colors.textSecondary)),
               const SizedBox(height: 8),
               Text(
-                'Where are you travelling today?',
-                style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary),
+                'Where will today take you?',
+                style: AppTextStyles.mediumHeading
+                    .copyWith(color: colors.textPrimary),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -717,19 +794,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ),
             child: ClipOval(
               child: (profileImage != null && profileImage.isNotEmpty)
-                ? Image.network(
-                    profileImage.startsWith('http') ? profileImage : '${ApiClient.baseUrl.replaceAll('/api/v1', '')}/$profileImage',
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Icon(Icons.person, color: colors.textPrimary),
-                  )
-                : Container(
-                    color: AppColors.primaryGold.withValues(alpha: 0.15),
-                    alignment: Alignment.center,
-                    child: Text(
-                      firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
-                      style: AppTextStyles.mediumHeading.copyWith(color: AppColors.primaryGold),
+                  ? Image.network(
+                      profileImage.startsWith('http')
+                          ? profileImage
+                          : '${ApiClient.baseUrl.replaceAll('/api/v1', '')}/$profileImage',
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          Icon(Icons.person, color: colors.textPrimary),
+                    )
+                  : Container(
+                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      alignment: Alignment.center,
+                      child: Text(
+                        firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
+                        style: AppTextStyles.mediumHeading
+                            .copyWith(color: AppColors.primaryGold),
+                      ),
                     ),
-                  ),
             ),
           ),
         ),
@@ -745,7 +826,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(alpha: 0.025),
             blurRadius: 24,
             offset: const Offset(0, 12),
           )
@@ -761,19 +842,26 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primaryGold, size: 24),
+                const Icon(Icons.location_on,
+                    color: AppColors.primaryGold, size: 24),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('FROM', style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1.2)),
+                      Text('FROM',
+                          style: AppTextStyles.caption.copyWith(
+                              color: colors.textSecondary, letterSpacing: 1.2)),
                       const SizedBox(height: 4),
                       Text(
-                        _fromLocation.isEmpty ? 'Search location' : _fromLocation,
+                        _fromLocation.isEmpty
+                            ? 'Search location'
+                            : _fromLocation,
                         style: _fromLocation.isEmpty
-                            ? AppTextStyles.subtitle.copyWith(color: colors.textSecondary)
-                            : AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+                            ? AppTextStyles.subtitle
+                                .copyWith(color: colors.textSecondary)
+                            : AppTextStyles.subtitle
+                                .copyWith(color: colors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -783,7 +871,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          
+
           // Swap and Divider
           Padding(
             padding: const EdgeInsets.only(left: 11, top: 8, bottom: 8),
@@ -809,7 +897,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             shape: BoxShape.circle,
                             border: Border.all(color: colors.divider),
                           ),
-                          child: Icon(Icons.swap_vert, color: colors.accentIcon, size: 20),
+                          child: Icon(Icons.swap_vert,
+                              color: colors.accentIcon, size: 20),
                         ),
                       );
                     },
@@ -818,26 +907,33 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          
+
           // TO
           GestureDetector(
             onTap: () => _showSearchBottomSheet(context),
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primaryGold, size: 24),
+                const Icon(Icons.location_on,
+                    color: AppColors.primaryGold, size: 24),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('TO', style: AppTextStyles.caption.copyWith(color: colors.textSecondary, letterSpacing: 1.2)),
+                      Text('TO',
+                          style: AppTextStyles.caption.copyWith(
+                              color: colors.textSecondary, letterSpacing: 1.2)),
                       const SizedBox(height: 4),
                       Text(
-                        _toLocation.isEmpty ? 'Search destination' : _toLocation,
+                        _toLocation.isEmpty
+                            ? 'Search destination'
+                            : _toLocation,
                         style: _toLocation.isEmpty
-                            ? AppTextStyles.subtitle.copyWith(color: colors.textSecondary)
-                            : AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+                            ? AppTextStyles.subtitle
+                                .copyWith(color: colors.textSecondary)
+                            : AppTextStyles.subtitle
+                                .copyWith(color: colors.textPrimary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -847,11 +943,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
           ),
-          
+
           const SizedBox(height: 24),
           Container(height: 1, width: double.infinity, color: colors.divider),
           const SizedBox(height: 24),
-          
+
           // Details (Date & Time)
           GestureDetector(
             onTap: () => _showSearchBottomSheet(context),
@@ -861,36 +957,54 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 Row(
                   children: [
-                    Icon(Icons.calendar_month, size: 20, color: _journeyDate != null ? AppColors.primaryGold : colors.textSecondary),
+                    Icon(Icons.calendar_month,
+                        size: 20,
+                        color: _journeyDate != null
+                            ? AppColors.primaryGold
+                            : colors.textSecondary),
                     const SizedBox(width: 8),
                     Text(
-                      _journeyDate == null ? 'Journey Date' : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)}',
-                      style: AppTextStyles.body.copyWith(
-                        color: _journeyDate != null ? colors.textPrimary : colors.textSecondary,
-                        fontWeight: _journeyDate != null ? FontWeight.w600 : FontWeight.w400,
-                      )
-                    ),
+                        _journeyDate == null
+                            ? 'Journey Date'
+                            : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)}',
+                        style: AppTextStyles.body.copyWith(
+                          color: _journeyDate != null
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                          fontWeight: _journeyDate != null
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        )),
                   ],
                 ),
                 Row(
                   children: [
-                    Icon(Icons.schedule, size: 20, color: _pickupTime != null ? AppColors.primaryGold : colors.textSecondary),
+                    Icon(Icons.schedule,
+                        size: 20,
+                        color: _pickupTime != null
+                            ? AppColors.primaryGold
+                            : colors.textSecondary),
                     const SizedBox(width: 8),
                     Text(
-                      _pickupTime == null ? 'Time' : _pickupTime!.format(context),
-                      style: AppTextStyles.body.copyWith(
-                        color: _pickupTime != null ? colors.textPrimary : colors.textSecondary,
-                        fontWeight: _pickupTime != null ? FontWeight.w600 : FontWeight.w400,
-                      )
-                    ),
+                        _pickupTime == null
+                            ? 'Time'
+                            : _pickupTime!.format(context),
+                        style: AppTextStyles.body.copyWith(
+                          color: _pickupTime != null
+                              ? colors.textPrimary
+                              : colors.textSecondary,
+                          fontWeight: _pickupTime != null
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        )),
                   ],
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Details (Passengers)
           GestureDetector(
             onTap: () => _showSearchBottomSheet(context),
@@ -899,19 +1013,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               children: [
                 Icon(Icons.person, size: 20, color: colors.textSecondary),
                 const SizedBox(width: 8),
-                Text('$_passengers People', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
+                Text('$_passengers People',
+                    style: AppTextStyles.body
+                        .copyWith(color: colors.textSecondary)),
                 const SizedBox(width: 24),
                 Icon(Icons.luggage, size: 20, color: colors.textSecondary),
                 const SizedBox(width: 8),
-                Text('$_luggage Bags', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
+                Text('$_luggage Bags',
+                    style: AppTextStyles.body
+                        .copyWith(color: colors.textSecondary)),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 32),
-          
+
           PrimaryButton(
-            label: 'SEARCH CARS →',
+            label: 'Find outstation cars',
             onPressed: () {
               if (_fromLatLng == null || _toLatLng == null) {
                 _showSearchBottomSheet(context);
@@ -922,7 +1040,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ],
       ),
-    ).animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1, end: 0, duration: 400.ms);
+    )
+        .animate()
+        .fadeIn(delay: 100.ms, duration: 400.ms)
+        .slideY(begin: 0.1, end: 0, duration: 400.ms);
   }
 
   Widget _buildRecentRidesSection(AppColorPalette colors) {
@@ -975,7 +1096,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 setState(() {
                   _fromLocation = ride.fromAddress;
                   _toLocation = ride.toAddress;
-                  _fromLatLng = const LatLng(23.0225, 72.5714); 
+                  _fromLatLng = const LatLng(23.0225, 72.5714);
                   _toLatLng = const LatLng(19.0760, 72.8777);
                 });
                 _showSearchBottomSheet(context);
@@ -988,7 +1109,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   String _getMonthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return months[month - 1];
   }
 }
@@ -1033,11 +1167,15 @@ class _RecentRideTile extends StatelessWidget {
                   children: [
                     Text(
                       '${ride.fromAddress}  →  ${ride.toAddress}',
-                      style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: colors.textPrimary),
+                      style: AppTextStyles.body.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: colors.textPrimary),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text('Sedan • AC', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                    Text('Sedan • AC',
+                        style: AppTextStyles.caption
+                            .copyWith(color: colors.textSecondary)),
                   ],
                 ),
               ),

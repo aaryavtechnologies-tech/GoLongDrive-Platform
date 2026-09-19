@@ -1,12 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:go_router/go_router.dart';
 import 'package:http/http.dart' as http;
 import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
 import '../../core/data/auth_service.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_checkbox.dart';
 import '../../core/widgets/app_text_field.dart';
 
 /// Matches app/(auth)/login.tsx — compacted to fit one screen, no scrolling.
@@ -18,12 +20,47 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  static const _storage = FlutterSecureStorage();
+  static const _emailKey = 'driver_saved_login_email';
+  static const _passwordKey = 'driver_saved_login_password';
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+  bool _rememberLogin = false;
 
   String? _emailError;
   String? _passwordError;
+
+  @override
+  void initState() {
+    super.initState();
+    _restoreSavedLogin();
+  }
+
+  Future<void> _restoreSavedLogin() async {
+    final values = await Future.wait([
+      _storage.read(key: _emailKey),
+      _storage.read(key: _passwordKey),
+    ]);
+    if (!mounted || values.first == null || values.last == null) return;
+    setState(() {
+      _emailController.text = values.first!;
+      _passwordController.text = values.last!;
+      _rememberLogin = true;
+    });
+  }
+
+  Future<void> _persistLoginChoice() async {
+    if (_rememberLogin) {
+      await _storage.write(key: _emailKey, value: _emailController.text.trim());
+      await _storage.write(key: _passwordKey, value: _passwordController.text);
+      return;
+    }
+    await Future.wait([
+      _storage.delete(key: _emailKey),
+      _storage.delete(key: _passwordKey),
+    ]);
+  }
 
   @override
   void dispose() {
@@ -35,8 +72,12 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _validate() {
     setState(() {
       final emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
-      _emailError = !emailRegex.hasMatch(_emailController.text.trim()) ? 'Enter a valid email address' : null;
-      _passwordError = _passwordController.text.length < 8 ? 'Password must be at least 8 characters' : null;
+      _emailError = !emailRegex.hasMatch(_emailController.text.trim())
+          ? 'Enter a valid email address'
+          : null;
+      _passwordError = _passwordController.text.length < 8
+          ? 'Password must be at least 8 characters'
+          : null;
     });
     return _emailError == null && _passwordError == null;
   }
@@ -44,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     if (!_validate()) return;
     setState(() => _isLoading = true);
-    
+
     try {
       final url = Uri.parse('${EnvConfig.apiUrl}/driver/login');
       final requestBody = {
@@ -53,8 +94,6 @@ class _LoginScreenState extends State<LoginScreen> {
       };
 
       debugPrint('>>> API REQUEST: POST $url');
-      debugPrint('>>> PAYLOAD: $requestBody');
-
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -71,10 +110,11 @@ class _LoginScreenState extends State<LoginScreen> {
         final data = jsonDecode(response.body);
         final token = data['data']['accessToken'];
         final userId = data['data']['driver']['id'];
-        
+
         if (token != null) {
           await AuthService.saveToken(token);
           await AuthService.saveUserId(userId);
+          await _persistLoginChoice();
           if (mounted) context.go('/tabs');
         } else {
           throw Exception('No token received');
@@ -93,8 +133,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -123,18 +161,25 @@ class _LoginScreenState extends State<LoginScreen> {
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.gold.withValues(alpha: 0.2), width: 2),
+                              border: Border.all(
+                                  color: AppColors.gold.withValues(alpha: 0.2),
+                                  width: 2),
                               boxShadow: [
-                                BoxShadow(color: AppColors.gold.withValues(alpha: 0.15), blurRadius: 24),
+                                BoxShadow(
+                                    color:
+                                        AppColors.gold.withValues(alpha: 0.15),
+                                    blurRadius: 24),
                               ],
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: Image.asset(
-                              'assets/images/app_icon.jpg',
+                              'assets/images/app_icon.png',
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => ColoredBox(
+                              errorBuilder: (context, error, stackTrace) =>
+                                  ColoredBox(
                                 color: AppColors.surface,
-                                child: const Icon(Icons.directions_car, color: AppColors.gold, size: 34),
+                                child: const Icon(Icons.directions_car,
+                                    color: AppColors.gold, size: 34),
                               ),
                             ),
                           ),
@@ -173,20 +218,42 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              AppCheckbox(
+                                value: _rememberLogin,
+                                onChanged: (value) =>
+                                    setState(() => _rememberLogin = value),
+                                label: Text(
+                                  'Save login',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                               TextButton(
-                                onPressed: () => context.push('/auth/forgot-password'),
-                                style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: Size.zero),
+                                onPressed: () =>
+                                    context.push('/auth/forgot-password'),
+                                style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    minimumSize: Size.zero),
                                 child: const Text(
                                   'Forgot Password?',
-                                  style: TextStyle(color: AppColors.gold, fontWeight: FontWeight.bold),
+                                  style: TextStyle(
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          AppButton(label: 'Log In', onPressed: _handleLogin, isLoading: _isLoading, height: 52),
+                          AppButton(
+                              label: 'Log In',
+                              onPressed: _handleLogin,
+                              isLoading: _isLoading,
+                              height: 52),
                         ],
                       ),
 
@@ -196,38 +263,55 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Row(
                             children: [
-                              Expanded(child: Divider(color: AppColors.divider)),
+                              Expanded(
+                                  child: Divider(color: AppColors.divider)),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
-                                child: Text('OR', style: TextStyle(color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 16),
+                                child: Text('OR',
+                                    style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontWeight: FontWeight.w600)),
                               ),
-                              Expanded(child: Divider(color: AppColors.divider)),
+                              Expanded(
+                                  child: Divider(color: AppColors.divider)),
                             ],
                           ),
                           const SizedBox(height: 14),
                           AppButton(
                             label: 'Apply as a New Driver',
                             variant: AppButtonVariant.secondary,
-                            rightIcon: Icon(Icons.person_add_alt, color: AppColors.textPrimary, size: 20),
+                            rightIcon: Icon(Icons.person_add_alt,
+                                color: AppColors.textPrimary, size: 20),
                             onPressed: () => context.push('/auth/register'),
                             height: 52,
                           ),
                           const SizedBox(height: 16),
                           Text.rich(
                             TextSpan(
-                              style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                              style: TextStyle(
+                                  color: AppColors.textMuted, fontSize: 12),
                               children: [
-                                const TextSpan(text: 'By logging in, you agree to our '),
+                                const TextSpan(
+                                    text: 'By logging in, you agree to our '),
                                 TextSpan(
                                   text: 'Terms',
-                                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
-                                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/terms'),
+                                  style: const TextStyle(
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.w600),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap =
+                                        () => context.push('/profile/terms'),
                                 ),
                                 const TextSpan(text: ' and '),
                                 TextSpan(
                                   text: 'Privacy Policy',
-                                  style: const TextStyle(color: AppColors.gold, fontWeight: FontWeight.w600),
-                                  recognizer: TapGestureRecognizer()..onTap = () => context.push('/profile/privacy'),
+                                  style: const TextStyle(
+                                      color: AppColors.gold,
+                                      fontWeight: FontWeight.w600),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap =
+                                        () => context.push('/profile/privacy'),
                                 ),
                               ],
                             ),

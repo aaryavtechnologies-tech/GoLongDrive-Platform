@@ -6,7 +6,7 @@ import '../core/theme/app_text_styles.dart';
 
 /// Outlined / ghost-style button used for secondary actions that sit
 /// alongside a PrimaryButton (e.g. "Skip" next to "Next", "Cancel" next to
-/// "Confirm"). Transparent background, gold border + text, same press-scale
+/// "Confirm"). Transparent background, accent border + text, same press-scale
 /// feel as PrimaryButton for visual consistency.
 class SecondaryButton extends StatefulWidget {
   final String label;
@@ -52,7 +52,7 @@ class _SecondaryButtonState extends State<SecondaryButton> {
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: disabled ? colors.divider : AppColors.primaryGold,
+                  color: disabled ? colors.divider : colors.accentIcon,
                   width: 1.4,
                 ),
               ),
@@ -60,7 +60,7 @@ class _SecondaryButtonState extends State<SecondaryButton> {
               child: Text(
                 widget.label,
                 style: AppTextStyles.button.copyWith(
-                  color: disabled ? colors.textSecondary : AppColors.primaryGold,
+                  color: disabled ? colors.textSecondary : colors.accentIcon,
                 ),
               ),
             ),

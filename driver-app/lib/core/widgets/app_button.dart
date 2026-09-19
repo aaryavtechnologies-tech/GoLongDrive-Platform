@@ -33,7 +33,7 @@ class AppButton extends StatelessWidget {
       AppButtonVariant.secondary => AppColors.surface,
     };
     final fg = switch (variant) {
-      AppButtonVariant.primary => Colors.black,
+      AppButtonVariant.primary => Colors.white,
       AppButtonVariant.outline => AppColors.gold,
       AppButtonVariant.secondary => AppColors.textPrimary,
     };
@@ -67,14 +67,18 @@ class AppButton extends StatelessWidget {
                     ? SizedBox(
                         height: 22,
                         width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2.4, color: fg),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2.4, color: fg),
                       )
                     : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             label,
-                            style: TextStyle(color: fg, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(
+                                color: fg,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16),
                           ),
                           if (rightIcon != null) ...[
                             const SizedBox(width: 8),

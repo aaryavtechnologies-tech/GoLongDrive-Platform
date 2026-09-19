@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 
 import '../screens/splash/splash_screen.dart';
+import '../screens/city_ride/city_ride_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
@@ -38,12 +39,14 @@ class AppRoutes {
   static const String verifyEmail = '/verify-email';
   static const String forgotPassword = '/forgot-password';
   static const String home = '/home';
+  static const String cityRide = '/city-ride';
   static const String profile = '/profile';
   static const String setLocations = '/set-locations';
   static const String tripDetails = '/trip-details';
   static const String confirmRide = '/confirm-ride';
   static const String driverAssigned = '/driver-assigned';
-  static const String findingDriver = '/finding-driver';  // NEW: post-booking flow
+  static const String findingDriver =
+      '/finding-driver'; // NEW: post-booking flow
   static const String searchResults = '/search-results';
   static const String boardingPass = '/boarding-pass';
   static const String activeRide = '/active-ride';
@@ -82,6 +85,9 @@ class AppRoutes {
       case forgotPassword:
         return _page(ForgotPasswordScreen(), settings);
 
+      case cityRide:
+        return _page(const CityRideScreen(), settings);
+
       case home:
         return _page(const MainTabsScreen(), settings);
 
@@ -109,16 +115,17 @@ class AppRoutes {
       case rideDetails:
         final args = settings.arguments;
         if (args is! RideHistoryItem) {
-          return _page(_missingArgsScreen('Ride Details needs a RideHistoryItem'), settings);
+          return _page(
+              _missingArgsScreen('Ride Details needs a RideHistoryItem'),
+              settings);
         }
         return _page(RideDetailsScreen(ride: args), settings);
-
-
 
       case tripDetails:
         final args = settings.arguments;
         if (args is! RideRequest) {
-          return _page(_missingArgsScreen('Trip Details needs a RideRequest'), settings);
+          return _page(
+              _missingArgsScreen('Trip Details needs a RideRequest'), settings);
         }
         return _page(TripDetailsScreen(request: args), settings);
 
@@ -130,7 +137,10 @@ class AppRoutes {
         // Changed to expect Map<String, dynamic> from the Search Results flow
         final args = settings.arguments;
         if (args is! Map<String, dynamic>) {
-          return _page(_missingArgsScreen('Confirm Ride needs Map<String, dynamic> args'), settings);
+          return _page(
+              _missingArgsScreen(
+                  'Confirm Ride needs Map<String, dynamic> args'),
+              settings);
         }
         return _page(ConfirmRideScreen(bookingArgs: args), settings);
 
