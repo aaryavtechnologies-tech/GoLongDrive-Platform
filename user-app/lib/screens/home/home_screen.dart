@@ -11,6 +11,7 @@ import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../booking/location_search_sheet.dart';
 import '../city_ride/city_ride_entry.dart';
+import '../tour_packages/tour_package_entry.dart';
 import '../booking/journey_date_time_sheet.dart';
 import '../../core/services/user_scope.dart';
 import '../../core/services/booking_service.dart';
@@ -677,6 +678,8 @@ class _HomeScreenState extends State<HomeScreen>
               ],
               const SizedBox(height: 32),
               const CityRideEntry(),
+              const SizedBox(height: 16),
+              const TourPackageEntry(),
               const SizedBox(height: 32),
               Text('Going a little further?',
                   style: AppTextStyles.mediumHeading

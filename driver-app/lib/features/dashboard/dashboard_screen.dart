@@ -11,6 +11,7 @@ import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/skeleton_loader.dart';
 import '../city_rides/city_rides_service.dart';
+import '../../screens/tour_packages/available_tour_packages_screen.dart';
 
 /// Dashboard Screen - Main hub for the driver.
 class DashboardScreen extends StatefulWidget {
@@ -513,6 +514,55 @@ class _DashboardScreenState extends State<DashboardScreen>
                               color: Colors.white),
                       ],
                     ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // --- Tour Packages ---
+              InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AvailableTourPackagesScreen())),
+                borderRadius: BorderRadius.circular(24),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.surfaceAlt
+                          : AppColors.surfaceAltLight,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: AppColors.goldTint,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(Icons.landscape_rounded, color: AppColors.gold, size: 28),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Tour Packages',
+                                style: TextStyle(
+                                    fontSize: 19,
+                                    fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 4),
+                            Text(
+                                'Multi-day outstation packages',
+                                style: TextStyle(
+                                    color: AppColors.textSecondary, fontSize: 13)),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_rounded, color: AppColors.gold),
+                    ],
                   ),
                 ),
               ),

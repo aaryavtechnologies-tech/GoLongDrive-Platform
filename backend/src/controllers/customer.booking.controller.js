@@ -47,6 +47,51 @@ const createBooking = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route   POST /api/customer/bookings/tour-package
+ * @access  Private (Customer)
+ */
+const bookTourPackage = asyncHandler(async (req, res) => {
+  const customerId = req.user._id;
+  const bookingData = req.body;
+  const TourPackage = require('../models/TourPackage.model');
+
+  const tourPackage = await TourPackage.findById(bookingData.tourPackage);
+  if (!tourPackage) {
+    throw ApiError.notFound('Tour package not found');
+  }
+
+  // Find price for vehicle type
+  const pricingOption = tourPackage.pricing.find(p => p.vehicleType === bookingData.vehicleType);
+  if (!pricingOption) {
+    throw ApiError.badRequest('Selected vehicle type is not available for this package');
+  }
+
+  const bookingIdStr = await generateBookingId();
+
+  const newBooking = await Booking.create({
+    bookingId: bookingIdStr,
+    customer: customerId,
+    ...bookingData,
+    bookingType: 'tour_package',
+    tripType: 'Tour Package',
+    tourPackage: tourPackage._id,
+    estimatedFare: pricingOption.price,
+    finalFare: pricingOption.price,
+  });
+
+  await addTimelineEntry(newBooking._id, 'Tour Package Booking Created', customerId, 'Customer booked a tour package');
+  emitBookingEvent('booking:created', { bookingId: newBooking.bookingId, status: newBooking.rideStatus });
+
+  // Send email (fire and forget)
+  sendBookingConfirmationEmail(req.user.email, req.user.fullName, newBooking).catch(err => console.error(err));
+
+  // Trigger real-time driver broadcast (fire and forget)
+  broadcastRideRequest(newBooking._id).catch(err => console.error('Broadcast failed:', err));
+
+  return sendSuccess(res, 201, 'Tour package booked successfully', { booking: newBooking });
+});
+
+/**
  * @route   GET /api/customer/bookings
  * @access  Private (Customer)
  */
@@ -231,6 +276,7 @@ const getDriverDetails = asyncHandler(async (req, res) => {
 
 module.exports = {
   createBooking,
+  bookTourPackage,
   getBookingHistory,
   getUpcomingBookings,
   getCompletedBookings,

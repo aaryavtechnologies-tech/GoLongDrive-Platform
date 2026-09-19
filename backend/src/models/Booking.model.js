@@ -96,8 +96,13 @@ const bookingSchema = new mongoose.Schema(
     // ── Long-Distance Booking Enhancements ───────────────────────────────────
     bookingType: {
       type: String,
-      enum: ['local', 'long_distance'],
+      enum: ['local', 'long_distance', 'tour_package'],
       default: 'local',
+    },
+    tourPackage: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'TourPackage',
+      default: null,
     },
     pickupLat: { type: Number },
     pickupLng: { type: Number },

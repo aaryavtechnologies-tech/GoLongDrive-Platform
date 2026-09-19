@@ -272,8 +272,24 @@ const getAvailableRides = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
   // Get driver details to filter by vehicle type later if needed
   // For now return all rides in SEARCHING_DRIVER state
-  const rides = await Booking.find({ rideStatus: RIDE_STATUS.SEARCHING_DRIVER }).sort({ createdAt: -1 }).populate('customer', 'fullName');
+  const rides = await Booking.find({ rideStatus: RIDE_STATUS.SEARCHING_DRIVER, bookingType: { $ne: 'tour_package' } }).sort({ createdAt: -1 }).populate('customer', 'fullName');
   return sendSuccess(res, 200, 'Available rides fetched', { rides });
+});
+
+/**
+ * @route   GET /api/driver/rides/available-packages
+ * @access  Private (Driver)
+ */
+const getUnassignedTourPackages = asyncHandler(async (req, res) => {
+  // Return all unassigned tour packages
+  const packages = await Booking.find({ 
+    bookingType: 'tour_package', 
+    rideStatus: RIDE_STATUS.SEARCHING_DRIVER 
+  }).sort({ createdAt: -1 })
+    .populate('customer', 'fullName')
+    .populate('tourPackage', 'title days nights destinations imageUrl includes');
+    
+  return sendSuccess(res, 200, 'Unassigned tour packages fetched', { packages });
 });
 
 /**
@@ -309,5 +325,6 @@ module.exports = {
   cancelRide,
   getRideHistory,
   getAvailableRides,
+  getUnassignedTourPackages,
   getDashboardStats
 };

@@ -37,6 +37,7 @@ const TRIP_TYPES = Object.freeze({
   AIRPORT_DROP: 'Airport Drop',
   MULTI_DAY_RENTAL: 'Multi-Day Rental',
   CUSTOM_TOUR: 'Custom Tour Package',
+  TOUR_PACKAGE: 'Tour Package',
 });
 
 const RIDE_STATUS = Object.freeze({

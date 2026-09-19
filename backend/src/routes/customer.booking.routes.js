@@ -10,6 +10,7 @@
 const router = require('express').Router();
 const {
   createBooking,
+  bookTourPackage,
   getBookingHistory,
   getUpcomingBookings,
   getCompletedBookings,
@@ -63,6 +64,7 @@ const isCustomer = [authenticate, requireRole(ROLES.CUSTOMER)];
  *         description: Booking created successfully
  */
 router.post('/', isCustomer, V.createBookingValidator, validate, createBooking);
+router.post('/tour-package', isCustomer, bookTourPackage);
 
 /**
  * @swagger

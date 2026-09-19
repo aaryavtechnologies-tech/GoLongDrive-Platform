@@ -18,6 +18,7 @@ const {
   cancelRide,
   getRideHistory,
   getAvailableRides,
+  getUnassignedTourPackages,
   getDashboardStats
 } = require('../controllers/driver.booking.controller');
 
@@ -36,6 +37,7 @@ router.post('/rides/:id/complete', isDriver, completeRide);
 router.post('/rides/:id/cancel', isDriver, cancelRide);
 router.get('/rides/history', isDriver, getRideHistory);
 router.get('/rides/available', isDriver, getAvailableRides);
+router.get('/rides/available-packages', isDriver, getUnassignedTourPackages);
 router.get('/dashboard', isDriver, getDashboardStats);
 
 module.exports = router;

@@ -33,6 +33,7 @@ const systemRoutes = require('./system.routes');
 
 const mapsRoutes = require('./maps.routes');
 const ridesRoutes = require('./rides.routes');
+const tourPackageRoutes = require('./tourPackage.routes');
 
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
@@ -79,5 +80,8 @@ router.use('/contact', adminContactRoutes);
 
 // System Monitoring
 router.use('/system', systemRoutes);
+
+// Tour Packages
+router.use('/tour-packages', tourPackageRoutes);
 
 module.exports = router;
