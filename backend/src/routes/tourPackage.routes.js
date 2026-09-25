@@ -9,24 +9,25 @@ const {
   suggestCustomTour
 } = require('../controllers/tourPackage.controller');
 
-const { protect, authorize } = require('../middleware/auth.middleware');
+const { authenticate } = require('../middleware/auth.middleware');
+const { requireRole } = require('../middleware/role.middleware');
 const { ROLES } = require('../utils/constants');
 
-// Public routes (or partially protected depending on req.user which we can handle via optional auth if needed, but standard is public for listing)
-// For now, let's keep list and get public
+// Public routes
 router.get('/', getAllPackages);
 router.get('/:id', getPackageById);
 
 // Protected routes
-router.use(protect);
+router.use(authenticate);
 
 // Customer only
-router.post('/suggest', authorize(ROLES.CUSTOMER), suggestCustomTour);
+router.post('/suggest', requireRole(ROLES.CUSTOMER), suggestCustomTour);
 
 // Admin only routes
-router.use(authorize(ROLES.ADMIN));
+router.use(requireRole(ROLES.ADMIN));
 router.post('/', createPackage);
 router.put('/:id', updatePackage);
 router.delete('/:id', deletePackage);
 
 module.exports = router;
+
