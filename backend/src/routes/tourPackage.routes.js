@@ -9,7 +9,7 @@ const {
   suggestCustomTour
 } = require('../controllers/tourPackage.controller');
 
-const { protect, authorize } = require('../middlewares/auth.middleware');
+const { protect, authorize } = require('../middleware/auth.middleware');
 const { ROLES } = require('../utils/constants');
 
 // Public routes (or partially protected depending on req.user which we can handle via optional auth if needed, but standard is public for listing)
