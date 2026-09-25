@@ -2,9 +2,11 @@
 
 const Booking = require('../models/Booking.model');
 const BookingTimeline = require('../models/BookingTimeline.model');
-const { getIO, getDriverSocket, getCustomerSocket } = require('../config/socket');
+const { getIO, getDriverSocket, getCustomerSocket, emitCityRideRequest } = require('../config/socket');
+const logger = require('../utils/logger');
 
 const assignmentTimers = new Map();
+
 
 // ── Vehicle Type Normalisation ────────────────────────────────────────────────
 // Normalise vehicle type strings so "Toyota Innova", "Innova Crysta", "innova"
@@ -275,12 +277,25 @@ const broadcastRideRequest = async (bookingId) => {
       // Store which drivers received this broadcast so we can notify them when taken
       const broadcastedDriverIds = [];
 
+      // Determine if this is a city/local ride — emit city:request, otherwise ride:request
+      const bookingTypeLower = (booking.bookingType || '').toLowerCase();
+      const tripTypeLower   = (booking.tripType   || '').toLowerCase();
+      const isCityRide = bookingTypeLower === 'local' || bookingTypeLower === 'city' ||
+                         tripTypeLower    === 'local' || tripTypeLower    === 'city';
+      const eventName = isCityRide ? 'city:request' : 'ride:request';
+
       availableDrivers.forEach((driver) => {
         const socketId = getDriverSocket(driver._id);
         if (socketId) {
-          io.to(socketId).emit('ride:request', { booking });
+          if (isCityRide) {
+            emitCityRideRequest(socketId, booking);
+          } else {
+            io.to(socketId).emit('ride:request', { booking });
+          }
           broadcastedDriverIds.push(driver._id);
-          console.log(`📤  Sent ride:request to driver ${driver.fullName} (${driver._id})`);
+          logger.info(`📤  [${isCityRide ? 'City' : 'LongDist'}] ${eventName} → driver: ${driver.fullName} (${driver._id}) | booking: ${booking.bookingId}`);
+        } else {
+          logger.warn(`⚠️  Driver ${driver.fullName} (${driver._id}) is online but has no active socket`);
         }
       });
 
@@ -377,12 +392,20 @@ const randomFallbackAssign = async (bookingId) => {
       selectedDriver.availabilityStatus = AVAILABILITY_STATUS.BUSY;
       await selectedDriver.save();
 
-      // Emit ride:request to the specific assigned driver's socket (FIXED BUG 3)
+      // Emit ride:request or city:request to the specific assigned driver's socket
       const driverSocketId = getDriverSocket(selectedDriver._id);
       if (driverSocketId) {
-        const io = getIO();
-        io.to(driverSocketId).emit('ride:request', { booking });
-        console.log(`📤  [Fallback] Sent ride:request to driver ${selectedDriver.fullName}`);
+        const bookingTypeLower = (booking.bookingType || '').toLowerCase();
+        const tripTypeLower   = (booking.tripType   || '').toLowerCase();
+        const isCityRide = bookingTypeLower === 'local' || bookingTypeLower === 'city' ||
+                           tripTypeLower    === 'local' || tripTypeLower    === 'city';
+        if (isCityRide) {
+          emitCityRideRequest(driverSocketId, booking);
+        } else {
+          const io = getIO();
+          io.to(driverSocketId).emit('ride:request', { booking });
+        }
+        logger.info(`📤  [Fallback] ${isCityRide ? 'city:request' : 'ride:request'} → driver: ${selectedDriver.fullName} | booking: ${booking.bookingId}`);
       }
     }
 

@@ -22,19 +22,32 @@ class CityRidesService {
     _initialized = true;
     await _loadCompletedRides();
     await _loadLiveCompletedRides();
+    // Always do a live fetch on first init — do NOT fall back to demo data here;
+    // refreshIncomingRequests() will show empty list if authenticated with no rides.
     await refreshIncomingRequests();
   }
 
-  /// Adds a socket-delivered city request to the feed. Returns false for
-  /// non-city bookings so the dashboard can keep its existing intercity flow.
-  bool ingestSocketRequest(Map<String, dynamic> payload) {
-    final bookingType = payload['bookingType']?.toString().toLowerCase();
-    final tripType = payload['tripType']?.toString().toLowerCase();
-    final isExplicitCityRide = bookingType == 'local' ||
-        bookingType == 'city' ||
-        tripType == 'local' ||
-        tripType == 'city';
-    if (!isExplicitCityRide) return false;
+  /// Bypass the initialized guard and force a fresh fetch from the server.
+  Future<void> forceRefresh() async {
+    await refreshIncomingRequests();
+  }
+
+  /// Adds a socket-delivered city request to the feed.
+  ///
+  /// [forceAccept] — set true when called from a `city:request` socket event,
+  /// since the backend already classified it as a city ride by choosing that event.
+  /// When false (default), checks bookingType/tripType to filter city vs long-distance.
+  /// Returns false for non-city bookings so the dashboard keeps its intercity flow.
+  bool ingestSocketRequest(Map<String, dynamic> payload, {bool forceAccept = false}) {
+    if (!forceAccept) {
+      final bookingType = payload['bookingType']?.toString().toLowerCase();
+      final tripType = payload['tripType']?.toString().toLowerCase();
+      final isExplicitCityRide = bookingType == 'local' ||
+          bookingType == 'city' ||
+          tripType == 'local' ||
+          tripType == 'city';
+      if (!isExplicitCityRide) return false;
+    }
 
     final ride = CityRideRequest.fromApiJson(payload);
     if (ride.id.isEmpty) return false;
@@ -342,33 +355,37 @@ class CityRidesService {
   Future<void> refreshIncomingRequests() async {
     try {
       final token = await AuthService.getToken();
-      if (token != null && token.isNotEmpty) {
-        final response =
-            await ApiService.get('/driver/bookings/rides/available');
-        if (response.statusCode >= 200 && response.statusCode < 300) {
-          final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-          final data = decoded['data'];
-          final rawRides = data is Map<String, dynamic> ? data['rides'] : null;
-          if (rawRides is List) {
-            final rides = rawRides
-                .whereType<Map<String, dynamic>>()
-                .where(_isCityRide)
-                .map(CityRideRequest.fromApiJson)
-                .where((ride) => ride.id.isNotEmpty)
-                .toList()
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            if (rides.isNotEmpty) {
-              incomingRequests.value = rides;
-              return;
-            }
-          }
+      if (token == null || token.isEmpty) {
+        // Not authenticated — show demo data so the UI isn't empty
+        _populateInitialRequests();
+        return;
+      }
+
+      final response =
+          await ApiService.get('/driver/bookings/rides/available');
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        final data = decoded['data'];
+        final rawRides = data is Map<String, dynamic> ? data['rides'] : null;
+        if (rawRides is List) {
+          final rides = rawRides
+              .whereType<Map<String, dynamic>>()
+              .where(_isCityRide)
+              .map(CityRideRequest.fromApiJson)
+              .where((ride) => ride.id.isNotEmpty)
+              .toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+          // Always update the list with live data (may be empty — that's fine).
+          // Do NOT fall back to demo rides when authenticated; empty = no real requests.
+          incomingRequests.value = rides;
+          return;
         }
       }
     } catch (e) {
-      debugPrint('Could not load live city rides; using demo requests: $e');
+      debugPrint('Could not load live city rides: $e');
     }
-
-    _populateInitialRequests();
+    // Only reach here on network error — keep existing list (don't overwrite with demos)
   }
 
   bool _isCityRide(Map<String, dynamic> ride) {

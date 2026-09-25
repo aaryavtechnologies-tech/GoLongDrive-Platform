@@ -20,6 +20,8 @@ const logger       = require('./src/utils/logger');
 const routes               = require('./src/routes');
 const swaggerSpec          = require('./docs/swagger');
 const { notFoundHandler, globalErrorHandler } = require('./src/middleware/error.middleware');
+const apiLogger            = require('./src/middleware/apiLogger.middleware');
+
 
 // ── XSS sanitise middleware ──────────────────
 const xssSanitize = (req, res, next) => {
@@ -127,7 +129,11 @@ app.use(hpp());
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 
+// Morgan: HTTP access log (piped into Winston)
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev', { stream: { write: (message) => logger.info(message.trim()) } }));
+
+// API Request/Response body logger — logs full payload to pm2 logs / log files
+app.use(apiLogger);
 
 // ── Compression ───────────────────────────────────────────────────────────────
 

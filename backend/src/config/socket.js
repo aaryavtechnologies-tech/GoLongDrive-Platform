@@ -2,6 +2,8 @@
 // Socket.io — handles driver & customer real-time connections.
 
 const { Server } = require('socket.io');
+const logger = require('../utils/logger');
+
 
 let io = null;
 // Maps driverId (string) → socket.id
@@ -27,13 +29,13 @@ const initSocket = (httpServer) => {
   });
 
   io.on('connection', (socket) => {
-    console.log(`🔌  Socket connected: ${socket.id}`);
+    logger.info(`🔌  Socket connected: ${socket.id}`);
 
     // ── Driver registers ─────────────────────────────────────────────────────
     socket.on('driver:join', ({ driverId }) => {
       if (driverId) {
         driverSockets.set(driverId.toString(), socket.id);
-        console.log(`✅  Driver ${driverId} joined with socket ${socket.id}`);
+        logger.info(`✅  Driver ${driverId} joined — socket: ${socket.id} | Total drivers online: ${driverSockets.size}`);
       }
     });
 
@@ -41,7 +43,7 @@ const initSocket = (httpServer) => {
     socket.on('customer:join', ({ customerId }) => {
       if (customerId) {
         customerSockets.set(customerId.toString(), socket.id);
-        console.log(`✅  Customer ${customerId} joined with socket ${socket.id}`);
+        logger.info(`✅  Customer ${customerId} joined — socket: ${socket.id}`);
       }
     });
 
@@ -51,7 +53,7 @@ const initSocket = (httpServer) => {
       for (const [driverId, sockId] of driverSockets.entries()) {
         if (sockId === socket.id) {
           driverSockets.delete(driverId);
-          console.log(`❌  Driver ${driverId} disconnected`);
+          logger.info(`❌  Driver ${driverId} disconnected — reason: ${reason}`);
           break;
         }
       }
@@ -59,15 +61,15 @@ const initSocket = (httpServer) => {
       for (const [customerId, sockId] of customerSockets.entries()) {
         if (sockId === socket.id) {
           customerSockets.delete(customerId);
-          console.log(`❌  Customer ${customerId} disconnected`);
+          logger.info(`❌  Customer ${customerId} disconnected — reason: ${reason}`);
           break;
         }
       }
-      console.log(`❌  Socket disconnected: ${socket.id} — reason: ${reason}`);
+      logger.info(`❌  Socket disconnected: ${socket.id} — reason: ${reason}`);
     });
   });
 
-  console.log('✅  Socket.io initialised');
+  logger.info('✅  Socket.io initialised');
   return io;
 };
 
@@ -98,4 +100,20 @@ const getCustomerSocket = (customerId) => {
   return customerSockets.get(customerId.toString());
 };
 
-module.exports = { initSocket, getIO, getDriverSocket, getCustomerSocket };
+/**
+ * Emit a city:request event to a specific driver socket.
+ * Used ONLY for local/city ride bookings — separate from ride:request (long-distance).
+ * @param {string} driverSocketId
+ * @param {Object} booking
+ */
+const emitCityRideRequest = (driverSocketId, booking) => {
+  try {
+    const ioInstance = getIO();
+    ioInstance.to(driverSocketId).emit('city:request', { booking });
+    logger.info(`📤  [City] city:request → socket ${driverSocketId} | booking: ${booking.bookingId || booking._id}`);
+  } catch (error) {
+    logger.error(`❌  emitCityRideRequest error: ${error.message}`);
+  }
+};
+
+module.exports = { initSocket, getIO, getDriverSocket, getCustomerSocket, emitCityRideRequest };

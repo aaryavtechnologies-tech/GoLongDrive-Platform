@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../core/data/socket_service.dart';
 import '../../core/utils/maps_launcher_util.dart';
 import 'city_ride_model.dart';
 import 'city_rides_service.dart';
@@ -19,10 +21,29 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
   String? _pinError;
   bool _isVerifyingPin = false;
 
+  /// Subscription to city:request socket events for real-time ride delivery
+  StreamSubscription<Map<String, dynamic>>? _cityRideSocketSub;
+
   @override
   void initState() {
     super.initState();
-    _service.initialize();
+    // Force a live fetch every time this screen opens (bypasses the _initialized guard)
+    _service.forceRefresh();
+    // Ensure socket is connected and listen for city:request events in real-time
+    SocketService.init().then((_) {
+      _cityRideSocketSub = SocketService.onCityRideRequest.listen((booking) {
+        if (!mounted) return;
+        // forceAccept:true — backend already classified this as a city ride
+        _service.ingestSocketRequest(booking, forceAccept: true);
+        HapticFeedback.mediumImpact();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _cityRideSocketSub?.cancel();
+    super.dispose();
   }
 
   @override

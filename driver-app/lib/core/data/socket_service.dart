@@ -26,6 +26,12 @@ class SocketService {
   static Stream<Map<String, dynamic>> get onRideRequest =>
       _rideRequestController.stream;
 
+  /// Emits the booking Map when a new CITY ride request arrives (city:request event)
+  static final StreamController<Map<String, dynamic>> _cityRideRequestController =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onCityRideRequest =>
+      _cityRideRequestController.stream;
+
   /// Emits a bookingId string when another driver takes the same broadcasted ride
   static final StreamController<String> _rideTakenController =
       StreamController.broadcast();
@@ -49,9 +55,12 @@ class SocketService {
 
   /// Initialise and connect the socket. Safe to call multiple times.
   static Future<void> init() async {
-    if (_socket != null) {
-      if (!_socket!.connected) _socket!.connect();
-      return;
+    // Only skip if socket exists AND is actively connected
+    if (_socket != null && _socket!.connected) return;
+    // Clean up any stale disconnected socket before reiniting
+    if (_socket != null && !_socket!.connected) {
+      _socket!.dispose();
+      _socket = null;
     }
     if (_isInitializing) return;
     _isInitializing = true;
@@ -99,6 +108,16 @@ class SocketService {
 
     // ── Ride events ────────────────────────────────────────────────────────────
 
+    /// New city ride request (city:request) — goes to CityRidesScreen directly
+    _socket!.on('city:request', (data) {
+      debugPrint('📥 city:request received: $data');
+      final booking = data is Map ? (data['booking'] ?? data) : null;
+      if (booking != null) {
+        _playRequestSound();
+        _cityRideRequestController.add(Map<String, dynamic>.from(booking));
+      }
+    });
+
     /// New ride request broadcast — show IncomingRequestScreen + play sound
     _socket!.on('ride:request', (data) {
       debugPrint('📥 ride:request received: $data');
@@ -137,6 +156,18 @@ class SocketService {
     _socket?.disconnect();
     _socket = null;
     debugPrint('SocketService: intentionally disconnected');
+  }
+
+  /// Force a full reconnect — useful when the driver toggles back online.
+  static Future<void> reconnect() async {
+    _intentionalDisconnect = false;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    if (_socket != null) {
+      _socket!.dispose();
+      _socket = null;
+    }
+    await init();
   }
 
   // ── Private helpers ──────────────────────────────────────────────────────────
