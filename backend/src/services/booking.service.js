@@ -281,7 +281,8 @@ const broadcastRideRequest = async (bookingId) => {
       const bookingTypeLower = (booking.bookingType || '').toLowerCase();
       const tripTypeLower   = (booking.tripType   || '').toLowerCase();
       const isCityRide = bookingTypeLower === 'local' || bookingTypeLower === 'city' ||
-                         tripTypeLower    === 'local' || tripTypeLower    === 'city';
+                         tripTypeLower    === 'local' || tripTypeLower    === 'city' ||
+                         booking.isShortRide;
       const eventName = isCityRide ? 'city:request' : 'ride:request';
 
       availableDrivers.forEach((driver) => {
@@ -398,7 +399,8 @@ const randomFallbackAssign = async (bookingId) => {
         const bookingTypeLower = (booking.bookingType || '').toLowerCase();
         const tripTypeLower   = (booking.tripType   || '').toLowerCase();
         const isCityRide = bookingTypeLower === 'local' || bookingTypeLower === 'city' ||
-                           tripTypeLower    === 'local' || tripTypeLower    === 'city';
+                           tripTypeLower    === 'local' || tripTypeLower    === 'city' ||
+                           booking.isShortRide;
         if (isCityRide) {
           emitCityRideRequest(driverSocketId, booking);
         } else {

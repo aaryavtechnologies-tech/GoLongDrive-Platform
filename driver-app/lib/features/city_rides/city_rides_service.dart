@@ -391,10 +391,12 @@ class CityRidesService {
   bool _isCityRide(Map<String, dynamic> ride) {
     final bookingType = ride['bookingType']?.toString().toLowerCase();
     final tripType = ride['tripType']?.toString().toLowerCase();
+    final isShortRide = ride['isShortRide'] == true;
     return bookingType == null ||
         bookingType == 'local' ||
         tripType == 'local' ||
-        tripType == 'city';
+        tripType == 'city' ||
+        isShortRide;
   }
 
   Future<void> _loadCompletedRides() async {
