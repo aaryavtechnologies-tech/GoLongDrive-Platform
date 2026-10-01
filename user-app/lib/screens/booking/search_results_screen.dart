@@ -196,12 +196,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         'rating': '4.8', // Mock rating
                         'time': car['durationText'] ?? 'N/A',
                         'distance': car['distanceText'] ?? 'N/A',
-                        'baseFare': car['baseFare'] ?? 2000,
+                        'baseFare': car['baseFare'] ?? 0,
                         'distanceCharge': car['distanceCharge'] ?? 0,
-                        'pricePerKm': car['pricePerKm'] ?? 15,
+                        'pricePerKm': car['pricePerKm'] ?? 12,
                         'distanceValueKm': car['distanceValueKm'] ?? (_distanceData != null ? _distanceData!['distanceValueKm'] : 0),
                         'total': car['fare'],
                         'availableNow': car['availableNow'] ?? false,
+                        'isLongRide': car['isLongRide'] ?? false,
+                        'shortRideThresholdKm': car['shortRideThresholdKm'] ?? 60,
                       };
                       return Padding(
                             padding: const EdgeInsets.only(bottom: 20),
@@ -414,15 +416,42 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Short/Long ride badge
+                Builder(builder: (context) {
+                  final bool isLongRide = car['isLongRide'] == true;
+                  final int threshold = (car['shortRideThresholdKm'] ?? 60) as int;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: isLongRide
+                          ? AppColors.primaryGold.withValues(alpha: 0.12)
+                          : Colors.teal.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      isLongRide
+                          ? '🛣️ Long Ride (≥$threshold km) — Base fare + KM charge'
+                          : '⚡ Short Ride (<$threshold km) — KM charge only, no base fare',
+                      style: AppTextStyles.caption.copyWith(
+                        color: isLongRide ? AppColors.primaryGold : Colors.teal,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }),
                 // Detailed Price Summary
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Base Fare', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-                    Text('₹${car['baseFare']}', style: AppTextStyles.caption.copyWith(color: colors.textPrimary)),
+                if ((car['baseFare'] as num? ?? 0) > 0) ...
+                  [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Base Fare', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                        Text('₹${car['baseFare']}', style: AppTextStyles.caption.copyWith(color: colors.textPrimary)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                   ],
-                ),
-                const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

@@ -44,6 +44,12 @@ export interface LongDistanceSettings {
   refundRules?: string;
 }
 
+export interface PricingSettings {
+  basePrice: number;             // Base price charged only when distanceKm >= shortRideThresholdKm
+  pricePerKm: number;            // Per-KM rate applied to all rides
+  shortRideThresholdKm: number;  // KM threshold: below this, only per-km is charged (no base)
+}
+
 export interface Settings {
   _id: string;
   companyName: string;
@@ -65,6 +71,7 @@ export interface Settings {
   securitySettings?: SecuritySettings;
   notificationSettings?: NotificationSettings;
   longDistanceSettings?: LongDistanceSettings;
+  pricingSettings?: PricingSettings;
   createdAt: string;
   updatedAt: string;
 }

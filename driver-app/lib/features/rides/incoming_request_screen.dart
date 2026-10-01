@@ -352,14 +352,28 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                             ),
                             child: Column(
                               children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text('Base Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                                    Text('₹${b['baseFare'] ?? 2000}', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
-                                const SizedBox(height: 6),
+                                // Show base fare row only for long rides (baseFare > 0)
+                                if ((b['baseFare'] ?? 0) > 0) ...[
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text('Base Fare', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                                      Text('₹${b['baseFare']}', style: TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                ] else ...[
+                                  Container(
+                                    width: double.infinity,
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.teal.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: const Text('⚡ Short Ride — KM charge only', style: TextStyle(color: Colors.teal, fontSize: 12, fontWeight: FontWeight.w600)),
+                                  ),
+                                ],
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
@@ -380,6 +394,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                               ],
                             ),
                           ),
+
                           const SizedBox(height: 8),
                           // Vehicle type badge
                           Container(

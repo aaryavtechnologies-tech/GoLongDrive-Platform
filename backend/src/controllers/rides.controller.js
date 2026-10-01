@@ -22,18 +22,34 @@ const getBookingQuery = (idParam) => {
 
 /**
  * Helper to calculate fare and advance based on global settings & vehicle details
+ *
+ * Pricing Logic:
+ *  - If distanceKm < shortRideThresholdKm (default 60): charge ONLY per-km price (no base fare)
+ *  - If distanceKm >= shortRideThresholdKm: charge base price + per-km price
  */
 const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec) => {
-  const vehicle = await VehicleType.findOne({ name: vehicleTypeName });
-  const baseFare = 2000; // Enforce base price of 2000
-  const pricePerKm = vehicle ? vehicle.pricePerKm : 12;
-
-  // Base fare is always charged; per-km cost is always added on top
-  const calculatedFare = baseFare + (distanceKm * pricePerKm);
-  const totalFare = Math.round(calculatedFare);
-
-  // Fetch admin settings for advance payment rules
+  // Fetch admin settings for pricing and advance payment rules
   const settings = await Setting.findOne();
+
+  // Pricing settings (from admin panel, with safe defaults)
+  const pricingCfg = settings?.pricingSettings || {};
+  const configuredBasePrice = typeof pricingCfg.basePrice === 'number' ? pricingCfg.basePrice : 2000;
+  const configuredPricePerKm = typeof pricingCfg.pricePerKm === 'number' ? pricingCfg.pricePerKm : 12;
+  const shortRideThresholdKm = typeof pricingCfg.shortRideThresholdKm === 'number' ? pricingCfg.shortRideThresholdKm : 60;
+
+  // Vehicle-specific pricePerKm overrides global if set
+  const vehicle = await VehicleType.findOne({ name: vehicleTypeName });
+  const pricePerKm = (vehicle && vehicle.pricePerKm) ? vehicle.pricePerKm : configuredPricePerKm;
+
+  // Apply pricing rule:
+  // Short ride (< threshold): no base fare, only per-km charge
+  // Long ride (>= threshold): base fare + per-km charge
+  const isLongRide = distanceKm >= shortRideThresholdKm;
+  const baseFare = isLongRide ? configuredBasePrice : 0;
+  const distanceCharge = distanceKm * pricePerKm;
+  const totalFare = Math.round(baseFare + distanceCharge);
+
+  // Advance payment rules
   const opts = settings?.longDistanceSettings || {
     advanceAmount: 500,
     advancePercentage: 20,
@@ -58,11 +74,13 @@ const calculateFareAndAdvance = async (vehicleTypeName, distanceKm, durationSec)
 
   return {
     baseFare,
-    distanceCharge: distanceKm * pricePerKm,
+    distanceCharge,
     pricePerKm,
     totalFare,
     advanceAmount,
-    remainingAmount: totalFare - advanceAmount
+    remainingAmount: totalFare - advanceAmount,
+    isLongRide,
+    shortRideThresholdKm
   };
 };
 

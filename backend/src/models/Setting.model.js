@@ -61,7 +61,12 @@ const settingSchema = new mongoose.Schema(
       refundRules: { type: String, default: "Full refund if cancelled before 24 hours, otherwise no refund" },
       longDistanceAvailability: { type: Boolean, default: true },
     },
-    platformFeePercentage: { type: Number, default: 10 }
+    platformFeePercentage: { type: Number, default: 10 },
+    pricingSettings: {
+      basePrice: { type: Number, default: 2000 },          // Applied only for rides >= shortRideThresholdKm
+      pricePerKm: { type: Number, default: 12 },           // Per-KM rate used for all rides
+      shortRideThresholdKm: { type: Number, default: 60 }, // Below this KM, base price is NOT charged
+    },
   },
   { timestamps: true }
 );

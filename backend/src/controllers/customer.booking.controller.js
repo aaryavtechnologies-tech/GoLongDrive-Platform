@@ -1,7 +1,7 @@
 // src/controllers/customer.booking.controller.js
 
 const Booking = require('../models/Booking.model');
-const { calculateEstimatedFare } = require('../services/fare.service');
+const { calculateEstimatedFare, calculateFareFromSettings } = require('../services/fare.service');
 const { generateBookingId, addTimelineEntry, emitBookingEvent, broadcastRideRequest } = require('../services/booking.service');
 const { sendBookingConfirmationEmail, sendBookingCancelledEmail } = require('../services/email.service');
 const { sendSuccess } = require('../helpers/response.helper');
@@ -17,11 +17,10 @@ const createBooking = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
   const bookingData = req.body;
 
-  // Calculate Fare
-  const fareDetails = calculateEstimatedFare({
+  // Calculate Fare using admin settings (threshold-based pricing)
+  const fareDetails = await calculateFareFromSettings({
     vehicleType: bookingData.vehicleType,
-    estimatedDistance: bookingData.estimatedDistance || 0,
-    days: bookingData.tripType === 'Multi-Day Rental' ? (bookingData.numberOfDays || 1) : 1
+    distanceKm: bookingData.estimatedDistance || bookingData.distance || 0,
   });
 
   const bookingIdStr = await generateBookingId();
@@ -30,8 +29,11 @@ const createBooking = asyncHandler(async (req, res) => {
     bookingId: bookingIdStr,
     customer: customerId,
     ...bookingData,
+    baseFare: fareDetails.baseFare,
+    distanceCharge: fareDetails.distanceCharge,
+    pricePerKm: fareDetails.pricePerKm,
     estimatedFare: fareDetails.grandTotal,
-    finalFare: fareDetails.grandTotal // can change later
+    finalFare: fareDetails.grandTotal,
   });
 
   await addTimelineEntry(newBooking._id, 'Booking Created', customerId, 'Customer created the booking via App');

@@ -13,6 +13,11 @@ const formSchema = z.object({
   companyName: z.string().min(2),
   timezone: z.string(),
   currency: z.string(),
+  pricingSettings: z.object({
+    basePrice: z.coerce.number().min(0),
+    pricePerKm: z.coerce.number().min(0),
+    shortRideThresholdKm: z.coerce.number().min(1),
+  }).optional(),
   longDistanceSettings: z.object({
     advanceAmount: z.coerce.number().min(0),
     advancePercentage: z.coerce.number().min(0).max(100),
@@ -36,6 +41,11 @@ export function GeneralSettingsForm() {
       companyName: '',
       timezone: '',
       currency: '',
+      pricingSettings: {
+        basePrice: 2000,
+        pricePerKm: 12,
+        shortRideThresholdKm: 60,
+      },
       longDistanceSettings: {
         advanceAmount: 500,
         advancePercentage: 20,
@@ -55,6 +65,11 @@ export function GeneralSettingsForm() {
         companyName: settings.companyName || '',
         timezone: settings.timezone || 'UTC',
         currency: settings.currency || 'USD',
+        pricingSettings: {
+          basePrice: settings.pricingSettings?.basePrice ?? 2000,
+          pricePerKm: settings.pricingSettings?.pricePerKm ?? 12,
+          shortRideThresholdKm: settings.pricingSettings?.shortRideThresholdKm ?? 60,
+        },
         longDistanceSettings: {
           advanceAmount: settings.longDistanceSettings?.advanceAmount ?? 500,
           advancePercentage: settings.longDistanceSettings?.advancePercentage ?? 20,
@@ -104,6 +119,76 @@ export function GeneralSettingsForm() {
             <div className="space-y-2">
               <label className="text-sm font-medium">Currency</label>
               <Input {...form.register('currency')} placeholder="e.g., USD, INR" />
+            </div>
+          </div>
+
+          {/* Pricing & Fare Settings */}
+          <div className="border-t pt-6 space-y-4">
+            <div>
+              <h3 className="text-lg font-medium">Pricing &amp; Fare Settings</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure per-KM rate and base price. The base price is only charged when the ride
+                distance is <strong>equal to or greater than</strong> the Short Ride Threshold.
+                Shorter rides are charged only the per-KM rate.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-3">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Base Price (₹)</label>
+                <Input
+                  type="number"
+                  {...form.register('pricingSettings.basePrice')}
+                  placeholder="e.g., 2000"
+                />
+                <p className="text-xs text-muted-foreground">Charged only for rides ≥ threshold KM</p>
+                {(form.formState.errors as any)?.pricingSettings?.basePrice && (
+                  <p className="text-sm text-destructive">{(form.formState.errors as any).pricingSettings.basePrice.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price Per KM (₹/km)</label>
+                <Input
+                  type="number"
+                  {...form.register('pricingSettings.pricePerKm')}
+                  placeholder="e.g., 12"
+                />
+                <p className="text-xs text-muted-foreground">Applied to every ride regardless of distance</p>
+                {(form.formState.errors as any)?.pricingSettings?.pricePerKm && (
+                  <p className="text-sm text-destructive">{(form.formState.errors as any).pricingSettings.pricePerKm.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Short Ride Threshold (KM)</label>
+                <Input
+                  type="number"
+                  {...form.register('pricingSettings.shortRideThresholdKm')}
+                  placeholder="e.g., 60"
+                />
+                <p className="text-xs text-muted-foreground">Rides below this KM → no base price</p>
+                {(form.formState.errors as any)?.pricingSettings?.shortRideThresholdKm && (
+                  <p className="text-sm text-destructive">{(form.formState.errors as any).pricingSettings.shortRideThresholdKm.message}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Live preview */}
+            <div className="rounded-md bg-muted/50 border p-4 text-sm space-y-1">
+              <p className="font-medium text-foreground">📋 Pricing Preview</p>
+              <p className="text-muted-foreground">
+                Ride &lt; {form.watch('pricingSettings.shortRideThresholdKm') ?? 60} km →{' '}
+                <span className="font-medium text-foreground">
+                  ₹{form.watch('pricingSettings.pricePerKm') ?? 12}/km only
+                </span>
+              </p>
+              <p className="text-muted-foreground">
+                Ride ≥ {form.watch('pricingSettings.shortRideThresholdKm') ?? 60} km →{' '}
+                <span className="font-medium text-foreground">
+                  ₹{form.watch('pricingSettings.basePrice') ?? 2000} base + ₹{form.watch('pricingSettings.pricePerKm') ?? 12}/km
+                </span>
+              </p>
             </div>
           </div>
 

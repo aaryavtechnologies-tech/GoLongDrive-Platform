@@ -352,13 +352,29 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                             children: [
                               Text('Payment Details', style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
                               const SizedBox(height: 16),
-                              _buildPriceRow(colors, 'Base Fare', '₹${car['baseFare'] ?? 2000}'),
-                              const SizedBox(height: 8),
-                              _buildPriceRow(colors, 'Distance Charge (${car['distanceValueKm'] ?? 0} km × ₹${car['pricePerKm'] ?? 15}/km)', '₹${car['distanceCharge'] ?? (totalAmount - (car['baseFare'] ?? 2000))}'),
+                              if ((car['baseFare'] as num? ?? 0) > 0) ...
+                                [
+                                  _buildPriceRow(colors, 'Base Fare', '₹${car['baseFare'] ?? 0}'),
+                                  const SizedBox(height: 8),
+                                ],
+                              _buildPriceRow(colors, 'Distance Charge (${car['distanceValueKm'] ?? 0} km × ₹${car['pricePerKm'] ?? 12}/km)', '₹${car['distanceCharge'] ?? totalAmount}'),
                               const SizedBox(height: 16),
                               Container(height: 1, color: colors.divider),
                               const SizedBox(height: 16),
                               _buildPriceRow(colors, 'Total Ride Amount', '₹$totalAmount', isTotal: true),
+                              const SizedBox(height: 8),
+                              if ((car['baseFare'] as num? ?? 0) == 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.teal.withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '⚡ Short ride — only KM rate charged, no base fare',
+                                    style: AppTextStyles.caption.copyWith(color: Colors.teal, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
                               const SizedBox(height: 8),
                               Text('No advance payment required. Full amount to be paid post-ride.', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                             ],
