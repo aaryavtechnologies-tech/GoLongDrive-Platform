@@ -63,7 +63,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
             'status': status.toUpperCase(),
             'passengers': booking['numberOfPassengers'] ?? 1,
             'luggage': booking['luggageDetails'] ?? 'None',
-            'otp': booking['customer']?['ridePin']?.toString(),
+            'otp': (booking['customer'] is Map) ? booking['customer']['ridePin']?.toString() : null,
           });
         } else if (isCancelled) {
           cancelled.add(RideHistoryItem(
@@ -98,7 +98,9 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
         _mockCancelled = cancelled;
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, s) {
+      print('Error fetching bookings: $e');
+      print(s);
       if (!mounted) return;
       setState(() => _isLoading = false);
     }

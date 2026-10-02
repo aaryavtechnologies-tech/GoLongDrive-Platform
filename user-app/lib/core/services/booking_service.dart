@@ -72,7 +72,7 @@ class BookingService {
       final response = await ApiClient.get('/customer/bookings');
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
-        return body['data'] ?? [];
+        return body['data']['bookings'] ?? [];
       } else {
         throw Exception('Failed to get bookings');
       }

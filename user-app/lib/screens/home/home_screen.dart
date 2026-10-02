@@ -677,8 +677,6 @@ class _HomeScreenState extends State<HomeScreen>
                 _buildActiveBookingBanner(colors),
               ],
               const SizedBox(height: 32),
-              const CityRideEntry(),
-              const SizedBox(height: 16),
               const TourPackageEntry(),
               const SizedBox(height: 32),
               Text('Going a little further?',
