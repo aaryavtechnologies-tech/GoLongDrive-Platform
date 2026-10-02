@@ -39,8 +39,8 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       final cancelled = <RideHistoryItem>[];
 
       for (var booking in data) {
-        final status = booking['status'] ?? 'Pending';
-        final isUpcoming = ['Pending', 'Confirmed', 'Searching Driver', 'Driver Assigned'].contains(status);
+        final status = booking['rideStatus'] ?? 'Pending';
+        final isUpcoming = ['Pending', 'Confirmed', 'Searching Driver', 'Driver Assigned', 'Driver Accepted', 'Driver Arriving', 'Trip Started'].contains(status);
         final isCancelled = ['Cancelled by Customer', 'Cancelled by Driver', 'Cancelled by Admin'].contains(status);
 
         final fromAddress = booking['pickupLocation']?['address'] ?? 'Unknown';
@@ -63,6 +63,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
             'status': status.toUpperCase(),
             'passengers': booking['numberOfPassengers'] ?? 1,
             'luggage': booking['luggageDetails'] ?? 'None',
+            'otp': booking['customer']?['ridePin']?.toString(),
           });
         } else if (isCancelled) {
           cancelled.add(RideHistoryItem(
@@ -272,6 +273,21 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
                           Text(ride['carNo'], style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                         ],
                       ),
+                      if (ride['otp'] != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                          ),
+                          child: Column(
+                            children: [
+                              Text('Ride OTP', style: AppTextStyles.caption.copyWith(fontSize: 9, color: colors.textSecondary)),
+                              Text(ride['otp'], style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: AppColors.primaryGold, letterSpacing: 2)),
+                            ],
+                          ),
+                        ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [

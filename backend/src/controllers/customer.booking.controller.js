@@ -99,7 +99,9 @@ const bookTourPackage = asyncHandler(async (req, res) => {
  */
 const getBookingHistory = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
-  const bookings = await Booking.find({ customer: customerId }).sort({ createdAt: -1 });
+  const bookings = await Booking.find({ customer: customerId })
+    .populate('customer', 'ridePin')
+    .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Booking history retrieved', { bookings });
 });
 
