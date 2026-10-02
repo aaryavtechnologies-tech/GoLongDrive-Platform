@@ -54,6 +54,7 @@ dependencies:
   intl: any
   socket_io_client: any
   flutter_dotenv: any
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

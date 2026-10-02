@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/data/socket_service.dart';
 import '../../core/utils/maps_launcher_util.dart';
@@ -825,12 +826,17 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
             ),
           ),
           IconButton(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content:
-                        Text('Calling ${ride.riderName} (${ride.riderPhone})')),
-              );
+            onPressed: () async {
+              final uri = Uri.parse('tel:${ride.riderPhone}');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri);
+              } else {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not launch phone app for ${ride.riderPhone}')),
+                  );
+                }
+              }
             },
             icon: const Icon(Icons.call_rounded, color: AppColors.gold),
             tooltip: 'Call rider',

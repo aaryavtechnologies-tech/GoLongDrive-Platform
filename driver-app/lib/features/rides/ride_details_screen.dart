@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/data/api_service.dart';
 import '../../app/theme.dart';
 import '../../core/data/mock_data.dart';
@@ -114,16 +115,24 @@ class RideDetailsScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceAlt2,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: AppColors.borderSubtle2),
+                        GestureDetector(
+                          onTap: () async {
+                            final uri = Uri.parse('tel:${r.customerPhone}');
+                            if (await canLaunchUrl(uri)) {
+                              await launchUrl(uri);
+                            }
+                          },
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceAlt2,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: AppColors.borderSubtle2),
+                            ),
+                            child: const Icon(Icons.call,
+                                color: AppColors.gold, size: 20),
                           ),
-                          child: const Icon(Icons.call,
-                              color: AppColors.gold, size: 20),
                         ),
                       ],
                     ),

@@ -1,6 +1,8 @@
 // lib/screens/rides/ride_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -15,10 +17,17 @@ class RideDetailsScreen extends StatelessWidget {
 
   const RideDetailsScreen({super.key, required this.ride});
 
-  void _callDriver(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Calling Driver...')),
-    );
+  void _callDriver(BuildContext context) async {
+    final uri = Uri.parse('tel:+919876543210');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not launch phone app')),
+        );
+      }
+    }
   }
 
   void _messageDriver(BuildContext context) {

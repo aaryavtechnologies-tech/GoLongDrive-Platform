@@ -547,7 +547,12 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                             ),
                             _roundIconButton(Icons.message_outlined),
                             const SizedBox(width: 10),
-                            _roundIconButton(Icons.call),
+                            _roundIconButton(Icons.call, onTap: () async {
+                              final uri = Uri.parse('tel:${ride.customerPhone}');
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri);
+                              }
+                            }),
                           ],
                         ),
                       ),
@@ -647,16 +652,19 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     );
   }
 
-  Widget _roundIconButton(IconData icon) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.surfaceAlt2,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSubtle2),
+  Widget _roundIconButton(IconData icon, {VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceAlt2,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.borderSubtle2),
+        ),
+        child: Icon(icon, color: AppColors.gold, size: 18),
       ),
-      child: Icon(icon, color: AppColors.gold, size: 18),
     );
   }
 }

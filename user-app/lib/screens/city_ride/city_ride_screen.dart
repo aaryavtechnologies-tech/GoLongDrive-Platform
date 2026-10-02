@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../widgets/primary_button.dart';
@@ -491,7 +492,12 @@ class _CityRideScreenState extends State<CityRideScreen> {
                         style: AppTextStyles.caption
                             .copyWith(color: c.textSecondary))
                   ])),
-              _roundAction(Icons.call_outlined, 'Call', c),
+              _roundAction(Icons.call_outlined, 'Call', c, onTap: () async {
+                final uri = Uri.parse('tel:+919876543210');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                }
+              }),
               const SizedBox(width: 8),
               _roundAction(Icons.chat_bubble_outline, 'Message', c),
             ]),
@@ -614,15 +620,18 @@ class _CityRideScreenState extends State<CityRideScreen> {
                 })),
           ]));
 
-  Widget _roundAction(IconData icon, String tooltip, AppColorPalette c) =>
+  Widget _roundAction(IconData icon, String tooltip, AppColorPalette c, {VoidCallback? onTap}) =>
       Tooltip(
           message: tooltip,
-          child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                  color: c.surfaceSecondary, shape: BoxShape.circle),
-              child: Icon(icon, color: c.accentIcon, size: 19)));
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                    color: c.surfaceSecondary, shape: BoxShape.circle),
+                child: Icon(icon, color: c.accentIcon, size: 19)),
+          ));
 
   Widget _routeCard(AppColorPalette c, {bool editable = false}) => _panel(
       c,
