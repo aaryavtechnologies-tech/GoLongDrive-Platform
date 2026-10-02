@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { deletionService, DeletionRequest } from '@/services/deletion.service';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export default function DeletionRequestsPage() {
   const [requests, setRequests] = useState<DeletionRequest[]>([]);

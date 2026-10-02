@@ -1,4 +1,4 @@
-import { fetchWithAuth } from './settings.service';
+import apiClient from '@/lib/axios';
 
 export interface DeletionRequest {
   _id: string;
@@ -13,20 +13,11 @@ export interface DeletionRequest {
 
 export const deletionService = {
   getRequests: async (): Promise<DeletionRequest[]> => {
-    const response = await fetchWithAuth('/admin/deletion-requests');
-    if (!response.ok) {
-      throw new Error('Failed to fetch deletion requests');
-    }
-    const data = await response.json();
-    return data.data.requests;
+    const response = await apiClient.get('/admin/deletion-requests');
+    return response.data.data.requests;
   },
 
   processRequest: async (id: string): Promise<void> => {
-    const response = await fetchWithAuth(`/admin/deletion-requests/${id}/process`, {
-      method: 'PATCH',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to process deletion request');
-    }
+    await apiClient.patch(`/admin/deletion-requests/${id}/process`);
   },
 };
