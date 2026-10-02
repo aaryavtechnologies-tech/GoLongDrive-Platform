@@ -34,6 +34,8 @@ const systemRoutes = require('./system.routes');
 const mapsRoutes = require('./maps.routes');
 const ridesRoutes = require('./rides.routes');
 const tourPackageRoutes = require('./tourPackage.routes');
+const publicRoutes = require('./public.routes');
+const adminDeletionRoutes = require('./admin.deletion.routes');
 
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
@@ -81,7 +83,13 @@ router.use('/contact', adminContactRoutes);
 // System Monitoring
 router.use('/system', systemRoutes);
 
+// Public endpoints (no auth)
+router.use('/public', publicRoutes);
+
 // Tour Packages
 router.use('/tour-packages', tourPackageRoutes);
+
+// Deletion requests (Admin)
+router.use('/admin/deletion-requests', adminDeletionRoutes);
 
 module.exports = router;

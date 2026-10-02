@@ -8,7 +8,10 @@ export function middleware(request: NextRequest) {
   // Allow access to public static assets and logo
   if (request.nextUrl.pathname.startsWith('/logo') || 
       request.nextUrl.pathname.startsWith('/_next') || 
-      request.nextUrl.pathname.startsWith('/api')) {
+      request.nextUrl.pathname.startsWith('/api') ||
+      request.nextUrl.pathname.startsWith('/user-policy') ||
+      request.nextUrl.pathname.startsWith('/driver-policy') ||
+      request.nextUrl.pathname.startsWith('/account-deletion')) {
     return NextResponse.next();
   }
 
@@ -35,6 +38,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - logo.jpeg (logo file)
      */
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.jpeg).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|logo.jpeg|user-policy|driver-policy|account-deletion).*)',
   ],
 };
