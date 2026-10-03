@@ -16,7 +16,7 @@ const autocomplete = async (input) => {
     const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
       params: { input, key: getApiKey(), components: 'country:in' }
     });
-    
+
     if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
       throw new Error(`Google Maps autocomplete status: ${response.data.status}`);
     }
@@ -38,11 +38,11 @@ const placeDetails = async (placeId) => {
     const response = await axios.get(`https://maps.googleapis.com/maps/api/place/details/json`, {
       params: { place_id: placeId, key: getApiKey() }
     });
-    
+
     if (response.data.status !== 'OK') {
       throw new Error(`Google Maps details status: ${response.data.status}`);
     }
-    
+
     const location = response.data.result?.geometry?.location || {};
     return {
       lat: location.lat,
@@ -61,11 +61,11 @@ const geocode = async (address) => {
     const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
       params: { address, key: getApiKey() }
     });
-    
+
     if (response.data.status !== 'OK') {
       throw new Error(`Google Maps geocode status: ${response.data.status}`);
     }
-    
+
     const result = response.data.results?.[0] || {};
     const location = result.geometry?.location || {};
     return {
@@ -85,11 +85,11 @@ const reverseGeocode = async (lat, lng) => {
     const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
       params: { latlng: `${lat},${lng}`, key: getApiKey() }
     });
-    
+
     if (response.data.status !== 'OK') {
       throw new Error(`Google Maps reverse geocode status: ${response.data.status}`);
     }
-    
+
     const result = response.data.results?.[0] || {};
     return result.formatted_address || `Location at ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
   } catch (error) {
