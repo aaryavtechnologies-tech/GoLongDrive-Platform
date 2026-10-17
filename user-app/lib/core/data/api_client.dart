@@ -11,7 +11,14 @@ import '../services/auth_service.dart';
 /// Handles headers, auth tokens, timeouts, and detailed logging for every
 /// API request, response, and error.
 class ApiClient {
-  static String get baseUrl => dotenv.env['API_BASE_URL'] ?? 'https://api.golongdrive.online/api/v1';
+  static String get baseUrl {
+    try {
+      if (dotenv.isInitialized) {
+        return dotenv.env['API_BASE_URL'] ?? 'https://api.golongdrive.online/api/v1';
+      }
+    } catch (_) {}
+    return 'https://api.golongdrive.online/api/v1';
+  }
   static const Duration timeoutDuration = Duration(seconds: 30);
   static int _requestCounter = 0;
 

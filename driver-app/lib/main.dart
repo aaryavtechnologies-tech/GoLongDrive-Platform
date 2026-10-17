@@ -4,7 +4,12 @@ import 'app/theme.dart';
 import 'app/router.dart';
 
 Future<void> main() async {
-  await dotenv.load(fileName: ".env");
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint("Failed to load .env file: $e");
+  }
   runApp(const GoLongDriveApp());
 }
 

@@ -28,34 +28,38 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    final token = await AuthService.getToken();
-    debugPrint('📱 [SplashScreen] Auth token present: ${token != null}');
+    try {
+      final token = await AuthService.getToken();
+      debugPrint('📱 [SplashScreen] Auth token present: ${token != null}');
 
-    if (token != null) {
-      try {
-        if (!mounted) return;
-        final userController = UserScope.of(context);
-        await userController.fetchProfile();
+      if (token != null) {
+        try {
+          if (!mounted) return;
+          final userController = UserScope.of(context);
+          await userController.fetchProfile();
 
-        if (mounted && userController.isLoggedIn) {
-          final profile = userController.userProfile!;
-          final isVerified = profile['emailVerified'] == true;
-          debugPrint('📱 [SplashScreen] Logged in user: ${profile['email']}, emailVerified: $isVerified');
+          if (mounted && userController.isLoggedIn) {
+            final profile = userController.userProfile!;
+            final isVerified = profile['emailVerified'] == true;
+            debugPrint('📱 [SplashScreen] Logged in user: ${profile['email']}, emailVerified: $isVerified');
 
-          if (isVerified) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.home);
-          } else {
-            Navigator.of(context).pushReplacementNamed(
-              AppRoutes.verifyEmail,
-              arguments: profile['email'] ?? '',
-            );
+            if (isVerified) {
+              Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+            } else {
+              Navigator.of(context).pushReplacementNamed(
+                AppRoutes.verifyEmail,
+                arguments: profile['email'] ?? '',
+              );
+            }
+            return;
           }
-          return;
+        } catch (e) {
+          debugPrint('⚠️ [SplashScreen] Error loading user profile: $e. Clearing token.');
+          await AuthService.logout();
         }
-      } catch (e) {
-        debugPrint('⚠️ [SplashScreen] Error loading user profile: $e. Clearing token.');
-        await AuthService.logout();
       }
+    } catch (e) {
+      debugPrint('⚠️ [SplashScreen] Error getting token: $e');
     }
 
     if (mounted) {

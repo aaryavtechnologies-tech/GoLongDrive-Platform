@@ -10,7 +10,6 @@ import '../../models/ride_history_item.dart';
 import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../booking/location_search_sheet.dart';
-import '../city_ride/city_ride_entry.dart';
 import '../tour_packages/tour_package_entry.dart';
 import '../booking/journey_date_time_sheet.dart';
 import '../../core/services/user_scope.dart';

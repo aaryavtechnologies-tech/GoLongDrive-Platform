@@ -1,4 +1,4 @@
-package com.golongdrive.user.project
+package com.golongdrive.user
 
 import io.flutter.embedding.android.FlutterActivity
 

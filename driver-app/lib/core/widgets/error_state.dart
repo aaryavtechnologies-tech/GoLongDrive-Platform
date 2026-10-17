@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../data/auth_service.dart';
 
 class ErrorStateWidget extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback? onRetry;
   final bool isNoInternet;
+  final String? buttonText;
 
   const ErrorStateWidget({
     super.key,
@@ -13,10 +16,28 @@ class ErrorStateWidget extends StatelessWidget {
     required this.message,
     this.onRetry,
     this.isNoInternet = false,
+    this.buttonText,
   });
+
+  bool get _isAuthError =>
+      message.contains('401') ||
+      title.contains('401') ||
+      message.toLowerCase().contains('unauthorized') ||
+      message.toLowerCase().contains('session expired');
 
   @override
   Widget build(BuildContext context) {
+    final bool authError = _isAuthError;
+    final String displayTitle = authError ? 'Session Expired' : title;
+    final String displayMessage = authError
+        ? 'You have been logged out. Please log in again.'
+        : message;
+    final String displayButtonText = buttonText ?? (authError ? 'Log In Again' : 'Try Again');
+    final IconData displayIcon = authError
+        ? Icons.lock_outline_rounded
+        : (isNoInternet ? Icons.wifi_off_rounded : Icons.error_outline_rounded);
+    final Color displayColor = authError ? AppColors.gold : AppColors.error;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -26,21 +47,18 @@ class ErrorStateWidget extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.1),
+                color: displayColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: AppColors.error.withValues(alpha: 0.3), width: 1),
+                  color: displayColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
               ),
-              child: Icon(
-                  isNoInternet
-                      ? Icons.wifi_off_rounded
-                      : Icons.error_outline_rounded,
-                  size: 48,
-                  color: AppColors.error),
+              child: Icon(displayIcon, size: 48, color: displayColor),
             ),
             const SizedBox(height: 24),
             Text(
-              title,
+              displayTitle,
               style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 20,
@@ -50,7 +68,7 @@ class ErrorStateWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              message,
+              displayMessage,
               style: TextStyle(
                 color: AppColors.textSecondary,
                 fontSize: 14,
@@ -58,23 +76,35 @@ class ErrorStateWidget extends StatelessWidget {
               ),
               textAlign: TextAlign.center,
             ),
-            if (onRetry != null) ...[
+            if (onRetry != null || authError) ...[
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: onRetry,
+                  onPressed: () async {
+                    if (authError) {
+                      await AuthService.clearAuth();
+                      if (context.mounted) context.go('/login');
+                    } else if (onRetry != null) {
+                      onRetry!();
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.gold,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     elevation: 2,
                   ),
-                  child: const Text('Try Again',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text(
+                    displayButtonText,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
               ),
             ]

@@ -43,6 +43,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final bodyData = jsonDecode(res.body);
         final decoded = bodyData['data'] ?? {};
         _profileData = decoded['driver'] ?? decoded;
+      } else if (res.statusCode == 401) {
+        if (mounted) setState(() => _errorMsg = '401');
+        return;
       } else {
         throw Exception('Failed to load profile (Status: ${res.statusCode})');
       }
@@ -73,6 +76,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     if (_errorMsg.isNotEmpty && !_refreshing) {
+      final isAuthError = _errorMsg.contains('401') || _errorMsg.toLowerCase().contains('unauthorized');
+      if (isAuthError) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 48,
+                      color: AppColors.gold,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Session Expired',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'You have been logged out. Please log in again.',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await AuthService.clearAuth();
+                        if (context.mounted) context.go('/login');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.gold,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                      child: const Text(
+                        'Log In Again',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }
+
       return Scaffold(
         body: Column(
           children: [
