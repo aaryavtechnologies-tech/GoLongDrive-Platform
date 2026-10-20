@@ -8,7 +8,7 @@
 PRODUCT_NAME = project
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.golongdrive.user.project
+PRODUCT_BUNDLE_IDENTIFIER = com.golongdrive.user
 
 // The copyright displayed in application information
 PRODUCT_COPYRIGHT = Copyright © 2026 com.golongdrive.user. All rights reserved.
