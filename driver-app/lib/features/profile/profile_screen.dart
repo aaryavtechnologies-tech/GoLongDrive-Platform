@@ -370,7 +370,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: SwitchListTile(
         value: isDark,
         onChanged: (_) => ThemeService.instance.toggleTheme(),
-        activeThumbColor: AppColors.gold,
+        activeColor: AppColors.gold,
         secondary: Icon(isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
             color: AppColors.textMuted, size: 22),
         title: Text('Dark Mode', style: TextStyle(color: AppColors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),

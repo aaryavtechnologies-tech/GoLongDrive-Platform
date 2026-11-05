@@ -344,7 +344,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     ),
                     Switch(
                       value: _online,
-                      activeThumbColor: Colors.white,
+                      activeColor: Colors.white,
                       activeTrackColor: AppColors.gold,
                       inactiveTrackColor: AppColors.divider,
                       onChanged: _toggleStatus,

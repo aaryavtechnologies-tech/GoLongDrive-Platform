@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -61,14 +62,17 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
       // Fetch live ride details from API
       try {
         final res = await ApiService.get('/rides/$rideId');
-        if (res.statusCode == 200 && res.data?['data']?['booking'] != null) {
-          final bookingJson = Map<String, dynamic>.from(res.data['data']['booking']);
-          if (mounted) {
-            setState(() {
-              _ride = Ride.fromJson(bookingJson);
-              _isLoading = false;
-            });
-            return;
+        if (res.statusCode == 200) {
+          final decoded = jsonDecode(res.body);
+          if (decoded is Map<String, dynamic> && decoded['data']?['booking'] != null) {
+            final bookingJson = Map<String, dynamic>.from(decoded['data']['booking']);
+            if (mounted) {
+              setState(() {
+                _ride = Ride.fromJson(bookingJson);
+                _isLoading = false;
+              });
+              return;
+            }
           }
         }
       } catch (e) {
@@ -86,7 +90,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Ride Details')),
         body: Center(
-          child: CircularProgressIndicator(color: AppColors.primaryGold),
+          child: CircularProgressIndicator(color: AppColors.gold),
         ),
       );
     }

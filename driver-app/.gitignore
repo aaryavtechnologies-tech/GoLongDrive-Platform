@@ -36,6 +36,11 @@ android
 /build/
 /coverage/
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Symbolication related
 app.*.symbols
 
