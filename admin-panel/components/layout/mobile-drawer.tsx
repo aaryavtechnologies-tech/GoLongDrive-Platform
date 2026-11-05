@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, UserCircle, Car, 
-  FileText, CreditCard, Settings, LogOut, Menu, Receipt, Landmark, Ticket
+  FileText, CreditCard, Settings, LogOut, Menu, Receipt, Landmark, Ticket, Compass
 } from 'lucide-react';
 import {
   Sheet,
@@ -23,6 +23,7 @@ const navigation = [
   { name: 'Customers', href: '/customers', icon: Users },
   { name: 'Drivers', href: '/drivers', icon: UserCircle },
   { name: 'Rides', href: '/rides', icon: Car },
+  { name: 'Tour Packages', href: '/tour-packages', icon: Compass },
   { name: 'Documents', href: '/documents', icon: FileText },
   { name: 'Payments', href: '/payments', icon: CreditCard },
   { name: 'Invoices', href: '/invoices', icon: Receipt },

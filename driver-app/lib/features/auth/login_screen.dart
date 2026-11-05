@@ -108,12 +108,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final token = data['data']['accessToken'];
-        final userId = data['data']['driver']['id'];
+        final token = data['data']?['accessToken'] ?? data['data']?['token'];
+        final driverData = data['data']?['driver'];
+        final userId = (driverData?['_id'] ?? driverData?['id'] ?? '')?.toString() ?? '';
 
-        if (token != null) {
-          await AuthService.saveToken(token);
-          await AuthService.saveUserId(userId);
+        if (token != null && token.toString().isNotEmpty) {
+          await AuthService.saveToken(token.toString());
+          if (userId.isNotEmpty) {
+            await AuthService.saveUserId(userId);
+          }
+          await AuthService.markOnboardingSeen();
           await _persistLoginChoice();
           if (mounted) context.go('/tabs');
         } else {

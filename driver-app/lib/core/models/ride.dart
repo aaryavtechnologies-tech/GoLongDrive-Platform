@@ -83,8 +83,8 @@ class Ride {
     return Ride(
       id: json['_id'] ?? '',
       status: parseStatus(json['rideStatus']),
-      pickupAddress: json['pickupLocation']?['address'] ?? 'Unknown Pickup',
-      dropAddress: json['dropoffLocation']?['address'] ?? 'Unknown Drop',
+      pickupAddress: json['pickupAddress'] ?? json['pickupLocation']?['address'] ?? 'Unknown Pickup',
+      dropAddress: json['dropAddress'] ?? json['dropoffLocation']?['address'] ?? 'Unknown Drop',
       customerName: json['customer']?['fullName'] ?? 'Customer',
       customerPhone: json['customer']?['phoneNumber'] ?? '',
       customerRating: 4.8, // Fallback if no rating provided

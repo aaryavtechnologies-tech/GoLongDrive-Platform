@@ -76,8 +76,8 @@ class _HomeScreenState extends State<HomeScreen>
 
         if (items.length >= 5) continue;
 
-        final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
-        final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
+        final from = b['pickupAddress'] ?? b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
+        final to = b['dropAddress'] ?? b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
         final fare = b['fareAmount'] != null
             ? '₹${b['fareAmount']}'
             : (b['total']?.toString() ?? '');

@@ -18,25 +18,80 @@ import '../../core/widgets/ride_route_map.dart';
 /// Reads `rideId` from route arguments (same pattern as `OtpScreen` reading
 /// `phone` — see PROJECT_STATUS.md §6, Phase 3 notes) and looks it up in
 /// `MockData.rides`. Read-only: no local state, no mutations.
-class RideDetailsScreen extends StatelessWidget {
+class RideDetailsScreen extends StatefulWidget {
   const RideDetailsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<RideDetailsScreen> createState() => _RideDetailsScreenState();
+}
+
+class _RideDetailsScreenState extends State<RideDetailsScreen> {
+  Ride? _ride;
+  bool _isLoading = true;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _resolveRide();
+  }
+
+  Future<void> _resolveRide() async {
     final args = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final rideId = args?['rideId'] as String?;
+    final passedRide = args?['ride'];
 
-    Ride? ride;
+    if (passedRide is Ride) {
+      if (mounted) setState(() { _ride = passedRide; _isLoading = false; });
+      return;
+    }
+
+    if (passedRide is Map<String, dynamic>) {
+      if (mounted) setState(() { _ride = Ride.fromJson(passedRide); _isLoading = false; });
+      return;
+    }
+
     if (rideId != null) {
       for (final r in MockData.rides) {
         if (r.id == rideId) {
-          ride = r;
-          break;
+          if (mounted) setState(() { _ride = r; _isLoading = false; });
+          return;
         }
+      }
+
+      // Fetch live ride details from API
+      try {
+        final res = await ApiService.get('/rides/$rideId');
+        if (res.statusCode == 200 && res.data?['data']?['booking'] != null) {
+          final bookingJson = Map<String, dynamic>.from(res.data['data']['booking']);
+          if (mounted) {
+            setState(() {
+              _ride = Ride.fromJson(bookingJson);
+              _isLoading = false;
+            });
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to load live ride details: $e');
       }
     }
 
-    if (ride == null) {
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Ride Details')),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryGold),
+        ),
+      );
+    }
+
+    if (_ride == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Ride Details')),
@@ -47,7 +102,7 @@ class RideDetailsScreen extends StatelessWidget {
       );
     }
 
-    final r = ride;
+    final r = _ride!;
 
     return Scaffold(
       backgroundColor: AppColors.background,

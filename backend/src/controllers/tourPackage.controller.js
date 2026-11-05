@@ -1,9 +1,46 @@
 const TourPackage = require('../models/TourPackage.model');
 const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
+const fs = require('fs');
+const path = require('path');
+
+const parseArray = (field) => {
+  if (!field) return [];
+  if (Array.isArray(field)) return field;
+  if (typeof field === 'string') {
+    try {
+      const parsed = JSON.parse(field);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (_) {}
+    return field.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+};
+
+const parseNumber = (val, defaultVal = 0) => {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const num = Number(val);
+  return isNaN(num) ? defaultVal : num;
+};
+
+// @desc    Upload tour package image (Admin)
+// @route   POST /api/v1/tour-packages/upload-image
+// @access  Private (Admin)
+exports.uploadPackageImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No image file uploaded' });
+    }
+    const fileUrl = `/uploads/tour-packages/${req.file.filename}`;
+    return res.status(200).json({ success: true, url: fileUrl });
+  } catch (error) {
+    logger.error(`Error in uploadPackageImage: ${error.message}`);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
 
 // @desc    Create a new tour package (Admin)
-// @route   POST /api/tour-packages
+// @route   POST /api/v1/tour-packages
 // @access  Private (Admin)
 exports.createPackage = async (req, res) => {
   try {
@@ -17,25 +54,45 @@ exports.createPackage = async (req, res) => {
       description,
       days,
       nights,
+      price,
+      numberOfPersons,
+      pricePerPerson,
+      route,
+      placesToExplore,
       includes,
       excludes,
-      imageUrl,
       destinations,
       pricing,
       isActive,
     } = req.body;
 
+    let finalImageUrl = req.body.imageUrl || '';
+    if (req.file) {
+      finalImageUrl = `/uploads/tour-packages/${req.file.filename}`;
+    }
+
+    const numDays = parseNumber(days, 1);
+    const numNights = nights !== undefined && nights !== null ? parseNumber(nights, 0) : (numDays > 1 ? numDays - 1 : 0);
+    const numPrice = parseNumber(price, 0);
+    const numPersons = parseNumber(numberOfPersons, 1);
+    const numPerPerson = pricePerPerson ? parseNumber(pricePerPerson, 0) : (numPersons > 0 ? Math.round(numPrice / numPersons) : 0);
+
     const newPackage = await TourPackage.create({
       title,
       description,
-      days,
-      nights,
-      includes,
-      excludes,
-      imageUrl,
-      destinations,
-      pricing,
-      isActive,
+      days: numDays,
+      nights: numNights,
+      price: numPrice,
+      numberOfPersons: numPersons,
+      pricePerPerson: numPerPerson,
+      route: route || '',
+      placesToExplore: parseArray(placesToExplore),
+      includes: parseArray(includes),
+      excludes: parseArray(excludes),
+      imageUrl: finalImageUrl,
+      destinations: destinations ? (typeof destinations === 'string' ? JSON.parse(destinations) : destinations) : [],
+      pricing: pricing ? (typeof pricing === 'string' ? JSON.parse(pricing) : pricing) : [],
+      isActive: isActive === undefined ? true : (isActive === true || isActive === 'true'),
     });
 
     res.status(201).json({
@@ -50,12 +107,16 @@ exports.createPackage = async (req, res) => {
 };
 
 // @desc    Get all tour packages
-// @route   GET /api/tour-packages
+// @route   GET /api/v1/tour-packages
 // @access  Public
 exports.getAllPackages = async (req, res) => {
   try {
-    // If admin, return all, otherwise only active
-    const filter = req.user?.role === 'admin' ? {} : { isActive: true };
+    // If admin or specifically requested, allow all, otherwise default to active
+    let filter = {};
+    if (req.query.all !== 'true' && req.user?.role !== 'admin') {
+      filter.isActive = true;
+    }
+
     const packages = await TourPackage.find(filter).sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -70,7 +131,7 @@ exports.getAllPackages = async (req, res) => {
 };
 
 // @desc    Get single tour package
-// @route   GET /api/tour-packages/:id
+// @route   GET /api/v1/tour-packages/:id
 // @access  Public
 exports.getPackageById = async (req, res) => {
   try {
@@ -80,7 +141,6 @@ exports.getPackageById = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tour package not found' });
     }
 
-    // If not admin, hide inactive packages
     if (!tourPackage.isActive && req.user?.role !== 'admin') {
       return res.status(404).json({ success: false, message: 'Tour package not found' });
     }
@@ -96,7 +156,7 @@ exports.getPackageById = async (req, res) => {
 };
 
 // @desc    Update a tour package (Admin)
-// @route   PUT /api/tour-packages/:id
+// @route   PUT /api/v1/tour-packages/:id
 // @access  Private (Admin)
 exports.updatePackage = async (req, res) => {
   try {
@@ -106,12 +166,45 @@ exports.updatePackage = async (req, res) => {
     }
 
     let tourPackage = await TourPackage.findById(req.params.id);
-    
     if (!tourPackage) {
       return res.status(404).json({ success: false, message: 'Tour package not found' });
     }
 
-    tourPackage = await TourPackage.findByIdAndUpdate(req.params.id, req.body, {
+    const updateData = { ...req.body };
+
+    if (req.file) {
+      updateData.imageUrl = `/uploads/tour-packages/${req.file.filename}`;
+    }
+
+    if (updateData.placesToExplore !== undefined) {
+      updateData.placesToExplore = parseArray(updateData.placesToExplore);
+    }
+    if (updateData.includes !== undefined) {
+      updateData.includes = parseArray(updateData.includes);
+    }
+    if (updateData.excludes !== undefined) {
+      updateData.excludes = parseArray(updateData.excludes);
+    }
+    if (updateData.days !== undefined) {
+      updateData.days = parseNumber(updateData.days, tourPackage.days);
+    }
+    if (updateData.nights !== undefined) {
+      updateData.nights = parseNumber(updateData.nights, tourPackage.nights);
+    }
+    if (updateData.price !== undefined) {
+      updateData.price = parseNumber(updateData.price, tourPackage.price);
+    }
+    if (updateData.numberOfPersons !== undefined) {
+      updateData.numberOfPersons = parseNumber(updateData.numberOfPersons, tourPackage.numberOfPersons);
+    }
+    if (updateData.pricePerPerson !== undefined) {
+      updateData.pricePerPerson = parseNumber(updateData.pricePerPerson, tourPackage.pricePerPerson);
+    }
+    if (updateData.isActive !== undefined) {
+      updateData.isActive = updateData.isActive === true || updateData.isActive === 'true';
+    }
+
+    tourPackage = await TourPackage.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
     });
@@ -128,7 +221,7 @@ exports.updatePackage = async (req, res) => {
 };
 
 // @desc    Delete a tour package (Admin)
-// @route   DELETE /api/tour-packages/:id
+// @route   DELETE /api/v1/tour-packages/:id
 // @access  Private (Admin)
 exports.deletePackage = async (req, res) => {
   try {
@@ -136,6 +229,14 @@ exports.deletePackage = async (req, res) => {
     
     if (!tourPackage) {
       return res.status(404).json({ success: false, message: 'Tour package not found' });
+    }
+
+    // Try to remove local image if it exists
+    if (tourPackage.imageUrl && tourPackage.imageUrl.startsWith('/uploads/tour-packages/')) {
+      const filePath = path.join(__dirname, '../../', tourPackage.imageUrl);
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath); } catch (_) {}
+      }
     }
 
     await tourPackage.deleteOne();
@@ -151,15 +252,11 @@ exports.deletePackage = async (req, res) => {
 };
 
 // @desc    Suggest a custom tour (User)
-// @route   POST /api/tour-packages/suggest
+// @route   POST /api/v1/tour-packages/suggest
 // @access  Private (Customer)
 exports.suggestCustomTour = async (req, res) => {
   try {
     const { destinations, days, preferredVehicle, budget, notes } = req.body;
-    
-    // We could store this in a CustomTourSuggestion collection or just email it.
-    // For now, let's just log it and send success. 
-    // Ideally, we'd have a SuggestionModel.
     logger.info(`Custom tour suggestion received from user ${req.user.id}`);
     
     res.status(201).json({

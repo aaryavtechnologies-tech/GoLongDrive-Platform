@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/theme.dart';
+import '../../core/data/auth_service.dart';
 import '../../core/widgets/app_button.dart';
 
 /// Matches app/(onboarding)/index.tsx: 3-slide horizontal PageView carousel,
@@ -41,9 +42,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
-  void _completeOnboarding() {
-    // TODO: persist hasSeenOnboarding = true once storage is wired up.
-    context.pushReplacement('/login');
+  void _completeOnboarding() async {
+    await AuthService.markOnboardingSeen();
+    if (mounted) context.go('/login');
   }
 
   void _next() {

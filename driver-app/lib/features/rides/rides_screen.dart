@@ -358,8 +358,8 @@ class _RidesScreenState extends State<RidesScreen> {
   Widget _rideCard(BuildContext context, dynamic ride) {
     final statusStr = ride['rideStatus'] as String? ?? 'unknown';
     final fare = (ride['finalFare'] ?? ride['estimatedFare'] ?? 0).toDouble();
-    final pickup = ride['pickupLocation']?['address'] ?? 'Unknown Pickup';
-    final drop = ride['dropoffLocation']?['address'] ?? 'Unknown Dropoff';
+    final pickup = ride['pickupAddress'] ?? ride['pickupLocation']?['address'] ?? 'Unknown Pickup';
+    final drop = ride['dropAddress'] ?? ride['dropoffLocation']?['address'] ?? 'Unknown Dropoff';
     final dist = (ride['distance'] ?? 0).toDouble();
     final date = ride['createdAt'] != null
         ? DateTime.parse(ride['createdAt'])
@@ -368,7 +368,7 @@ class _RidesScreenState extends State<RidesScreen> {
     return InkWell(
       borderRadius: BorderRadius.circular(20),
       onTap: () =>
-          context.push('/rides/details', extra: {'rideId': ride['_id']}),
+          context.push('/rides/details', extra: {'rideId': ride['_id'], 'ride': ride}),
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: cardDecoration(radius: 20),

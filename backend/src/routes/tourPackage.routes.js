@@ -6,11 +6,13 @@ const {
   getPackageById,
   updatePackage,
   deletePackage,
-  suggestCustomTour
+  suggestCustomTour,
+  uploadPackageImage,
 } = require('../controllers/tourPackage.controller');
 
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
+const { uploadTourPackageImage } = require('../middleware/upload.middleware');
 const { ROLES } = require('../utils/constants');
 
 // Public routes
@@ -25,9 +27,9 @@ router.post('/suggest', requireRole(ROLES.CUSTOMER), suggestCustomTour);
 
 // Admin only routes
 router.use(requireRole(ROLES.ADMIN));
-router.post('/', createPackage);
-router.put('/:id', updatePackage);
+router.post('/upload-image', uploadTourPackageImage, uploadPackageImage);
+router.post('/', uploadTourPackageImage, createPackage);
+router.put('/:id', uploadTourPackageImage, updatePackage);
 router.delete('/:id', deletePackage);
 
 module.exports = router;
-

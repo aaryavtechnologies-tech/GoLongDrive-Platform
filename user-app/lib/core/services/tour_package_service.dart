@@ -22,12 +22,13 @@ class TourPackageService {
     throw Exception('Failed to load tour package');
   }
 
-  Future<void> bookTourPackage(Map<String, dynamic> bookingData) async {
+  Future<Map<String, dynamic>> bookTourPackage(Map<String, dynamic> bookingData) async {
     final response = await ApiClient.post('/customer/bookings/tour-package', body: bookingData);
     final responseData = jsonDecode(response.body);
     if (responseData['success'] != true) {
       throw Exception(responseData['message'] ?? 'Failed to book tour package');
     }
+    return responseData['data'] ?? {};
   }
 
   Future<void> suggestCustomTour(Map<String, dynamic> suggestionData) async {

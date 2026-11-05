@@ -12,8 +12,12 @@ const uploadDocument = createUpload('documents').single('document');
 // Single vehicle image upload -> /uploads/vehicles/
 const uploadVehicleImage = createUpload('vehicles').single('vehicleImage');
 
+// Single tour package image upload -> /uploads/tour-packages/
+const uploadTourPackageImage = createUpload('tour-packages').single('image');
+
 module.exports = {
   uploadProfileImage,
   uploadDocument,
   uploadVehicleImage,
+  uploadTourPackageImage,
 };

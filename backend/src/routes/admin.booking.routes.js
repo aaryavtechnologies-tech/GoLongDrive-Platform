@@ -14,6 +14,7 @@ const {
   updateBooking,
   cancelBooking,
   assignDriver,
+  confirmTourBooking,
   autoAssignDriver,
   reassignDriver,
   removeDriver,
@@ -178,6 +179,8 @@ router.patch('/:id/assign-driver', isAdmin, [
   ...V.getBookingDetailsValidator,
   require('express-validator').body('driverId').isMongoId().withMessage('Invalid driver ID')
 ], validate, assignDriver);
+
+router.patch('/:id/confirm-tour', isAdmin, V.getBookingDetailsValidator, validate, confirmTourBooking);
 
 router.post('/:id/auto-assign', isAdmin, autoAssignDriver);
 router.patch('/:id/reassign-driver', isAdmin, reassignDriver);

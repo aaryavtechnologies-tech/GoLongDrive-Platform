@@ -152,8 +152,8 @@ class _AvailableRidesScreenState extends State<AvailableRidesScreen> {
 
   Widget _rideCard(BuildContext context, dynamic ride) {
     final fare = (ride['finalFare'] ?? ride['estimatedFare'] ?? 0).toDouble();
-    final pickup = ride['pickupLocation']?['address'] ?? 'Unknown Pickup';
-    final drop = ride['dropoffLocation']?['address'] ?? 'Unknown Dropoff';
+    final pickup = ride['pickupAddress'] ?? ride['pickupLocation']?['address'] ?? 'Unknown Pickup';
+    final drop = ride['dropAddress'] ?? ride['dropoffLocation']?['address'] ?? 'Unknown Dropoff';
     final dist = (ride['distance'] ?? 0).toDouble();
     final date = ride['createdAt'] != null ? DateTime.tryParse(ride['createdAt']) ?? DateTime.now() : DateTime.now();
     final rideId = ride['_id']?.toString() ?? '';

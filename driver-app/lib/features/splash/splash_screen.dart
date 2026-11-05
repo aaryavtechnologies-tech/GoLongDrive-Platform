@@ -73,17 +73,21 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _decideNext() async {
     final results = await Future.wait([
-      Future.delayed(const Duration(milliseconds: 3000)),
+      Future.delayed(const Duration(milliseconds: 2000)),
       AuthService.isLoggedIn(),
+      AuthService.hasSeenOnboarding(),
     ]);
     final bool loggedIn = results[1] as bool;
+    final bool seenOnboarding = results[2] as bool;
 
     if (!mounted) return;
     
     if (loggedIn) {
-      context.pushReplacement('/tabs');
+      context.go('/tabs');
+    } else if (seenOnboarding) {
+      context.go('/login');
     } else {
-      context.pushReplacement('/onboarding');
+      context.go('/onboarding');
     }
   }
 

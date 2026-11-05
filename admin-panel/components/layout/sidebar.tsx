@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, UserCircle, Car, 
-  CreditCard, Settings, LogOut, Ticket
+  CreditCard, Settings, LogOut, Ticket, Compass
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -17,6 +17,7 @@ const navigation = [
   { name: 'Drivers', href: '/drivers', icon: UserCircle },
   { name: 'Vehicles', href: '/vehicles', icon: Car },
   { name: 'Rides', href: '/rides', icon: Car },
+  { name: 'Tour Packages', href: '/tour-packages', icon: Compass },
   { name: 'Payments', href: '/payments', icon: CreditCard },
   { name: 'Coupons', href: '/coupons', icon: Ticket },
   { name: 'Settings', href: '/settings', icon: Settings },

@@ -1,5 +1,14 @@
 // src/services/maps.service.js
-const axios = require('axios');
+// Native fetch implementation (compatible with Node 18+) without external axios dependency
+
+const httpGet = async (url, options = {}) => {
+  const params = options.params || {};
+  const query = new URLSearchParams(params).toString();
+  const fullUrl = query ? `${url}?${query}` : url;
+  const res = await fetch(fullUrl);
+  const data = await res.json();
+  return { data };
+};
 
 const getApiKey = () => {
   return process.env.GOOGLE_MAPS_API_KEY || process.env.OLA_MAPS_API_KEY || '';
@@ -13,12 +22,13 @@ const isConfigured = () => {
 const autocomplete = async (input) => {
   if (!isConfigured()) return [];
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
+    const response = await httpGet(`https://maps.googleapis.com/maps/api/place/autocomplete/json`, {
       params: { input, key: getApiKey(), components: 'country:in' }
     });
 
     if (response.data.status !== 'OK' && response.data.status !== 'ZERO_RESULTS') {
-      throw new Error(`Google Maps autocomplete status: ${response.data.status}`);
+      const msg = response.data.error_message ? `${response.data.status}: ${response.data.error_message}` : response.data.status;
+      throw new Error(`Google Maps autocomplete status: ${msg}`);
     }
 
     return (response.data.predictions || []).map(p => ({
@@ -35,12 +45,13 @@ const autocomplete = async (input) => {
 const placeDetails = async (placeId) => {
   if (!isConfigured()) return { lat: 23.0225, lng: 72.5714, address: 'Fallback geocoded place' };
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/place/details/json`, {
+    const response = await httpGet(`https://maps.googleapis.com/maps/api/place/details/json`, {
       params: { place_id: placeId, key: getApiKey() }
     });
 
     if (response.data.status !== 'OK') {
-      throw new Error(`Google Maps details status: ${response.data.status}`);
+      const msg = response.data.error_message ? `${response.data.status}: ${response.data.error_message}` : response.data.status;
+      throw new Error(`Google Maps details status: ${msg}`);
     }
 
     const location = response.data.result?.geometry?.location || {};
@@ -58,12 +69,13 @@ const placeDetails = async (placeId) => {
 const geocode = async (address) => {
   if (!isConfigured()) return { lat: 23.0225, lng: 72.5714, address };
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
+    const response = await httpGet(`https://maps.googleapis.com/maps/api/geocode/json`, {
       params: { address, key: getApiKey() }
     });
 
     if (response.data.status !== 'OK') {
-      throw new Error(`Google Maps geocode status: ${response.data.status}`);
+      const msg = response.data.error_message ? `${response.data.status}: ${response.data.error_message}` : response.data.status;
+      throw new Error(`Google Maps geocode status: ${msg}`);
     }
 
     const result = response.data.results?.[0] || {};
@@ -82,12 +94,13 @@ const geocode = async (address) => {
 const reverseGeocode = async (lat, lng) => {
   if (!isConfigured()) return `Simulated Address (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json`, {
+    const response = await httpGet(`https://maps.googleapis.com/maps/api/geocode/json`, {
       params: { latlng: `${lat},${lng}`, key: getApiKey() }
     });
 
     if (response.data.status !== 'OK') {
-      throw new Error(`Google Maps reverse geocode status: ${response.data.status}`);
+      const msg = response.data.error_message ? `${response.data.status}: ${response.data.error_message}` : response.data.status;
+      throw new Error(`Google Maps reverse geocode status: ${msg}`);
     }
 
     const result = response.data.results?.[0] || {};
@@ -109,7 +122,7 @@ const getRoute = async (originLat, originLng, destLat, destLng) => {
     };
   }
   try {
-    const response = await axios.get(`https://maps.googleapis.com/maps/api/directions/json`, {
+    const response = await httpGet(`https://maps.googleapis.com/maps/api/directions/json`, {
       params: {
         origin: `${originLat},${originLng}`,
         destination: `${destLat},${destLng}`,
@@ -118,7 +131,8 @@ const getRoute = async (originLat, originLng, destLat, destLng) => {
     });
 
     if (response.data.status !== 'OK') {
-      throw new Error(`Google Maps directions status: ${response.data.status}`);
+      const msg = response.data.error_message ? `${response.data.status}: ${response.data.error_message}` : response.data.status;
+      throw new Error(`Google Maps directions status: ${msg}`);
     }
 
     const route = response.data.routes?.[0] || {};

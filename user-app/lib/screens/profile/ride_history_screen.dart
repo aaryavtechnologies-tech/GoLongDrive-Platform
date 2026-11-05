@@ -34,8 +34,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       final bookings = await BookingService.getMyBookings();
       final List<RideHistoryItem> list = [];
       for (final b in bookings) {
-        final from = b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
-        final to = b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
+        final from = b['pickupAddress'] ?? b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
+        final to = b['dropAddress'] ?? b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
         final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total'] ?? '');
         final date = b['pickupDate'] ?? b['date'] ?? '';
         final statusStr = b['status']?.toString().toLowerCase() ?? '';

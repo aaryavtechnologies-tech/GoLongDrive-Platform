@@ -3,9 +3,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/services/tour_package_service.dart';
+import '../../models/tour_package.dart';
+import '../tour_packages/tour_package_detail_screen.dart';
 
-class PackagesScreen extends StatelessWidget {
+class PackagesScreen extends StatefulWidget {
   const PackagesScreen({super.key});
+
+  @override
+  State<PackagesScreen> createState() => _PackagesScreenState();
+}
+
+class _PackagesScreenState extends State<PackagesScreen> {
+  int _selectedTabIndex = 0; // 0 = Tour Packages, 1 = Memberships
+  final TourPackageService _tourService = TourPackageService();
+  List<TourPackage> _tourPackages = [];
+  bool _loadingTours = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchTours();
+  }
+
+  Future<void> _fetchTours() async {
+    try {
+      final list = await _tourService.getTourPackages();
+      if (mounted) {
+        setState(() {
+          _tourPackages = list;
+          _loadingTours = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingTours = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,130 +49,374 @@ class PackagesScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: colors.background,
       body: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ride Packages',
-                      style: AppTextStyles.mediumHeading
-                          .copyWith(color: colors.textPrimary),
-                    ).animate().fadeIn(duration: 300.ms),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Save more on every outstation journey',
-                      style: AppTextStyles.bodySecondary
-                          .copyWith(color: colors.textSecondary),
-                    ).animate().fadeIn(delay: 100.ms, duration: 300.ms),
-                    const SizedBox(height: 28),
+        child: Column(
+          children: [
+            // Top Header & Tab Toggle
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Packages & Tours',
+                    style: AppTextStyles.mediumHeading.copyWith(
+                      color: colors.textPrimary,
+                      fontSize: 22,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Explore curated tour packages or save with memberships',
+                    style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                  ),
+                  const SizedBox(height: 16),
 
-                    // Hero card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primaryGold,
-                            AppColors.primaryGoldDark,
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Icon(Icons.card_membership_rounded,
-                                  color: Colors.white, size: 36),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Text(
-                                  'GoLong Memberships',
-                                  style: AppTextStyles.mediumHeading
-                                      .copyWith(color: Colors.white),
-                                ),
+                  // Pill Tabs
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: colors.surface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: colors.divider.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTabIndex = 0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _selectedTabIndex == 0 ? AppColors.primaryGold : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'Pre-pay for rides and save up to 25% on every trip. Lock in lower rates before they go up.',
-                            style: AppTextStyles.body.copyWith(
-                                color: Colors.white.withValues(alpha: 0.88)),
-                          ),
-                          const SizedBox(height: 20),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.35)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.local_offer_rounded,
-                                    color: Colors.white, size: 16),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Active plans start from ₹999/month',
-                                  style: AppTextStyles.caption.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                              child: Center(
+                                child: Text(
+                                  'Tour Packages',
+                                  style: TextStyle(
+                                    color: _selectedTabIndex == 0 ? Colors.white : colors.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
                                   ),
                                 ),
-                              ],
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    ).animate().fadeIn(delay: 150.ms, duration: 400.ms).slideY(begin: 0.08, end: 0),
-
-                    const SizedBox(height: 32),
-
-                    Text(
-                      'Choose your plan',
-                      style: AppTextStyles.subtitle
-                          .copyWith(color: colors.textPrimary),
-                    ).animate().fadeIn(delay: 200.ms, duration: 300.ms),
-                    const SizedBox(height: 16),
-                  ],
-                ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTabIndex = 1),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              decoration: BoxDecoration(
+                                color: _selectedTabIndex == 1 ? AppColors.primaryGold : Colors.transparent,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Ride Memberships',
+                                  style: TextStyle(
+                                    color: _selectedTabIndex == 1 ? Colors.white : colors.textSecondary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  ..._packages.asMap().entries.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _PackageCard(
-                        pkg: entry.value,
-                        delay: Duration(milliseconds: 240 + entry.key * 90),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _PerksSection(),
-                  const SizedBox(height: 40),
-                ]),
-              ),
+            // Tab Content
+            Expanded(
+              child: _selectedTabIndex == 0
+                  ? _buildTourPackagesTab(colors)
+                  : _buildMembershipsTab(colors),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTourPackagesTab(AppColorPalette colors) {
+    if (_loadingTours) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryGold));
+    }
+
+    if (_tourPackages.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.landscape_rounded, size: 64, color: colors.textSecondary.withValues(alpha: 0.4)),
+              const SizedBox(height: 16),
+              Text(
+                'No tour packages available',
+                style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'New multi-day curated tour packages will be listed here shortly.',
+                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _fetchTours,
+      color: AppColors.primaryGold,
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        itemCount: _tourPackages.length,
+        itemBuilder: (context, index) {
+          final pkg = _tourPackages[index];
+          final img = pkg.fullImageUrl;
+
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => TourPackageDetailScreen(package: pkg),
+                ),
+              );
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 18),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: colors.divider.withValues(alpha: 0.3)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                        child: img != null && img.isNotEmpty
+                            ? Image.network(
+                                img,
+                                height: 165,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (ctx, err, st) => Container(
+                                  height: 165,
+                                  color: colors.surfaceElevated,
+                                  child: const Center(
+                                    child: Icon(Icons.landscape_rounded, size: 50, color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                height: 165,
+                                color: colors.surfaceElevated,
+                                child: Center(
+                                  child: Icon(
+                                    Icons.landscape_rounded,
+                                    size: 50,
+                                    color: AppColors.primaryGold.withValues(alpha: 0.5),
+                                  ),
+                                ),
+                              ),
+                      ),
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                          ),
+                          child: Text(
+                            '${pkg.days}D / ${pkg.nights}N',
+                            style: const TextStyle(
+                              color: AppColors.primaryGold,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pkg.title,
+                          style: AppTextStyles.subtitle.copyWith(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        if (pkg.route != null && pkg.route!.isNotEmpty) ...[
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.route_rounded, size: 14, color: AppColors.primaryGold),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  pkg.route!,
+                                  style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        const Divider(height: 1),
+                        const SizedBox(height: 10),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '₹${pkg.price.toInt()}',
+                                  style: AppTextStyles.priceLarge.copyWith(
+                                    color: colors.textPrimary,
+                                    fontSize: 19,
+                                  ),
+                                ),
+                                if (pkg.pricePerPerson > 0)
+                                  Text(
+                                    '₹${pkg.pricePerPerson.toInt()}/person',
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: AppColors.primaryGold,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryGold,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'Book Now',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMembershipsTab(AppColorPalette colors) {
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Hero card
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primaryGold,
+                        AppColors.primaryGoldDark,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.card_membership_rounded, color: Colors.white, size: 32),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'GoLong Memberships',
+                              style: AppTextStyles.mediumHeading.copyWith(color: Colors.white, fontSize: 18),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Pre-pay for rides and save up to 25% on every trip.',
+                        style: AppTextStyles.caption.copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              ..._packages.map(
+                (pkg) => Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _MembershipCard(pkg: pkg),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ]),
+          ),
+        ),
+      ],
     );
   }
 
@@ -181,19 +460,6 @@ class PackagesScreen extends StatelessWidget {
       features: ['GST invoice included', 'Premium sedans & SUVs', 'Meet & greet option'],
       icon: Icons.business_center_rounded,
     ),
-    _PackageData(
-      name: 'Family Explorer',
-      tagline: 'For group road trips that matter',
-      price: '₹1,799',
-      period: '/month',
-      km: '1000 km',
-      trips: '10 trips',
-      validity: '30 days',
-      badge: '6-seater included',
-      badgeColor: Color(0xFF3B916E),
-      features: ['6-seater vehicles', 'Extra luggage space', '2 free date changes/trip'],
-      icon: Icons.family_restroom_rounded,
-    ),
   ];
 }
 
@@ -218,11 +484,10 @@ class _PackageData {
   });
 }
 
-class _PackageCard extends StatelessWidget {
+class _MembershipCard extends StatelessWidget {
   final _PackageData pkg;
-  final Duration delay;
 
-  const _PackageCard({required this.pkg, required this.delay});
+  const _MembershipCard({required this.pkg});
 
   @override
   Widget build(BuildContext context) {
@@ -232,261 +497,47 @@ class _PackageCard extends StatelessWidget {
         color: colors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.divider.withValues(alpha: 0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: colors.surfaceElevated,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(pkg.icon, color: AppColors.primaryGold, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(pkg.name,
-                          style: AppTextStyles.subtitle
-                              .copyWith(color: colors.textPrimary, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 4),
-                      Text(pkg.tagline,
-                          style: AppTextStyles.caption
-                              .copyWith(color: colors.textSecondary)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Badge
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: pkg.badgeColor.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    pkg.badge,
-                    style: AppTextStyles.caption.copyWith(
-                      color: pkg.badgeColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Stats row
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            child: Row(
-              children: [
-                _StatChip(icon: Icons.map_outlined, value: pkg.km, label: 'Included'),
-                const SizedBox(width: 12),
-                _StatChip(icon: Icons.route_rounded, value: pkg.trips, label: 'Trips'),
-                const SizedBox(width: 12),
-                _StatChip(icon: Icons.timer_outlined, value: pkg.validity, label: 'Valid for'),
-              ],
-            ),
-          ),
-
-          Divider(height: 1, color: colors.divider.withValues(alpha: 0.5)),
-
-          // Features
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ...pkg.features.map(
-                  (f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle_rounded,
-                            color: AppColors.primaryGold, size: 16),
-                        const SizedBox(width: 10),
-                        Text(f,
-                            style: AppTextStyles.caption
-                                .copyWith(color: colors.textPrimary)),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: pkg.price,
-                            style: AppTextStyles.priceLarge.copyWith(fontSize: 22),
-                          ),
-                          TextSpan(
-                            text: pkg.period,
-                            style: AppTextStyles.caption.copyWith(
-                                color: colors.textSecondary, fontSize: 13),
-                          ),
-                        ],
-                      ),
-                    ),
-                    _SelectButton(),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: delay, duration: 400.ms).slideY(begin: 0.06, end: 0);
-  }
-}
-
-class _StatChip extends StatelessWidget {
-  final IconData icon;
-  final String value;
-  final String label;
-
-  const _StatChip({required this.icon, required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-        decoration: BoxDecoration(
-          color: colors.background,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: colors.divider.withValues(alpha: 0.5)),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, size: 16, color: AppColors.primaryGold),
-            const SizedBox(height: 6),
-            Text(value,
-                style: AppTextStyles.body.copyWith(
-                    color: colors.textPrimary, fontWeight: FontWeight.w700, fontSize: 13)),
-            Text(label,
-                style: AppTextStyles.caption.copyWith(color: colors.textSecondary, fontSize: 10)),
+            Row(
+              children: [
+                Icon(pkg.icon, color: AppColors.primaryGold, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    pkg.name,
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Text(
+                  pkg.price,
+                  style: AppTextStyles.priceLarge.copyWith(fontSize: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...pkg.features.map(
+              (f) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle_rounded, color: AppColors.primaryGold, size: 14),
+                    const SizedBox(width: 8),
+                    Text(f, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
-}
-
-class _SelectButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Plans launching soon — stay tuned!')),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primaryGold, AppColors.primaryGoldDark],
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          'Get Plan',
-          style: AppTextStyles.body.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _PerksSection extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.divider.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Why GoLong Packages?',
-              style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary)),
-          const SizedBox(height: 16),
-          ..._perks.map(
-            (p) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryGold.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(p.$1, color: AppColors.primaryGold, size: 20),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(p.$2,
-                            style: AppTextStyles.body.copyWith(
-                                color: colors.textPrimary, fontWeight: FontWeight.w600)),
-                        Text(p.$3,
-                            style: AppTextStyles.caption
-                                .copyWith(color: colors.textSecondary)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn(delay: 600.ms, duration: 350.ms);
-  }
-
-  static const List<(IconData, String, String)> _perks = [
-    (Icons.savings_rounded, 'Save up to 25%', 'Pre-pay and lock in lower rates on every trip'),
-    (Icons.flash_on_rounded, 'Priority booking', 'Package holders get faster driver assignments'),
-    (Icons.support_agent_rounded, 'Dedicated support', '24/7 priority support for all package riders'),
-    (Icons.refresh_rounded, 'Rollover unused km', 'Unused kilometres carry forward to next month'),
-  ];
 }

@@ -62,35 +62,55 @@ const bookTourPackage = asyncHandler(async (req, res) => {
     throw ApiError.notFound('Tour package not found');
   }
 
-  // Find price for vehicle type
-  const pricingOption = tourPackage.pricing.find(p => p.vehicleType === bookingData.vehicleType);
-  if (!pricingOption) {
-    throw ApiError.badRequest('Selected vehicle type is not available for this package');
+  const passengers = Number(bookingData.numberOfPassengers) || tourPackage.numberOfPersons || 1;
+
+  // Calculate fare
+  let fare = tourPackage.price;
+  if (!fare && tourPackage.pricePerPerson) {
+    fare = tourPackage.pricePerPerson * passengers;
   }
+  if (!fare && tourPackage.pricing && tourPackage.pricing.length > 0) {
+    const opt = tourPackage.pricing.find(p => p.vehicleType === bookingData.vehicleType) || tourPackage.pricing[0];
+    fare = opt.price;
+  }
+  if (!fare) fare = 0;
 
   const bookingIdStr = await generateBookingId();
 
   const newBooking = await Booking.create({
     bookingId: bookingIdStr,
     customer: customerId,
-    ...bookingData,
     bookingType: 'tour_package',
     tripType: 'Tour Package',
     tourPackage: tourPackage._id,
-    estimatedFare: pricingOption.price,
-    finalFare: pricingOption.price,
+    vehicleType: bookingData.vehicleType || 'Tour Cab',
+    numberOfPassengers: passengers,
+    pickupDate: bookingData.pickupDate ? new Date(bookingData.pickupDate) : new Date(),
+    pickupTime: bookingData.pickupTime || '09:00 AM',
+    pickupAddress: bookingData.pickupAddress || tourPackage.route || tourPackage.title,
+    pickupCity: bookingData.pickupCity || (tourPackage.placesToExplore && tourPackage.placesToExplore[0]) || 'Tour Origin',
+    pickupState: bookingData.pickupState || 'State',
+    pickupPincode: bookingData.pickupPincode || '000000',
+    dropAddress: bookingData.dropAddress || (tourPackage.placesToExplore && tourPackage.placesToExplore.length > 0 ? tourPackage.placesToExplore.join(', ') : tourPackage.title),
+    dropCity: bookingData.dropCity || (tourPackage.placesToExplore && tourPackage.placesToExplore[tourPackage.placesToExplore.length - 1]) || 'Tour Destination',
+    dropState: bookingData.dropState || 'State',
+    dropPincode: bookingData.dropPincode || '000000',
+    specialInstructions: bookingData.specialInstructions || '',
+    estimatedFare: fare,
+    finalFare: fare,
+    baseFare: fare,
+    paymentMethod: 'Cash',
+    paymentStatus: 'Pending',
+    rideStatus: RIDE_STATUS.PENDING,
   });
 
-  await addTimelineEntry(newBooking._id, 'Tour Package Booking Created', customerId, 'Customer booked a tour package');
+  await addTimelineEntry(newBooking._id, 'Tour Package Booking Requested', customerId, 'Customer submitted tour booking request without upfront payment. Awaiting Admin phone confirmation.');
   emitBookingEvent('booking:created', { bookingId: newBooking.bookingId, status: newBooking.rideStatus });
 
   // Send email (fire and forget)
   sendBookingConfirmationEmail(req.user.email, req.user.fullName, newBooking).catch(err => console.error(err));
 
-  // Trigger real-time driver broadcast (fire and forget)
-  broadcastRideRequest(newBooking._id).catch(err => console.error('Broadcast failed:', err));
-
-  return sendSuccess(res, 201, 'Tour package booked successfully', { booking: newBooking });
+  return sendSuccess(res, 201, 'Tour package booking request submitted successfully. Our team will contact you shortly to confirm your booking.', { booking: newBooking });
 });
 
 /**
@@ -101,6 +121,8 @@ const getBookingHistory = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
   const bookings = await Booking.find({ customer: customerId })
     .populate('customer', 'ridePin')
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
+    .populate('driver', 'fullName phoneNumber vehicleType')
     .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Booking history retrieved', { bookings });
 });
@@ -114,7 +136,10 @@ const getUpcomingBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ 
     customer: customerId, 
     rideStatus: { $in: [RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER, RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED] } 
-  }).sort({ pickupDate: 1 });
+  })
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
+    .populate('driver', 'fullName phoneNumber vehicleType')
+    .sort({ pickupDate: 1 });
   return sendSuccess(res, 200, 'Upcoming bookings retrieved', { bookings });
 });
 
@@ -127,7 +152,10 @@ const getCompletedBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ 
     customer: customerId, 
     rideStatus: RIDE_STATUS.TRIP_COMPLETED 
-  }).sort({ createdAt: -1 });
+  })
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
+    .populate('driver', 'fullName phoneNumber vehicleType')
+    .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Completed bookings retrieved', { bookings });
 });
 
@@ -140,7 +168,10 @@ const getCancelledBookings = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ 
     customer: customerId, 
     rideStatus: { $in: [RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN] } 
-  }).sort({ createdAt: -1 });
+  })
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
+    .populate('driver', 'fullName phoneNumber vehicleType')
+    .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Cancelled bookings retrieved', { bookings });
 });
 
@@ -150,7 +181,9 @@ const getCancelledBookings = asyncHandler(async (req, res) => {
  */
 const getBookingDetails = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId }).populate('driver', 'fullName phoneNumber profileImage vehicle rating');
+  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId })
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore includes excludes description');
   
   if (!booking) throw ApiError.notFound('Booking not found');
 

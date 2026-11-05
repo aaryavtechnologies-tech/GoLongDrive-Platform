@@ -390,7 +390,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                       context.push('/rides/current');
                     } else {
                       context.push('/rides/details',
-                          extra: {'rideId': _nextRide!['_id']});
+                          extra: {'rideId': _nextRide!['_id'], 'ride': _nextRide});
                     }
                   },
                   child: Container(
@@ -419,14 +419,15 @@ class _DashboardScreenState extends State<DashboardScreen>
                         ]),
                         const SizedBox(height: 12),
                         Text(
-                          (_ongoingRide ?? _nextRide)!['pickupLocation']
+                          (_ongoingRide ?? _nextRide)!['pickupAddress'] ??
+                              (_ongoingRide ?? _nextRide)!['pickupLocation']
                                   ?['address'] ??
                               'Unknown',
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '→  ${(_ongoingRide ?? _nextRide)!['dropoffLocation']?['address'] ?? 'Unknown'}',
+                          '→  ${(_ongoingRide ?? _nextRide)!['dropAddress'] ?? (_ongoingRide ?? _nextRide)!['dropoffLocation']?['address'] ?? 'Unknown'}',
                           style: TextStyle(
                               color: AppColors.textMuted, fontSize: 13),
                         ),

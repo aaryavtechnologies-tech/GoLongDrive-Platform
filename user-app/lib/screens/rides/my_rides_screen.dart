@@ -43,8 +43,8 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
         final isUpcoming = ['Pending', 'Confirmed', 'Searching Driver', 'Driver Assigned', 'Driver Accepted', 'Driver Arriving', 'Trip Started'].contains(status);
         final isCancelled = ['Cancelled by Customer', 'Cancelled by Driver', 'Cancelled by Admin'].contains(status);
 
-        final fromAddress = booking['pickupLocation']?['address'] ?? 'Unknown';
-        final toAddress = booking['dropLocation']?['address'] ?? 'Unknown';
+        final fromAddress = booking['pickupAddress'] ?? booking['pickupLocation']?['address'] ?? 'Unknown';
+        final toAddress = booking['dropAddress'] ?? booking['dropLocation']?['address'] ?? 'Unknown';
         final dateStr = booking['pickupDate'] ?? '';
         final timeStr = booking['pickupTime'] ?? '';
 

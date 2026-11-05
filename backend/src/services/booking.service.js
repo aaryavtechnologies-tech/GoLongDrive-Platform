@@ -207,7 +207,8 @@ const notifyOtherDriversRideTaken = (driverIds, winnerDriverId, bookingIdStr) =>
 const handleDriverRejection = async (bookingId, driverId, reason) => {
   try {
     const Driver = require('../models/Driver.model');
-    const b = await Booking.findById(bookingId);
+    const isObjectId = /^[a-fA-F0-9]{24}$/.test(bookingId);
+    const b = await Booking.findOne(isObjectId ? { _id: bookingId } : { bookingId });
     if (!b || b.rideStatus !== require('../utils/constants').RIDE_STATUS.DRIVER_ASSIGNED) return;
     if (b.driver && b.driver.toString() !== driverId.toString()) return;
 

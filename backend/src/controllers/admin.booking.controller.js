@@ -16,12 +16,13 @@ const { RIDE_STATUS, AVAILABILITY_STATUS, ONLINE_STATUS, DRIVER_STATUS } = requi
  * @access  Private (Admin)
  */
 const getAllBookings = asyncHandler(async (req, res) => {
-  const { status, date, vehicleType, customerId } = req.query;
+  const { status, date, vehicleType, customerId, bookingType } = req.query;
   const filter = {};
 
   if (status) filter.rideStatus = status;
   if (vehicleType) filter.vehicleType = vehicleType;
   if (customerId) filter.customer = customerId;
+  if (bookingType) filter.bookingType = bookingType;
   
   if (date) {
     const startOfDay = new Date(date);
@@ -33,7 +34,8 @@ const getAllBookings = asyncHandler(async (req, res) => {
 
   const bookings = await Booking.find(filter)
     .populate('customer', 'fullName email phoneNumber')
-    .populate('driver', 'fullName phoneNumber')
+    .populate('driver', 'fullName phoneNumber vehicleType')
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
     .sort({ createdAt: -1 });
 
   return sendSuccess(res, 200, 'Bookings retrieved', { bookings });
@@ -46,7 +48,8 @@ const getAllBookings = asyncHandler(async (req, res) => {
 const getBookingDetails = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id)
     .populate('customer', 'fullName email phoneNumber')
-    .populate('driver', 'fullName email phoneNumber driverStatus');
+    .populate('driver', 'fullName email phoneNumber driverStatus vehicle')
+    .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore includes excludes description');
   
   if (!booking) throw ApiError.notFound('Booking not found');
 
@@ -115,7 +118,7 @@ const assignDriver = asyncHandler(async (req, res) => {
   const booking = await Booking.findById(req.params.id);
   
   if (!booking) throw ApiError.notFound('Booking not found');
-  if (![RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER].includes(booking.rideStatus)) {
+  if (![RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER, RIDE_STATUS.CONFIRMED].includes(booking.rideStatus)) {
     throw ApiError.badRequest('Booking is not waiting for a driver');
   }
 
@@ -140,6 +143,24 @@ const assignDriver = asyncHandler(async (req, res) => {
   setTimeout(() => handleDriverRejection(booking._id, driverId, 'Timeout: Driver did not respond'), 120000);
 
   return sendSuccess(res, 200, 'Driver assigned successfully', { booking });
+});
+
+/**
+ * @route   PATCH /api/admin/bookings/:id/confirm-tour
+ * @access  Private (Admin)
+ */
+const confirmTourBooking = asyncHandler(async (req, res) => {
+  const booking = await Booking.findById(req.params.id);
+  if (!booking) throw ApiError.notFound('Booking not found');
+
+  booking.rideStatus = RIDE_STATUS.CONFIRMED;
+  await booking.save();
+
+  const notes = req.body.notes || 'Admin confirmed tour package booking with customer via phone';
+  await addTimelineEntry(booking._id, 'Tour Booking Confirmed', 'Admin', notes);
+  emitBookingEvent('booking:confirmed', { bookingId: booking.bookingId, status: booking.rideStatus });
+
+  return sendSuccess(res, 200, 'Tour booking confirmed successfully', { booking });
 });
 
 /**
@@ -305,6 +326,7 @@ module.exports = {
   updateBooking,
   cancelBooking,
   assignDriver,
+  confirmTourBooking,
   autoAssignDriver,
   reassignDriver,
   removeDriver,

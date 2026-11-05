@@ -10,6 +10,11 @@ const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
 const { RIDE_STATUS, ONLINE_STATUS, AVAILABILITY_STATUS } = require('../utils/constants');
 
+const getBookingQuery = (idParam) => {
+  const isObjectId = /^[a-fA-F0-9]{24}$/.test(idParam);
+  return isObjectId ? { _id: idParam } : { bookingId: idParam };
+};
+
 /**
  * @route   PATCH /api/driver/status
  * @access  Private (Driver)
@@ -59,7 +64,7 @@ const getCurrentRide = asyncHandler(async (req, res) => {
  */
 const acceptRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const booking = await Booking.findById(req.params.id);
+  const booking = await Booking.findOne(getBookingQuery(req.params.id));
 
   if (!booking) throw ApiError.notFound('Booking not found');
 
@@ -169,7 +174,7 @@ const startRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
   const { otp } = req.body;
   
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId }).populate('customer');
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (![RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
@@ -200,7 +205,7 @@ const startRide = asyncHandler(async (req, res) => {
  */
 const endRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId });
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId });
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.rideStatus !== RIDE_STATUS.TRIP_STARTED) {
@@ -223,7 +228,7 @@ const endRide = asyncHandler(async (req, res) => {
 const completeRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
   const { otp } = req.body;
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId }).populate('customer');
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.rideStatus !== RIDE_STATUS.AWAITING_PAYMENT) {
@@ -275,7 +280,7 @@ const completeRide = asyncHandler(async (req, res) => {
 const cancelRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
   const { reason } = req.body;
-  const booking = await Booking.findOne({ _id: req.params.id, driver: driverId });
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId });
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.rideStatus === RIDE_STATUS.TRIP_COMPLETED || booking.rideStatus.includes('Cancelled')) {

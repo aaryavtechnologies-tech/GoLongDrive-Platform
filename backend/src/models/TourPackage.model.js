@@ -17,8 +17,28 @@ const tourPackageSchema = new mongoose.Schema(
     },
     nights: {
       type: Number,
-      required: true,
+      default: 0,
     },
+    price: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+    numberOfPersons: {
+      type: Number,
+      default: 1,
+    },
+    pricePerPerson: {
+      type: Number,
+      default: 0,
+    },
+    route: {
+      type: String,
+      default: '',
+    },
+    placesToExplore: [{
+      type: String,
+    }],
     includes: [{
       type: String,
     }],
