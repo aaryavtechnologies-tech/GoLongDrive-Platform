@@ -1,13 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
-  typescript: {
-    // Pre-existing type declaration issues in third-party packages (axios, @tanstack/react-query, @base-ui/react)
-    // do not reflect logic errors in our code. These are suppressed so CI builds succeed.
-    ignoreBuildErrors: true,
+  turbopack: {
+    root: path.resolve(__dirname),
   },
-  eslint: {
-    ignoreDuringBuilds: true,
+  typescript: {
+    // Pre-existing type declaration issues in third-party packages do not reflect logic errors in our code.
+    ignoreBuildErrors: true,
   },
   images: {
     remotePatterns: [
