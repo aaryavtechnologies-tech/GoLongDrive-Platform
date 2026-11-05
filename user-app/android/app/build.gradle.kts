@@ -17,7 +17,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.golongdrive.user"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "28.2.13676358"
+    ndkVersion = flutter.ndkVersion
 
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -50,16 +50,6 @@ android {
             signingConfig = signingConfigs.getByName("release")
         }
     }
-
-    // Workaround: Windows user-name "chirag singh" contains a space, which causes
-    // llvm-strip to fail when resolving paths to native libraries in the pub cache.
-    // Google Play strips native libs on its end when processing the AAB, so leaving
-    // debug symbols in the local AAB is safe for Play Store distribution.
-    packaging {
-        jniLibs {
-            keepDebugSymbols += setOf("**/*.so")
-        }
-    }
 }
 
 kotlin {
@@ -74,12 +64,4 @@ flutter {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-}
-
-// Belt-and-suspenders: also disable every strip* Gradle task at the point
-// each task is created (more reliable than afterEvaluate on AGP 8.x).
-tasks.whenTaskAdded {
-    if (name.startsWith("strip")) {
-        enabled = false
-    }
 }

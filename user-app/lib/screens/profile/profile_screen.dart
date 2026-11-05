@@ -323,7 +323,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Switch(
                             value: item.toggleValue ?? false,
                             onChanged: item.onToggle,
-                            activeThumbColor: AppColors.primaryGold,
+                            activeColor: AppColors.primaryGold,
                           )
                         else
                           Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
