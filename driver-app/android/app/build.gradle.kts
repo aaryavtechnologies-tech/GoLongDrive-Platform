@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.golongdrive"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -22,9 +22,15 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     buildTypes {
@@ -32,6 +38,14 @@ android {
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.datastore:datastore-core:1.1.3")
+        force("androidx.datastore:datastore-preferences:1.1.3")
+        force("androidx.datastore:datastore-preferences-core:1.1.3")
     }
 }
 

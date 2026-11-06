@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.golongdrive.userapp"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -40,9 +40,15 @@ android {
     defaultConfig {
         applicationId = "com.golongdrive.userapp"
         minSdk = 24
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = false
+        }
     }
 
     buildTypes {
@@ -53,6 +59,14 @@ android {
                 signingConfigs.getByName("debug")
             }
         }
+    }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("androidx.datastore:datastore-core:1.1.3")
+        force("androidx.datastore:datastore-preferences:1.1.3")
+        force("androidx.datastore:datastore-preferences-core:1.1.3")
     }
 }
 
