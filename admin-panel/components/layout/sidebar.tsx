@@ -7,7 +7,8 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, Users, UserCircle, Car, 
-  CreditCard, Settings, LogOut, Ticket, Compass
+  CreditCard, Settings, LogOut, Ticket, Compass,
+  Banknote, LifeBuoy
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -18,7 +19,9 @@ const navigation = [
   { name: 'Vehicles', href: '/vehicles', icon: Car },
   { name: 'Rides', href: '/rides', icon: Car },
   { name: 'Tour Packages', href: '/tour-packages', icon: Compass },
+  { name: 'Driver Payouts', href: '/payouts', icon: Banknote },
   { name: 'Payments', href: '/payments', icon: CreditCard },
+  { name: 'Support Tickets', href: '/tickets', icon: LifeBuoy },
   { name: 'Coupons', href: '/coupons', icon: Ticket },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];

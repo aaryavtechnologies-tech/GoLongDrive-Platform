@@ -98,6 +98,21 @@ const driverSchema = new mongoose.Schema(
       default: AVAILABILITY_STATUS.AVAILABLE,
     },
 
+    // ── Financial / Wallet / Payout fields ────────────────────────────────────
+    walletBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    bankDetails: {
+      accountHolderName: { type: String },
+      accountNumber: { type: String },
+      ifscCode: { type: String },
+      bankName: { type: String },
+      upiId: { type: String },
+    },
+
     // ── Auth / Security fields ────────────────────────────────────────────────
 
     emailVerified: {

@@ -1,14 +1,16 @@
 // src/routes/earnings.routes.js
 
-/**
- * @swagger
- * tags:
- *   name: Earnings
- *   description: Driver and Admin Earnings Dashboard
- */
-
 const router = require('express').Router();
-const { getDriverEarningsDashboard, getAdminEarningsDashboard } = require('../controllers/earnings.controller');
+const {
+  getDriverEarningsDashboard,
+  requestPayout,
+  getDriverPayouts,
+  getDriverBankDetails,
+  updateDriverBankDetails,
+  getAdminPayouts,
+  updatePayoutStatus,
+  getAdminEarningsDashboard,
+} = require('../controllers/earnings.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { ROLES } = require('../utils/constants');
@@ -16,34 +18,16 @@ const { ROLES } = require('../utils/constants');
 const isDriver = [authenticate, requireRole(ROLES.DRIVER)];
 const isAdmin = [authenticate, requireRole(ROLES.ADMIN)];
 
-/**
- * @swagger
- * /api/driver/earnings/driver/dashboard:
- *   get:
- *     summary: Get driver earnings dashboard stats
- *     tags: [Earnings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Stats retrieved
- */
-// Driver
+// ── Driver Routes ─────────────────────────────────────────────────────────────
 router.get('/driver/dashboard', isDriver, getDriverEarningsDashboard);
+router.post('/driver/payout-request', isDriver, requestPayout);
+router.get('/driver/payouts', isDriver, getDriverPayouts);
+router.get('/driver/bank-details', isDriver, getDriverBankDetails);
+router.put('/driver/bank-details', isDriver, updateDriverBankDetails);
 
-/**
- * @swagger
- * /api/admin/earnings/admin/dashboard:
- *   get:
- *     summary: Get admin earnings dashboard stats
- *     tags: [Earnings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Stats retrieved
- */
-// Admin
+// ── Admin Routes ──────────────────────────────────────────────────────────────
 router.get('/admin/dashboard', isAdmin, getAdminEarningsDashboard);
+router.get('/admin/payouts', isAdmin, getAdminPayouts);
+router.patch('/admin/payouts/:id/status', isAdmin, updatePayoutStatus);
 
 module.exports = router;

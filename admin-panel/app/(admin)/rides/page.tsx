@@ -17,7 +17,10 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+export type BookingCategory = 'All' | 'Ongoing' | 'Upcoming' | 'Completed' | 'Cancelled';
+
 export default function RidesPage() {
+  const [activeCategory, setActiveCategory] = React.useState<BookingCategory>('All');
   const [filters, setFilters] = React.useState<FilterTypes>({ 
     search: '', 
     status: 'All',
@@ -39,11 +42,47 @@ export default function RidesPage() {
     setPage(1);
   };
 
+  const handleCategoryChange = (category: BookingCategory) => {
+    setActiveCategory(category);
+    setPage(1);
+    if (category === 'All') {
+      setFilters(prev => ({ ...prev, status: 'All' }));
+    } else if (category === 'Ongoing') {
+      setFilters(prev => ({ ...prev, status: 'Trip Started' }));
+    } else if (category === 'Upcoming') {
+      setFilters(prev => ({ ...prev, status: 'Pending' }));
+    } else if (category === 'Completed') {
+      setFilters(prev => ({ ...prev, status: 'Trip Completed' }));
+    } else if (category === 'Cancelled') {
+      setFilters(prev => ({ ...prev, status: 'Cancelled by Customer' }));
+    }
+  };
+
   if (isError) {
     return <ErrorBoundary error={new Error('Failed to load rides')} reset={refetch} />;
   }
 
-  const rides = data?.data || [];
+  const allRides = data?.data || [];
+
+  // Categorize or filter rides based on category
+  const rides = React.useMemo(() => {
+    if (activeCategory === 'All') return allRides;
+    if (activeCategory === 'Ongoing') {
+      const ongoingStatuses = ['Trip Started', 'Driver Arrived', 'Driver Assigned', 'Driver Accepted', 'Confirmed'];
+      return allRides.filter(r => ongoingStatuses.includes(r.status));
+    }
+    if (activeCategory === 'Upcoming') {
+      const upcomingStatuses = ['Pending', 'Searching Driver'];
+      return allRides.filter(r => upcomingStatuses.includes(r.status));
+    }
+    if (activeCategory === 'Completed') {
+      return allRides.filter(r => r.status === 'Trip Completed');
+    }
+    if (activeCategory === 'Cancelled') {
+      return allRides.filter(r => r.status.toLowerCase().includes('cancel'));
+    }
+    return allRides;
+  }, [allRides, activeCategory]);
 
   return (
     <div className="space-y-6">
@@ -73,6 +112,52 @@ export default function RidesPage() {
             New Booking
           </Button>
         </div>
+      </div>
+
+      {/* Booking Category Navigation Tabs */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-zinc-950 border border-white/10 rounded-xl">
+        {[
+          { id: 'All', label: 'All Bookings', count: allRides.length },
+          { 
+            id: 'Ongoing', 
+            label: 'Ongoing Bookings', 
+            count: allRides.filter(r => ['Trip Started', 'Driver Arrived', 'Driver Assigned', 'Driver Accepted', 'Confirmed'].includes(r.status)).length 
+          },
+          { 
+            id: 'Upcoming', 
+            label: 'Upcoming Bookings', 
+            count: allRides.filter(r => ['Pending', 'Searching Driver'].includes(r.status)).length 
+          },
+          { 
+            id: 'Completed', 
+            label: 'Completed Bookings', 
+            count: allRides.filter(r => r.status === 'Trip Completed').length 
+          },
+          { 
+            id: 'Cancelled', 
+            label: 'Cancelled Bookings', 
+            count: allRides.filter(r => r.status.toLowerCase().includes('cancel')).length 
+          },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleCategoryChange(tab.id as BookingCategory)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              activeCategory === tab.id
+                ? 'bg-yellow-400 text-black shadow-md shadow-yellow-400/20'
+                : 'text-zinc-400 hover:text-white hover:bg-zinc-900'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+              activeCategory === tab.id
+                ? 'bg-black/20 text-black font-bold'
+                : 'bg-zinc-800 text-zinc-400'
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
       </div>
 
       <RideFilters 

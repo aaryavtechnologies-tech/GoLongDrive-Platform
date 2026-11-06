@@ -36,6 +36,7 @@ const ridesRoutes = require('./rides.routes');
 const tourPackageRoutes = require('./tourPackage.routes');
 const publicRoutes = require('./public.routes');
 const adminDeletionRoutes = require('./admin.deletion.routes');
+const ticketRoutes = require('./ticket.routes');
 
 // ── Health Monitoring ─────────────────────────────────────────────────────────
 router.use('/health', healthRoutes);
@@ -91,5 +92,8 @@ router.use('/tour-packages', tourPackageRoutes);
 
 // Deletion requests (Admin)
 router.use('/admin/deletion-requests', adminDeletionRoutes);
+
+// Support Tickets (Customer, Driver & Admin)
+router.use('/tickets', ticketRoutes);
 
 module.exports = router;
