@@ -303,9 +303,17 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     );
   }
 
-  Future<void> _applyDarkStyle(GoogleMapController controller) async {
-    // ignore: deprecated_member_use
-    await controller.setMapStyle(_darkNavStyle);
+  Future<void> _applyMapStyle(GoogleMapController controller) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    try {
+      if (isDark) {
+        // ignore: deprecated_member_use
+        await controller.setMapStyle(_darkNavStyle);
+      } else {
+        // ignore: deprecated_member_use
+        await controller.setMapStyle(null);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -380,9 +388,11 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
             else
               GoogleMap(
                 initialCameraPosition: CameraPosition(target: _driverPos!, zoom: 17.5, tilt: 55),
+                trafficEnabled: true,
+                mapType: MapType.normal,
                 onMapCreated: (c) {
                   _mapController = c;
-                  _applyDarkStyle(c);
+                  _applyMapStyle(c);
                   _recenterCamera();
                 },
                 polylines: {
@@ -415,10 +425,10 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
                       zIndexInt: 2,
                     ),
                 },
-                myLocationEnabled: false,
+                myLocationEnabled: true,
                 myLocationButtonEnabled: false,
                 zoomControlsEnabled: false,
-                compassEnabled: false,
+                compassEnabled: true,
                 mapToolbarEnabled: false,
                 liteModeEnabled: false,
               ),

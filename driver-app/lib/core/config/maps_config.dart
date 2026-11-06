@@ -21,8 +21,17 @@ library;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class MapsConfig {
-  static String get directionsApiKey => dotenv.env['DIRECTIONS_API_KEY'] ?? const String.fromEnvironment(
-    'DIRECTIONS_API_KEY',
-    defaultValue: '',
-  );
+  static const String fallbackApiKey = 'AIzaSyDCV--o3F41NBGrTA1c_2XwCXT6vopg2hw';
+
+  static String get directionsApiKey {
+    try {
+      if (dotenv.isInitialized) {
+        final val = dotenv.env['DIRECTIONS_API_KEY'];
+        if (val != null && val.trim().isNotEmpty) return val.trim();
+      }
+    } catch (_) {}
+    const envVal = String.fromEnvironment('DIRECTIONS_API_KEY', defaultValue: '');
+    if (envVal.isNotEmpty) return envVal;
+    return fallbackApiKey;
+  }
 }
