@@ -94,6 +94,7 @@ class _TabShellState extends State<TabShell> {
         return Scaffold(
           backgroundColor: AppColors.background,
           body: IndexedStack(
+            key: ValueKey(ThemeService.instance.isDarkMode),
             index: _tabIndex,
             children: List.generate(_tabs.length, (i) => _screenFor(i)),
           ),

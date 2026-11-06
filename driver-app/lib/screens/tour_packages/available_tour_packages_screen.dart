@@ -68,7 +68,7 @@ class _AvailableTourPackagesScreenState extends State<AvailableTourPackagesScree
       body: _isLoading
           ? const Center(child: CircularProgressIndicator(color: AppColors.gold))
           : _packages.isEmpty
-              ? const Center(child: Text('No tour packages available right now.'))
+              ? Center(child: Text('No tour packages available right now.', style: TextStyle(color: AppColors.textMuted)))
               : RefreshIndicator(
                   onRefresh: _loadPackages,
                   child: ListView.builder(

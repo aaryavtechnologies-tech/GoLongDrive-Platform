@@ -46,7 +46,7 @@ class TermsScreen extends StatelessWidget {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Terms of Service', style: AppText.cardHeadline),
+                  Text('Terms of Service', style: AppText.cardHeadline),
                 ],
               ),
             ),

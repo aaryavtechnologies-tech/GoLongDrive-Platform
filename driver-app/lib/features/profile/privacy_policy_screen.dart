@@ -53,7 +53,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Privacy Policy', style: AppText.cardHeadline),
+                  Text('Privacy Policy', style: AppText.cardHeadline),
                 ],
               ),
             ),

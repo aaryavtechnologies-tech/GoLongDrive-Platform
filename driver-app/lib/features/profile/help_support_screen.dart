@@ -75,7 +75,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Help & Support', style: AppText.cardHeadline),
+                  Text('Help & Support', style: AppText.cardHeadline),
                 ],
               ),
             ),
@@ -106,7 +106,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Contact Us', style: AppText.sectionTitle),
+                  Text('Contact Us', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   Container(
                     decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),
@@ -137,7 +137,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text('Frequently Asked Questions', style: AppText.sectionTitle),
+                  Text('Frequently Asked Questions', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   Container(
                     decoration: cardDecoration(bg: Theme.of(context).brightness == Brightness.dark ? AppColors.surfaceAlt : AppColors.surfaceAltLight, radius: 24, context: context),

@@ -317,9 +317,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                       children: [
                         Text(
                           req.riderName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -410,9 +411,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                             const SizedBox(height: 3),
                             Text(
                               req.pickupAddress,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -460,9 +462,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                             const SizedBox(height: 3),
                             Text(
                               req.dropAddress,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -611,7 +614,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
         ),
         title: Text(
           _getActiveTitle(activeRide.status),
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+          style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: AppColors.textPrimary),
         ),
         actions: [
           // Simulate Rider Cancel menu button for testing
@@ -801,9 +807,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
               children: [
                 Text(
                   ride.riderName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -895,9 +902,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                     const SizedBox(height: 2),
                     Text(
                       ride.pickupAddress,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -937,9 +945,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                     const SizedBox(height: 2),
                     Text(
                       ride.dropAddress,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
                       ),
                     ),
                   ],
@@ -1115,9 +1124,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                 child: Center(
                   child: Text(
                     digit,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -1179,9 +1189,10 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                                     fontWeight: FontWeight.bold, fontSize: 12))
                             : Text(
                                 key,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
+                                  color: AppColors.textPrimary,
                                 ),
                               )),
                   ),
@@ -1424,7 +1435,9 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                     Text('Passenger',
                         style: TextStyle(color: AppColors.textSecondary)),
                     Text(ride.riderName,
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -1434,7 +1447,9 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                     Text('Distance',
                         style: TextStyle(color: AppColors.textSecondary)),
                     Text('${ride.tripDistanceKm} km',
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -1444,7 +1459,9 @@ class _CityRidesScreenState extends State<CityRidesScreen> {
                     Text('Duration',
                         style: TextStyle(color: AppColors.textSecondary)),
                     Text('${ride.tripDurationMin} mins',
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary)),
                   ],
                 ),
               ],

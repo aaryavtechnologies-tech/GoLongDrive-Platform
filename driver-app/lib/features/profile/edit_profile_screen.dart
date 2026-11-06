@@ -104,7 +104,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Edit Profile', style: AppText.cardHeadline),
+                  Text('Edit Profile', style: AppText.cardHeadline),
                 ],
               ),
             ),
@@ -163,7 +163,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     readOnly: true,
                   ),
                   const SizedBox(height: 24),
-                  const Text('Vehicle', style: AppText.sectionTitle),
+                  Text('Vehicle', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   AppTextField(
                     label: 'Vehicle Model',

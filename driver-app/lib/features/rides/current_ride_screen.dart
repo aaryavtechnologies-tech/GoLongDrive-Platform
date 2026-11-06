@@ -222,7 +222,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 isEndRide 
                   ? 'Please ask the passenger for the 4-digit PIN (shown on their app) to finalize the trip.'
                   : 'Please ask the passenger for their 4-digit verification PIN to start the ride.',
-                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -230,8 +230,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 keyboardType: TextInputType.number,
                 maxLength: 4,
                 obscureText: true,
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: AppColors.textPrimary,
                     fontSize: 24,
                     letterSpacing: 8,
                     fontWeight: FontWeight.bold),
@@ -392,7 +392,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                         onPressed: () => context.pop(),
                       ),
                       const SizedBox(width: 4),
-                      const Text('Current Ride', style: AppText.cardHeadline),
+                      Text('Current Ride', style: AppText.cardHeadline),
                     ],
                   ),
                 ),
@@ -451,10 +451,10 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: _openGoogleMaps,
-                              icon: const Icon(Icons.map, color: Colors.white),
+                              icon: const Icon(Icons.map, color: AppColors.gold),
                               label: const Text('Open in Google Maps',
                                   style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppColors.gold,
                                       fontWeight: FontWeight.bold)),
                               style: OutlinedButton.styleFrom(
                                 padding:

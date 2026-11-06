@@ -48,3 +48,41 @@ on one take the ride request and asgin a random driver base on the user needs an
  and get the confirmation it should also update on the user side. 
 
  so make that 
+
+
+
+ the google maps view and navigation system is not working  like the route preview and the google maps direction for he driver too go from current location to pickup locaion to drop location and on each step of the navigation say the instruction like the google maps do and also lock the sreen when the 
+ driver is on the ride.  and also when driver is arrived at the pickup location then it should automatically then driver have to tap on the confirm arriavl then ask the pin to the user to confirm the ride start then it should start the journey and from start journey to end journey it should track the live location and also calculate the fare base on the distance and time and also when driver reach the drop location then it should automatically calculate the fare and show the payment 
+ option when driver end the ride open the rozarpay in user app to collect the payment and show the final ride details to user. and also update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
+
+ for google maps thing driver app 
+   -> show the route preivew 
+   -> after the ride accpe show the google maps direction and turn by turn navigation until he reach the drop location 
+   -> then it should automatically calculate the fare and show the payment 
+   -> then driver have to tap on end ride to show the final payment and ride details
+   -> then it should update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
+
+
+these are the only logical error which i found on the system and the payment is not working for now  for the user when user 
+try to book the ride and driver accept then it should open the rozarpay in user app to collect the payment and show the final 
+ride details to user. and also update the confirm payment in both apps and updates screenns in the driver apo according to that 
+and same for the user app 
+
+
+for the user app : 
+
+user the was get comfirm and its need to show the ride details and the 
+driver details and contact infomaion and other thing too and pin to start the ride 
+and also generate the digial boarding pass for the user app 
+
+and then on the user app when driver is arrived then it should automatically then driver have to tap on the confirm arriavl then ask the pin to the user to confirm the ride start then it should start the journey and from start journey to end journey it should track the live location and also calculate the fare base on the distance and time and also when driver reach the drop location then it should automatically calculate the fare and show the payment 
+option when driver end the ride open the rozarpay in user app to collect the payment and show the final ride details to user. and also update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
+
+
+and during this ride journey user can see the live location, route preivew and details of the rides and that screen will lock for whole ride journey and it cannot be close or minimized and after the ride ends open the payment screen then give a option so make the payment using the rozarpay and after the payment completed they can see rides are commpleted in the rides history and also fix the rides sorting the user ride screen it should show 4 tops (ongoing, upcoming, past, cancelled) and sort them according to that 1st ongonig then upcoming then past and cancelled 
+
+
+so make all the require changes in the system and make it user friendly and bug free 
+
+and after the work complete make the checkpoint file to save the changes which you have done and also tell me about the changes which you have done and how you fix the logical errors and all. in another file 
+

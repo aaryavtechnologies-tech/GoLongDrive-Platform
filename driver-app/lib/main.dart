@@ -10,6 +10,7 @@ Future<void> main() async {
   } catch (e) {
     debugPrint("Failed to load .env file: $e");
   }
+  await ThemeService.instance.init();
   runApp(const GoLongDriveApp());
 }
 

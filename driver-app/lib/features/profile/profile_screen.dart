@@ -27,7 +27,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+    ThemeService.instance.themeMode.addListener(_onThemeUpdated);
     _fetchData();
+  }
+
+  void _onThemeUpdated() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ThemeService.instance.themeMode.removeListener(_onThemeUpdated);
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -181,7 +192,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     await AuthService.clearAuth();
                     if (context.mounted) context.go('/login');
                   },
-                  child: const Text('Force Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: Text('Force Log Out', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.error)),
                 ),
               ),
             ),
@@ -226,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Profile', style: AppText.cardHeadline),
+              Text('Profile', style: AppText.cardHeadline),
               IconButton(
                 icon: Icon(Icons.refresh, color: AppColors.textSecondary),
                 onPressed: _onRefresh,
@@ -287,14 +298,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Contact Info', style: AppText.sectionTitle),
+                Text('Contact Info', style: AppText.sectionTitle),
                 const SizedBox(height: 16),
                 _infoRow(Icons.phone_outlined, 'Phone', phone),
                 Divider(color: AppColors.borderSubtle2, height: 24),
                 _infoRow(Icons.mail_outline, 'Email', email),
                 const SizedBox(height: 24),
                 
-                const Text('Vehicle Info', style: AppText.sectionTitle),
+                Text('Vehicle Info', style: AppText.sectionTitle),
                 const SizedBox(height: 16),
                 _infoRow(Icons.directions_car_outlined, 'Brand & Model', '$vehicleBrand $vehicleModel'),
                 Divider(color: AppColors.borderSubtle2, height: 24),
@@ -314,7 +325,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 24),
 
-          const Text('Settings', style: AppText.sectionTitle),
+          Text('Settings', style: AppText.sectionTitle),
           const SizedBox(height: 12),
           Container(
             decoration: cardDecoration(bg: AppColors.surfaceAlt, radius: 24),
@@ -369,7 +380,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       color: Colors.transparent,
       child: SwitchListTile(
         value: isDark,
-        onChanged: (_) => ThemeService.instance.toggleTheme(),
+        onChanged: (_) async {
+          await ThemeService.instance.toggleTheme();
+          if (mounted) setState(() {});
+        },
         activeColor: AppColors.gold,
         secondary: Icon(isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
             color: AppColors.textMuted, size: 22),

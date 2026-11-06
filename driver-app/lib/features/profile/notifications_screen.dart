@@ -78,7 +78,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Notifications', style: AppText.cardHeadline),
+                  Text('Notifications', style: AppText.cardHeadline),
                 ],
               ),
             ),
@@ -86,11 +86,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
                 children: [
-                  const Text('Ride Activity', style: AppText.sectionTitle),
+                  Text('Ride Activity', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   _settingsGroup(_rideSettings),
                   const SizedBox(height: 24),
-                  const Text('General', style: AppText.sectionTitle),
+                  Text('General', style: AppText.sectionTitle),
                   const SizedBox(height: 12),
                   _settingsGroup(_generalSettings),
                 ],

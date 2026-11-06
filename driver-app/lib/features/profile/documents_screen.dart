@@ -93,7 +93,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('My Documents', style: AppText.cardHeadline),
+                  Text('My Documents', style: AppText.cardHeadline),
                 ],
               ),
             ),

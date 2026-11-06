@@ -30,7 +30,18 @@ class _EarningsScreenState extends State<EarningsScreen> {
   @override
   void initState() {
     super.initState();
+    ThemeService.instance.themeMode.addListener(_onThemeUpdated);
     _fetchData();
+  }
+
+  void _onThemeUpdated() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ThemeService.instance.themeMode.removeListener(_onThemeUpdated);
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -132,7 +143,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Earnings', style: AppText.cardHeadline),
+                Text('Earnings', style: AppText.cardHeadline),
                 IconButton(
                   icon: Icon(Icons.refresh, color: AppColors.textSecondary),
                   onPressed: _onRefresh,
@@ -177,7 +188,7 @@ class _EarningsScreenState extends State<EarningsScreen> {
             ),
             const SizedBox(height: 24),
 
-            const Text('Transaction History', style: AppText.sectionTitle),
+            Text('Transaction History', style: AppText.sectionTitle),
             const SizedBox(height: 12),
             _transactions.isEmpty
                 ? Container(

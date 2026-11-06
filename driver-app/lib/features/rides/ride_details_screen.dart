@@ -123,7 +123,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
                     onPressed: () => context.pop(),
                   ),
                   const SizedBox(width: 4),
-                  const Text('Ride Details', style: AppText.cardHeadline),
+                  Text('Ride Details', style: AppText.cardHeadline),
                   const Spacer(),
                   _statusBadge(r.status),
                 ],
@@ -225,7 +225,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('Pickup',
+                                  Text('Pickup',
                                       style: AppText.smallLabel),
                                   const SizedBox(height: 4),
                                   Text(r.pickupAddress,
@@ -234,7 +234,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
                                           fontSize: 14,
                                           height: 1.3)),
                                   const SizedBox(height: 20),
-                                  const Text('Drop', style: AppText.smallLabel),
+                                  Text('Drop', style: AppText.smallLabel),
                                   const SizedBox(height: 4),
                                   Text(r.dropAddress,
                                       style: TextStyle(
@@ -283,7 +283,7 @@ class _RideDetailsScreenState extends State<RideDetailsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Vehicle', style: AppText.sectionTitle),
+                        Text('Vehicle', style: AppText.sectionTitle),
                         const SizedBox(height: 14),
                         _detailRow(
                             Icons.directions_car, 'Model', r.vehicleModel),

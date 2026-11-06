@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// ThemeService manages the application's theme state globally.
 class ThemeService {
@@ -7,9 +8,28 @@ class ThemeService {
 
   final ValueNotifier<ThemeMode> themeMode = ValueNotifier(ThemeMode.light);
 
-  void toggleTheme() {
-    themeMode.value =
+  Future<void> init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isDark = prefs.getBool('is_dark_mode');
+      if (isDark != null) {
+        themeMode.value = isDark ? ThemeMode.dark : ThemeMode.light;
+      }
+    } catch (e) {
+      debugPrint('ThemeService init error: $e');
+    }
+  }
+
+  Future<void> toggleTheme() async {
+    final nextMode =
         themeMode.value == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    themeMode.value = nextMode;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_dark_mode', nextMode == ThemeMode.dark);
+    } catch (e) {
+      debugPrint('ThemeService toggle error: $e');
+    }
   }
 
   bool get isDarkMode => themeMode.value == ThemeMode.dark;
@@ -143,34 +163,39 @@ class AppGradients {
 class AppText {
   AppText._();
 
-  static const display = TextStyle(
-    fontSize: 36,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-  );
+  static TextStyle get display => TextStyle(
+        fontSize: 36,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        color: AppColors.textPrimary,
+      );
 
-  static const onboardingTitle = TextStyle(
-    fontSize: 32,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-  );
+  static TextStyle get onboardingTitle => TextStyle(
+        fontSize: 32,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        color: AppColors.textPrimary,
+      );
 
-  static const screenHeaderTitle = TextStyle(
-    fontSize: 28,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-  );
+  static TextStyle get screenHeaderTitle => TextStyle(
+        fontSize: 28,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        color: AppColors.textPrimary,
+      );
 
-  static const cardHeadline = TextStyle(
-    fontSize: 24,
-    fontWeight: FontWeight.w800,
-    letterSpacing: -0.5,
-  );
+  static TextStyle get cardHeadline => TextStyle(
+        fontSize: 24,
+        fontWeight: FontWeight.w800,
+        letterSpacing: -0.5,
+        color: AppColors.textPrimary,
+      );
 
-  static const sectionTitle = TextStyle(
-    fontSize: 20,
-    fontWeight: FontWeight.bold,
-  );
+  static TextStyle get sectionTitle => TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
 
   static const balanceAmount = TextStyle(
     fontSize: 48,
@@ -179,22 +204,25 @@ class AppText {
     color: Colors.white,
   );
 
-  static const body = TextStyle(
-    fontSize: 16,
-    fontWeight: FontWeight.w500,
-  );
+  static TextStyle get body => TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textPrimary,
+      );
 
-  static const smallLabel = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w600,
-    letterSpacing: 0.5,
-  );
+  static TextStyle get smallLabel => TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.5,
+        color: AppColors.textSecondary,
+      );
 
-  static const micro = TextStyle(
-    fontSize: 10,
-    fontWeight: FontWeight.bold,
-    letterSpacing: 0.5,
-  );
+  static TextStyle get micro => TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 0.5,
+        color: AppColors.textSecondary,
+      );
 }
 
 class AppSpacing {
@@ -211,6 +239,8 @@ ThemeData buildDarkTheme() {
     primary: AppColors.gold,
     secondary: Color(0xFFE8DFCD), // warm cream secondary accent
     surface: AppColors.surfaceDark,
+    onSurface: AppColors.textPrimaryDark,
+    onPrimary: Colors.white,
     error: AppColors.error,
   );
   return ThemeData(
@@ -219,6 +249,23 @@ ThemeData buildDarkTheme() {
     brightness: Brightness.dark,
     colorScheme: scheme,
     dividerColor: AppColors.dividerDark,
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(color: AppColors.textPrimaryDark),
+      displayMedium: TextStyle(color: AppColors.textPrimaryDark),
+      displaySmall: TextStyle(color: AppColors.textPrimaryDark),
+      headlineLarge: TextStyle(color: AppColors.textPrimaryDark),
+      headlineMedium: TextStyle(color: AppColors.textPrimaryDark),
+      headlineSmall: TextStyle(color: AppColors.textPrimaryDark),
+      titleLarge: TextStyle(color: AppColors.textPrimaryDark),
+      titleMedium: TextStyle(color: AppColors.textPrimaryDark),
+      titleSmall: TextStyle(color: AppColors.textPrimaryDark),
+      bodyLarge: TextStyle(color: AppColors.textPrimaryDark),
+      bodyMedium: TextStyle(color: AppColors.textPrimaryDark),
+      bodySmall: TextStyle(color: AppColors.textSecondaryDark),
+      labelLarge: TextStyle(color: AppColors.textPrimaryDark),
+      labelMedium: TextStyle(color: AppColors.textSecondaryDark),
+      labelSmall: TextStyle(color: AppColors.textSecondaryDark),
+    ),
     textSelectionTheme: const TextSelectionThemeData(
       cursorColor: AppColors.gold,
       selectionColor: Color(0x331E56D8),
@@ -288,6 +335,8 @@ ThemeData buildLightTheme() {
     primary: AppColors.gold,
     secondary: Color(0xFFD4C3A3), // warm cream secondary accent
     surface: AppColors.surfaceLight,
+    onSurface: AppColors.textPrimaryLight,
+    onPrimary: Colors.white,
     error: AppColors.error,
   );
   return ThemeData(
@@ -296,6 +345,23 @@ ThemeData buildLightTheme() {
     brightness: Brightness.light,
     colorScheme: scheme,
     dividerColor: AppColors.dividerLight,
+    textTheme: const TextTheme(
+      displayLarge: TextStyle(color: AppColors.textPrimaryLight),
+      displayMedium: TextStyle(color: AppColors.textPrimaryLight),
+      displaySmall: TextStyle(color: AppColors.textPrimaryLight),
+      headlineLarge: TextStyle(color: AppColors.textPrimaryLight),
+      headlineMedium: TextStyle(color: AppColors.textPrimaryLight),
+      headlineSmall: TextStyle(color: AppColors.textPrimaryLight),
+      titleLarge: TextStyle(color: AppColors.textPrimaryLight),
+      titleMedium: TextStyle(color: AppColors.textPrimaryLight),
+      titleSmall: TextStyle(color: AppColors.textPrimaryLight),
+      bodyLarge: TextStyle(color: AppColors.textPrimaryLight),
+      bodyMedium: TextStyle(color: AppColors.textPrimaryLight),
+      bodySmall: TextStyle(color: AppColors.textSecondaryLight),
+      labelLarge: TextStyle(color: AppColors.textPrimaryLight),
+      labelMedium: TextStyle(color: AppColors.textSecondaryLight),
+      labelSmall: TextStyle(color: AppColors.textSecondaryLight),
+    ),
     textSelectionTheme: const TextSelectionThemeData(
       cursorColor: AppColors.gold,
       selectionColor: Color(0x331E56D8),
@@ -323,6 +389,39 @@ ThemeData buildLightTheme() {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
       ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: AppColors.inputFillLight,
+      hintStyle: const TextStyle(color: AppColors.textSecondaryLight),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.dividerLight),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: AppColors.dividerLight),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: BorderRadius.all(Radius.circular(14)),
+        borderSide: BorderSide(color: AppColors.gold, width: 1.5),
+      ),
+    ),
+    bottomSheetTheme: const BottomSheetThemeData(
+      backgroundColor: AppColors.surfaceLight,
+      modalBackgroundColor: AppColors.surfaceLight,
+      showDragHandle: true,
+      dragHandleColor: AppColors.textSecondaryLight,
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: AppColors.surfaceLight,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: AppColors.surfaceAlt2Light,
+      contentTextStyle: const TextStyle(color: AppColors.textPrimaryLight),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
     ),
   );
 }

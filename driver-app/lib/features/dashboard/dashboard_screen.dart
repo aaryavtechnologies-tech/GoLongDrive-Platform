@@ -67,8 +67,13 @@ class _DashboardScreenState extends State<DashboardScreen>
     _cityRidesService.initialize().then((_) {
       if (mounted) _onCityRideRequestsChanged();
     });
+    ThemeService.instance.themeMode.addListener(_onThemeUpdated);
     _fetchData();
     _initSocket();
+  }
+
+  void _onThemeUpdated() {
+    if (mounted) setState(() {});
   }
 
   void _onCityRideRequestsChanged() {
@@ -132,6 +137,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     _cityRidesService.incomingRequests
         .removeListener(_onCityRideRequestsChanged);
     _cityRideAlertController.dispose();
+    ThemeService.instance.themeMode.removeListener(_onThemeUpdated);
     super.dispose();
   }
 
@@ -337,8 +343,10 @@ class _DashboardScreenState extends State<DashboardScreen>
                         const SizedBox(width: 12),
                         Text(
                           _online ? "You're Online" : "You're Offline",
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w700),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary),
                         ),
                       ],
                     ),
@@ -423,7 +431,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                               (_ongoingRide ?? _nextRide)!['pickupLocation']
                                   ?['address'] ??
                               'Unknown',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -550,10 +560,11 @@ class _DashboardScreenState extends State<DashboardScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Tour Packages',
+                            Text('Tour Packages',
                                 style: TextStyle(
                                     fontSize: 19,
-                                    fontWeight: FontWeight.w900)),
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.textPrimary)),
                             const SizedBox(height: 4),
                             Text(
                                 'Multi-day outstation packages',
@@ -570,7 +581,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 24),
 
               // --- Quick Actions ---
-              const Text('Quick Actions', style: AppText.sectionTitle),
+              Text('Quick Actions', style: AppText.sectionTitle),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -594,13 +605,13 @@ class _DashboardScreenState extends State<DashboardScreen>
               const SizedBox(height: 24),
 
               // --- Recent Activity Feed ---
-              const Text('Recent Activity', style: AppText.sectionTitle),
+              Text('Recent Activity', style: AppText.sectionTitle),
               const SizedBox(height: 12),
               if (_recentTxns.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24.0),
                   child: Text('No recent activity',
-                      style: TextStyle(color: Colors.grey)),
+                      style: TextStyle(color: AppColors.textMuted)),
                 )
               else
                 Container(
@@ -640,7 +651,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(txn['type'] ?? 'Ride Payment',
-                                  style: const TextStyle(fontSize: 14)),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      color: AppColors.textPrimary)),
                             ),
                             Text(
                               '₹${(txn['amount'] ?? 0).toInt()}',
@@ -732,8 +745,10 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
           const SizedBox(height: 12),
           Text(value,
-              style:
-                  const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary)),
           const SizedBox(height: 2),
           Text(label,
               style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
@@ -754,8 +769,10 @@ class _DashboardScreenState extends State<DashboardScreen>
             Icon(icon, color: AppColors.gold, size: 22),
             const SizedBox(height: 8),
             Text(label,
-                style:
-                    const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary)),
           ],
         ),
       ),

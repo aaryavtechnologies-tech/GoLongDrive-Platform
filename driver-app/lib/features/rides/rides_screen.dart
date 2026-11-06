@@ -34,8 +34,19 @@ class _RidesScreenState extends State<RidesScreen> {
   @override
   void initState() {
     super.initState();
+    ThemeService.instance.themeMode.addListener(_onThemeUpdated);
     _cityRidesService.initialize();
     _fetchData();
+  }
+
+  void _onThemeUpdated() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    ThemeService.instance.themeMode.removeListener(_onThemeUpdated);
+    super.dispose();
   }
 
   Future<void> _fetchData() async {
@@ -117,7 +128,7 @@ class _RidesScreenState extends State<RidesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('My Rides', style: AppText.cardHeadline),
+                Text('My Rides', style: AppText.cardHeadline),
                 IconButton(
                   icon: Icon(Icons.refresh, color: AppColors.textSecondary),
                   onPressed: _onRefresh,
