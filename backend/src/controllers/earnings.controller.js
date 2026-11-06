@@ -88,14 +88,18 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
       { $group: { _id: null, netEarnings: { $sum: '$driverEarnings' } } }
     ]),
     // Today's completed bookings
-    Booking.find({ ...completedRidesQuery, completedAt: { $gte: today } }),
+    Booking.find({ ...completedRidesQuery, $or: [
+      { completedAt: { $gte: today } },
+      { rideCompletedAt: { $gte: today } },
+      { updatedAt: { $gte: today } }
+    ] }),
     // Lifetime completed bookings
-    Booking.find(completedRidesQuery).select('actualDistance estimatedDistance completedAt finalFare estimatedFare'),
+    Booking.find(completedRidesQuery).select('bookingId actualDistance estimatedDistance completedAt rideCompletedAt createdAt updatedAt pickupDate finalFare estimatedFare paymentMethod'),
     // Recent transactions
     DriverEarning.find({ driver: driverId })
       .sort({ createdAt: -1 })
-      .limit(10)
-      .populate('booking', 'bookingId pickupDate pickupAddress dropAddress finalFare estimatedFare paymentMethod'),
+      .limit(20)
+      .populate('booking', 'bookingId pickupDate pickupAddress dropAddress finalFare estimatedFare paymentMethod actualDistance estimatedDistance rideStatus'),
     // Pending payouts
     Payout.aggregate([
       { $match: { driver: driverId, status: { $in: ['Pending', 'Processing'] } } },
@@ -103,13 +107,26 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
     ])
   ]);
 
+  const getRideDistanceKm = (b) => {
+    if (typeof b.actualDistance === 'number' && b.actualDistance > 0) return b.actualDistance;
+    if (typeof b.estimatedDistance === 'number' && b.estimatedDistance > 0) {
+      return b.estimatedDistance > 500 ? b.estimatedDistance / 1000 : b.estimatedDistance;
+    }
+    return 0;
+  };
+
+  const getBookingCompletedDate = (b) => {
+    const raw = b.completedAt || b.rideCompletedAt || b.updatedAt || b.createdAt;
+    return raw ? new Date(raw) : null;
+  };
+
   // Today calculations
   const todayEarningsVal = todayEarningsAgg[0]?.netEarnings || 0;
   const todayGrossVal = todayEarningsAgg[0]?.grossFare || 0;
   const todayRidesCount = todayBookings.length;
   let todayDistanceKm = 0;
   todayBookings.forEach((b) => {
-    todayDistanceKm += b.actualDistance || (b.estimatedDistance ? b.estimatedDistance / 1000 : 0);
+    todayDistanceKm += getRideDistanceKm(b);
   });
 
   // Lifetime calculations
@@ -119,7 +136,7 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
   const lifetimeRidesCount = lifetimeBookings.length;
   let lifetimeDistanceKm = 0;
   lifetimeBookings.forEach((b) => {
-    lifetimeDistanceKm += b.actualDistance || (b.estimatedDistance ? b.estimatedDistance / 1000 : 0);
+    lifetimeDistanceKm += getRideDistanceKm(b);
   });
 
   // Last 7 days distance and earnings graph data
@@ -132,14 +149,15 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
     const nextD = new Date(d);
     nextD.setDate(d.getDate() + 1);
 
-    const dayRides = lifetimeBookings.filter(
-      (b) => b.completedAt && b.completedAt >= d && b.completedAt < nextD
-    );
+    const dayRides = lifetimeBookings.filter((b) => {
+      const cDate = getBookingCompletedDate(b);
+      return cDate && cDate >= d && cDate < nextD;
+    });
 
     let dayDist = 0;
     let dayEarn = 0;
     dayRides.forEach((r) => {
-      dayDist += r.actualDistance || (r.estimatedDistance ? r.estimatedDistance / 1000 : 0);
+      dayDist += getRideDistanceKm(r);
       dayEarn += (r.finalFare || r.estimatedFare || 0) * 0.9; // Net estimate
     });
 
@@ -177,6 +195,7 @@ const getDriverEarningsDashboard = asyncHandler(async (req, res) => {
     distanceGraph,
     recentTransactions: recentEarnings.map((t) => ({
       id: t._id,
+      rideId: t.booking?._id || t.booking,
       bookingId: t.booking?.bookingId || 'TRIP',
       amount: t.driverEarnings,
       fare: t.fare,

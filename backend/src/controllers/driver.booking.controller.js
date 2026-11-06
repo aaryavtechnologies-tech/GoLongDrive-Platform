@@ -434,10 +434,50 @@ const getRideHistory = asyncHandler(async (req, res) => {
  */
 const getAvailableRides = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  // Get driver details to filter by vehicle type later if needed
-  // For now return all rides in SEARCHING_DRIVER state
-  const rides = await Booking.find({ rideStatus: RIDE_STATUS.SEARCHING_DRIVER, bookingType: { $ne: 'tour_package' } }).sort({ createdAt: -1 }).populate('customer', 'fullName');
+  // Available rides only from the last 24 hours so drivers get fresh daily requests
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const rides = await Booking.find({ 
+    rideStatus: RIDE_STATUS.SEARCHING_DRIVER, 
+    bookingType: { $ne: 'tour_package' },
+    createdAt: { $gte: twentyFourHoursAgo }
+  })
+    .sort({ createdAt: -1 })
+    .populate('customer', 'fullName phoneNumber profileImage rating');
   return sendSuccess(res, 200, 'Available rides fetched', { rides });
+});
+
+/**
+ * @route   GET /api/driver/bookings/rides/:id
+ * @access  Private (Driver)
+ */
+const getRideDetails = asyncHandler(async (req, res) => {
+  const driverId = req.user._id;
+  const { id } = req.params;
+  const mongoose = require('mongoose');
+
+  const query = mongoose.Types.ObjectId.isValid(id)
+    ? { _id: id }
+    : { bookingId: id };
+
+  const booking = await Booking.findOne(query)
+    .populate('customer', 'fullName phoneNumber email rating profileImage')
+    .populate('driver', 'fullName phoneNumber vehicle rating driverStatus')
+    .populate('tourPackage', 'title days nights destinations imageUrl includes');
+
+  if (!booking) throw ApiError.notFound('Ride booking not found');
+
+  const DriverEarning = require('../models/DriverEarning.model');
+  const earning = await DriverEarning.findOne({ booking: booking._id, driver: driverId });
+
+  return sendSuccess(res, 200, 'Ride details retrieved', { 
+    booking,
+    earning: earning ? {
+      driverEarnings: earning.driverEarnings,
+      platformFee: earning.platformFee,
+      fare: earning.fare,
+      payoutStatus: earning.payoutStatus
+    } : null
+  });
 });
 
 /**
@@ -491,6 +531,7 @@ module.exports = {
   cancelRide,
   getRideHistory,
   getAvailableRides,
+  getRideDetails,
   getUnassignedTourPackages,
   getDashboardStats
 };

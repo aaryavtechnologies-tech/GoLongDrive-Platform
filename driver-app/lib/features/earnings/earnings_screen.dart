@@ -478,9 +478,25 @@ class _EarningsScreenState extends State<EarningsScreen> {
 
   // --- Distance Covered Visual Bar Chart ---
   Widget _buildDistanceGraphCard() {
-    double maxDistance = 1;
-    for (var g in _distanceGraph) {
+    // Generate default 7 days if empty so chart always renders
+    List<dynamic> graphData = List.from(_distanceGraph);
+    if (graphData.isEmpty) {
+      final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      final now = DateTime.now();
+      for (int i = 6; i >= 0; i--) {
+        final d = now.subtract(Duration(days: i));
+        graphData.add({
+          'day': days[d.weekday - 1],
+          'distanceKm': 0.0,
+        });
+      }
+    }
+
+    double maxDistance = 20.0;
+    double totalWeekDist = 0.0;
+    for (var g in graphData) {
       final double dist = (g['distanceKm'] ?? 0).toDouble();
+      totalWeekDist += dist;
       if (dist > maxDistance) maxDistance = dist;
     }
 
@@ -493,75 +509,100 @@ class _EarningsScreenState extends State<EarningsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Distance Covered (km)',
-                      style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 2),
-                  Text('Daily distance tracking over the last 7 days',
-                      style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Distance Covered (km)',
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 2),
+                    Text('Daily performance over the last 7 days',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  ],
+                ),
               ),
-              const Icon(Icons.bar_chart, color: AppColors.gold, size: 24),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.gold.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+                ),
+                child: Text(
+                  '${totalWeekDist.toStringAsFixed(1)} km total',
+                  style: const TextStyle(color: AppColors.gold, fontSize: 11, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 24),
 
           // Bar graph
-          _distanceGraph.isEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text('No distance activity recorded this week',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-                  ),
-                )
-              : SizedBox(
-                  height: 140,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: _distanceGraph.map((item) {
-                      final double dist = (item['distanceKm'] ?? 0).toDouble();
-                      final String day = item['day'] ?? '';
-                      final double ratio = (dist / maxDistance).clamp(0.08, 1.0);
-                      final isToday = day == _distanceGraph.last['day'];
+          SizedBox(
+            height: 145,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: graphData.map((item) {
+                final double dist = (item['distanceKm'] ?? 0).toDouble();
+                final String day = item['day'] ?? '';
+                final double ratio = dist > 0 ? (dist / maxDistance).clamp(0.12, 1.0) : 0.06;
+                final isToday = day == graphData.last['day'];
 
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text(
-                            dist > 0 ? '${dist.toStringAsFixed(0)}k' : '0',
-                            style: TextStyle(
-                              color: isToday ? AppColors.gold : AppColors.textMuted,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Container(
-                            width: 22,
-                            height: 85 * ratio,
-                            decoration: BoxDecoration(
-                              color: isToday ? AppColors.gold : AppColors.gold.withValues(alpha: 0.35),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            day,
-                            style: TextStyle(
-                              color: isToday ? AppColors.textPrimary : AppColors.textSecondary,
-                              fontSize: 11,
-                              fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      dist > 0 ? '${dist.toStringAsFixed(dist < 10 ? 1 : 0)}k' : '0',
+                      style: TextStyle(
+                        color: isToday ? AppColors.gold : (dist > 0 ? AppColors.textPrimary : AppColors.textMuted),
+                        fontSize: 10,
+                        fontWeight: isToday || dist > 0 ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 24,
+                      height: 85 * ratio,
+                      decoration: BoxDecoration(
+                        gradient: dist > 0
+                            ? (isToday
+                                ? const LinearGradient(
+                                    colors: [Color(0xFFFFD56B), AppColors.gold],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  )
+                                : LinearGradient(
+                                    colors: [
+                                      AppColors.gold.withValues(alpha: 0.7),
+                                      AppColors.gold.withValues(alpha: 0.35),
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ))
+                            : null,
+                        color: dist == 0 ? AppColors.surfaceAlt : null,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: isToday ? AppColors.gold : Colors.transparent,
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      day,
+                      style: TextStyle(
+                        color: isToday ? AppColors.gold : AppColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -597,48 +638,66 @@ class _EarningsScreenState extends State<EarningsScreen> {
         final route = t['route'] ?? 'Completed Ride';
         final method = t['paymentMethod'] ?? 'Online';
         final date = t['date'] != null ? DateTime.tryParse(t['date'])?.toLocal().toString().split('.')[0] : '';
+        final rideId = t['rideId'] ?? t['id'] ?? t['bookingId'];
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: cardDecoration(context: context, radius: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.gold.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.directions_car, color: AppColors.gold, size: 20),
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              if (rideId != null) {
+                context.push('/rides/details', extra: {'rideId': rideId.toString(), 'ride': t});
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: cardDecoration(context: context, radius: 16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: AppColors.gold.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.directions_car, color: AppColors.gold, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(bookingId,
+                                style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(width: 6),
+                            const Icon(Icons.chevron_right, size: 16, color: AppColors.gold),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(route,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                        const SizedBox(height: 4),
+                        Text('$date · $method',
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '+₹${amount.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: AppColors.success,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(bookingId,
-                        style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 2),
-                    Text(route,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    const SizedBox(height: 4),
-                    Text('$date · $method',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 11)),
-                  ],
-                ),
-              ),
-              Text(
-                '+₹${amount.toStringAsFixed(0)}',
-                style: const TextStyle(
-                  color: AppColors.success,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       },

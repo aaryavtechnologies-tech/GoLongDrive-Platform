@@ -62,10 +62,12 @@ class _RidesScreenState extends State<RidesScreen> {
         ApiService.get('/driver/bookings/rides/available'),
       ]);
 
+      List<dynamic> combined = [];
+
       if (futures[0].statusCode == 200) {
         final data = jsonDecode(futures[0].body)['data'];
         if (data != null && data['rides'] != null) {
-          _allRides = data['rides'];
+          combined.addAll(data['rides']);
         }
       } else {
         throw Exception('Failed to load rides history');
@@ -74,9 +76,23 @@ class _RidesScreenState extends State<RidesScreen> {
       if (futures[1].statusCode == 200) {
         final data = jsonDecode(futures[1].body)['data'];
         if (data != null && data['rides'] != null) {
-          _allRides.addAll(data['rides']);
+          combined.addAll(data['rides']);
         }
       }
+
+      // Sort: Active rides first, then newest first
+      combined.sort((a, b) {
+        final aActive = _isActiveStatus((a['rideStatus'] ?? '').toString());
+        final bActive = _isActiveStatus((b['rideStatus'] ?? '').toString());
+        if (aActive && !bActive) return -1;
+        if (!aActive && bActive) return 1;
+
+        final aDate = DateTime.tryParse((a['createdAt'] ?? '').toString()) ?? DateTime(2000);
+        final bDate = DateTime.tryParse((b['createdAt'] ?? '').toString()) ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+      });
+
+      _allRides = combined;
     } catch (e) {
       if (mounted) {
         setState(() =>
@@ -92,27 +108,69 @@ class _RidesScreenState extends State<RidesScreen> {
     }
   }
 
+  bool _isActiveStatus(String status) {
+    final s = status.toLowerCase();
+    return s == 'in_progress' ||
+        status == 'Trip Started' ||
+        s == 'trip_started' ||
+        s == 'driver_accepted' ||
+        status == 'Driver Accepted' ||
+        s == 'driver_arriving' ||
+        status == 'Driver Arriving' ||
+        s == 'driver_arrived' ||
+        status == 'Driver Arrived' ||
+        s == 'confirmed' ||
+        status == 'Confirmed' ||
+        status == 'Awaiting Payment';
+  }
+
+  /// 24-hour clearing rule:
+  /// Active rides are ALWAYS shown so drivers never lose ongoing rides.
+  /// Available, completed, or cancelled rides older than 24 hours are cleared.
+  bool _isWithin24Hours(dynamic r) {
+    final status = (r['rideStatus'] ?? '').toString();
+    if (_isActiveStatus(status)) return true;
+
+    final dateStr = r['completedAt'] ?? r['createdAt'] ?? r['pickupDate'];
+    if (dateStr == null) return true;
+    final rideTime = DateTime.tryParse(dateStr.toString());
+    if (rideTime == null) return true;
+
+    final diff = DateTime.now().difference(rideTime);
+    // If completed/requested over 24 hours ago, clear it from the daily view
+    return diff.inHours < 24;
+  }
+
   Future<void> _onRefresh() async {
     _refreshing = true;
     await _fetchData();
   }
 
   List<dynamic> get _filtered {
-    if (_filter == null) return _allRides;
-    return _allRides.where((r) {
-      final status = r['rideStatus'] as String?;
-      if (_filter == 'Available' && status == 'Searching Driver') return true;
-      if (_filter == 'Upcoming' &&
-          ['driver_accepted', 'driver_arriving', 'confirmed']
-              .contains(status)) {
-        return true;
+    // Apply 24h clearing filter first
+    final activeOrRecent = _allRides.where(_isWithin24Hours).toList();
+
+    if (_filter == null) return activeOrRecent;
+
+    return activeOrRecent.where((r) {
+      final status = (r['rideStatus'] ?? '').toString();
+      final s = status.toLowerCase();
+
+      if (_filter == 'Available') {
+        return status == 'Searching Driver' || s == 'searching_driver' || s == 'available' || s == 'pending';
       }
-      if (_filter == 'Ongoing' && status == 'in_progress') return true;
-      if (_filter == 'Completed' && status == 'trip_completed') return true;
-      if (_filter == 'Cancelled' &&
-          status != null &&
-          status.startsWith('cancelled')) {
-        return true;
+      if (_filter == 'Upcoming') {
+        return ['driver_accepted', 'driver_arriving', 'driver_arrived', 'confirmed'].contains(s) ||
+               ['Driver Accepted', 'Driver Arriving', 'Driver Arrived', 'Confirmed'].contains(status);
+      }
+      if (_filter == 'Ongoing') {
+        return status == 'Trip Started' || s == 'in_progress' || s == 'trip_started' || status == 'Awaiting Payment';
+      }
+      if (_filter == 'Completed') {
+        return status == 'Trip Completed' || s == 'trip_completed' || s == 'completed';
+      }
+      if (_filter == 'Cancelled') {
+        return s.startsWith('cancel');
       }
       return false;
     }).toList();
@@ -128,7 +186,15 @@ class _RidesScreenState extends State<RidesScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('My Rides', style: AppText.cardHeadline),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('My Rides', style: AppText.cardHeadline),
+                    const SizedBox(height: 2),
+                    Text('Active & last 24h requests • Refreshes daily',
+                        style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                  ],
+                ),
                 IconButton(
                   icon: Icon(Icons.refresh, color: AppColors.textSecondary),
                   onPressed: _onRefresh,
@@ -454,22 +520,24 @@ class _RidesScreenState extends State<RidesScreen> {
 
   Widget _statusBadge(String statusStr) {
     Color color = AppColors.textSecondary;
-    String label = 'Unknown';
+    String label = statusStr;
 
-    if (statusStr == 'Searching Driver') {
+    final s = statusStr.toLowerCase();
+
+    if (statusStr == 'Searching Driver' || s == 'searching_driver' || s == 'available' || s == 'pending') {
       color = AppColors.info;
       label = 'Available';
-    } else if (['driver_accepted', 'driver_arriving', 'confirmed']
-        .contains(statusStr)) {
+    } else if (['driver_accepted', 'driver_arriving', 'driver_arrived', 'confirmed'].contains(s) ||
+        ['Driver Accepted', 'Driver Arriving', 'Driver Arrived', 'Confirmed'].contains(statusStr)) {
       color = AppColors.info;
       label = 'Upcoming';
-    } else if (statusStr == 'in_progress') {
+    } else if (statusStr == 'Trip Started' || s == 'in_progress' || s == 'trip_started' || statusStr == 'Awaiting Payment') {
       color = AppColors.success;
       label = 'Ongoing';
-    } else if (statusStr == 'trip_completed') {
+    } else if (statusStr == 'Trip Completed' || s == 'trip_completed' || s == 'completed') {
       color = AppColors.gold;
       label = 'Completed';
-    } else if (statusStr.startsWith('cancelled')) {
+    } else if (s.startsWith('cancel')) {
       color = AppColors.error;
       label = 'Cancelled';
     }
