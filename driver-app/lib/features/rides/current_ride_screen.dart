@@ -648,26 +648,32 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                               ],
                             ),
                           ),
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: _openGoogleMaps,
-                              icon: const Icon(Icons.map, color: AppColors.gold),
-                              label: const Text('Open in Google Maps',
-                                  style: TextStyle(
-                                      color: AppColors.gold,
-                                      fontWeight: FontWeight.bold)),
-                              style: OutlinedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 16),
-                                side: BorderSide(
-                                    color:
-                                        AppColors.gold.withValues(alpha: 0.5)),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+
+                        // --- Google Maps Button ---
+                        if (_stage != _TripStage.completed)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _openGoogleMaps,
+                                icon: const Icon(Icons.map, color: AppColors.gold),
+                                label: const Text('Open in Google Maps',
+                                    style: TextStyle(
+                                        color: AppColors.gold,
+                                        fontWeight: FontWeight.bold)),
+                                style: OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  side: BorderSide(
+                                      color:
+                                          AppColors.gold.withValues(alpha: 0.5)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
                               ),
                             ),
                           ),
-                        ),
 
                       // --- RideTimeline (pickup / drop) ---
                       Container(
@@ -818,8 +824,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         ),
       ),
     ),
-    );
-  }
+  );
+}
 
   Widget _stageStepper() {
     const stages = _TripStage.values;

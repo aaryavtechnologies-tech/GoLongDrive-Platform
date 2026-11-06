@@ -126,20 +126,20 @@ class _EarningsScreenState extends State<EarningsScreen> {
       return SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 100),
-          children: const [
+          children: [
             Text('Earnings & Wallet', style: AppText.cardHeadline),
-            SizedBox(height: 20),
-            SkeletonCard(height: 160),
-            SizedBox(height: 20),
-            Row(
+            const SizedBox(height: 20),
+            const SkeletonCard(height: 160),
+            const SizedBox(height: 20),
+            const Row(
               children: [
                 Expanded(child: SkeletonCard(height: 90)),
                 SizedBox(width: 12),
                 Expanded(child: SkeletonCard(height: 90)),
               ],
             ),
-            SizedBox(height: 20),
-            SkeletonCard(height: 200),
+            const SizedBox(height: 20),
+            const SkeletonCard(height: 200),
           ],
         ),
       );

@@ -296,7 +296,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                               shape: BoxShape.circle, color: AppColors.gold),
                         ),
                         const SizedBox(width: 10),
-                        const Text('New Ride Request',
+                        Text('New Ride Request',
                             style: AppText.cardHeadline),
                       ],
                     ),
@@ -486,7 +486,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Pickup',
+                                      Text('Pickup',
                                           style: AppText.smallLabel),
                                       const SizedBox(height: 4),
                                       Text(pickupAddress,
@@ -495,7 +495,7 @@ class _IncomingRequestScreenState extends State<IncomingRequestScreen>
                                               fontSize: 14,
                                               height: 1.3)),
                                       const SizedBox(height: 20),
-                                      const Text('Drop',
+                                      Text('Drop',
                                           style: AppText.smallLabel),
                                       const SizedBox(height: 4),
                                       Text(dropAddress,
