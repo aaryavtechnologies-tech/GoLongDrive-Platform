@@ -13,6 +13,7 @@ const {
   getCurrentRide,
   acceptRide,
   rejectRide,
+  arriveRide,
   startRide,
   endRide,
   completeRide,
@@ -33,6 +34,7 @@ router.patch('/status', isDriver, toggleStatus);
 router.get('/rides/current', isDriver, getCurrentRide);
 router.post('/rides/:id/accept', isDriver, acceptRide);
 router.post('/rides/:id/reject', isDriver, rejectRide);
+router.post('/rides/:id/arrive', isDriver, arriveRide);
 router.post('/rides/:id/start', isDriver, startRide);
 router.post('/rides/:id/end', isDriver, endRide);
 router.post('/rides/:id/complete', isDriver, completeRide);

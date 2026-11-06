@@ -170,6 +170,34 @@ class SocketService {
     await init();
   }
 
+  /// Broadcast real-time driver coordinates to customer & ride room
+  static void emitDriverLocation({
+    required String bookingId,
+    String? customerId,
+    required double latitude,
+    required double longitude,
+    double heading = 0,
+    double speed = 0,
+  }) {
+    if (_socket != null && _socket!.connected) {
+      _socket!.emit('driver:location_update', {
+        'bookingId': bookingId,
+        'customerId': customerId,
+        'latitude': latitude,
+        'longitude': longitude,
+        'heading': heading,
+        'speed': speed,
+      });
+    }
+  }
+
+  /// Join a ride-specific socket room
+  static void joinRide(String bookingId) {
+    if (_socket != null && _socket!.connected) {
+      _socket!.emit('ride:join', {'bookingId': bookingId});
+    }
+  }
+
   // ── Private helpers ──────────────────────────────────────────────────────────
 
   /// Exponential back-off reconnect (2s → 4s → 8s → max 30s)

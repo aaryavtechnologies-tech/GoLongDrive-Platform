@@ -84,12 +84,15 @@ const bookingSchema = new mongoose.Schema(
     // ── Lifecycle Tracking ────────────────────────────────────────────────────
     assignedAt: { type: Date },
     acceptedAt: { type: Date },
+    arrivedAt: { type: Date },
     startedAt: { type: Date },
     completedAt: { type: Date },
     cancelledAt: { type: Date },
     cancelledBy: { type: String }, // 'Customer', 'Driver', 'Admin'
     cancellationReason: { type: String },
     driverResponseTime: { type: Number }, // Time taken by driver to accept in ms
+    actualDistance: { type: Number, default: 0 }, // in KM
+    actualDuration: { type: Number, default: 0 }, // in Minutes
 
     // ── Long-Distance Booking Enhancements ───────────────────────────────────
     bookingType: {

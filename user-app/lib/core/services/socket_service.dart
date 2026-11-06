@@ -59,6 +59,16 @@ class UserSocketService {
   static Stream<Map<String, dynamic>> get onRideAwaitingPayment =>
       _rideAwaitingPaymentCtrl.stream;
 
+  static final StreamController<Map<String, dynamic>> _driverArrivedCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onDriverArrived =>
+      _driverArrivedCtrl.stream;
+
+  static final StreamController<Map<String, dynamic>> _driverLocationCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onDriverLocation =>
+      _driverLocationCtrl.stream;
+
   // ── Public API ─────────────────────────────────────────────────────────────
 
   static bool get isConnected => _socket?.connected ?? false;
@@ -152,6 +162,26 @@ class UserSocketService {
         _rideAwaitingPaymentCtrl.add(Map<String, dynamic>.from(data));
       }
     });
+
+    _socket!.on('ride:driver_arrived', (data) {
+      debugPrint('📥 ride:driver_arrived: $data');
+      if (data is Map) {
+        _driverArrivedCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('driver:location', (data) {
+      if (data is Map) {
+        _driverLocationCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
+  /// Join a ride socket room
+  static void joinRide(String bookingId) {
+    if (_socket != null && _socket!.connected) {
+      _socket!.emit('ride:join', {'bookingId': bookingId});
+    }
   }
 
   /// Disconnect cleanly (on logout)

@@ -7,8 +7,8 @@ import '../../core/theme/app_text_styles.dart';
 import '../../models/ride_history_item.dart';
 import '../../widgets/back_button.dart';
 import '../../routes/app_routes.dart';
-
 import '../../core/services/booking_service.dart';
+import '../booking/active_ride_screen.dart';
 
 class RideHistoryScreen extends StatefulWidget {
   const RideHistoryScreen({super.key});
@@ -20,7 +20,8 @@ class RideHistoryScreen extends StatefulWidget {
 class _RideHistoryScreenState extends State<RideHistoryScreen> {
   List<RideHistoryItem> _history = [];
   bool _isLoading = true;
-  String _filter = 'All';
+  final List<String> _tabs = const ['Ongoing', 'Upcoming', 'Past', 'Cancelled'];
+  String _selectedTab = 'Ongoing';
 
   @override
   void initState() {
@@ -36,15 +37,32 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       for (final b in bookings) {
         final from = b['pickupAddress'] ?? b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
         final to = b['dropAddress'] ?? b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
-        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['total'] ?? '');
+        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['finalFare'] != null && b['finalFare'] > 0 ? '₹${b['finalFare']}' : (b['estimatedFare'] != null ? '₹${b['estimatedFare']}' : (b['total'] ?? '')));
         final date = b['pickupDate'] ?? b['date'] ?? '';
-        final statusStr = b['status']?.toString().toLowerCase() ?? '';
-        final status = statusStr.contains('cancel')
-            ? RideStatus.cancelled
-            : RideStatus.completed;
+        final String rawStatus = (b['rideStatus'] ?? b['status'] ?? '').toString();
+        final statusLower = rawStatus.toLowerCase();
+
+        RideStatus status;
+        if (statusLower.contains('cancel')) {
+          status = RideStatus.cancelled;
+        } else if (statusLower == 'trip completed' || statusLower == 'completed' || statusLower == 'paid') {
+          status = RideStatus.completed;
+        } else if (statusLower == 'trip started' ||
+                   statusLower == 'driver arriving' ||
+                   statusLower == 'driver arrived' ||
+                   statusLower == 'driver accepted' ||
+                   statusLower == 'driver assigned' ||
+                   statusLower == 'confirmed' ||
+                   statusLower == 'awaiting payment') {
+          status = RideStatus.ongoing;
+        } else {
+          status = RideStatus.upcoming;
+        }
 
         list.add(RideHistoryItem(
           id: b['_id'] ?? b['id'] ?? '',
+          bookingId: b['bookingId'] ?? b['_id'] ?? b['id'] ?? '',
+          rawStatus: rawStatus,
           fromAddress: from,
           toAddress: to,
           dateLabel: date,
@@ -52,9 +70,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           status: status,
           vehicleLabel: b['vehicleType'] ?? 'Car',
           carName: b['vehicleType'] ?? 'Car',
-          driverName: b['driver']?['fullName'],
+          driverName: b['driver'] is Map ? b['driver']['fullName'] : null,
           driverRating: 4.8,
-          plateNumber: b['vehicle']?['registrationNumber'],
+          plateNumber: b['vehicle'] is Map ? b['vehicle']['registrationNumber'] : null,
           paymentLabel: b['paymentMethod'] ?? 'Online',
         ));
       }
@@ -70,13 +88,30 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
   }
 
   List<RideHistoryItem> get _filtered {
-    if (_filter == 'All') return _history;
-    final status = _filter == 'Completed' ? RideStatus.completed : RideStatus.cancelled;
-    return _history.where((r) => r.status == status).toList();
+    switch (_selectedTab) {
+      case 'Ongoing':
+        return _history.where((r) => r.status == RideStatus.ongoing).toList();
+      case 'Upcoming':
+        return _history.where((r) => r.status == RideStatus.upcoming).toList();
+      case 'Past':
+        return _history.where((r) => r.status == RideStatus.completed).toList();
+      case 'Cancelled':
+        return _history.where((r) => r.status == RideStatus.cancelled).toList();
+      default:
+        return _history;
+    }
   }
 
-  void _openRideDetails(RideHistoryItem ride) {
-    Navigator.of(context).pushNamed(AppRoutes.rideDetails, arguments: ride);
+  void _onRideTapped(RideHistoryItem ride) {
+    if (ride.status == RideStatus.ongoing) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ActiveRideScreen(bookingId: ride.bookingId ?? ride.id),
+        ),
+      );
+    } else {
+      Navigator.of(context).pushNamed(AppRoutes.rideDetails, arguments: ride);
+    }
   }
 
   @override
@@ -117,7 +152,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
                                   padding: const EdgeInsets.only(bottom: 12),
                                   child: _RideHistoryTile(
                                     ride: ride,
-                                    onTap: () => _openRideDetails(ride),
+                                    onTap: () => _onRideTapped(ride),
                                   ),
                                 );
                               },
@@ -143,34 +178,36 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
 
   Widget _buildFilterChips() {
     final colors = AppColors.of(context);
-    const options = ['All', 'Completed', 'Cancelled'];
-    return Row(
-      children: options.map((option) {
-        final selected = _filter == option;
-        return Padding(
-          padding: const EdgeInsets.only(right: 10),
-          child: GestureDetector(
-            onTap: () => setState(() => _filter = option),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-              decoration: BoxDecoration(
-                color: selected ? AppColors.primaryGold : colors.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: selected ? AppColors.primaryGold : colors.inputBorder,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: _tabs.map((tab) {
+          final selected = _selectedTab == tab;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = tab),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: selected ? AppColors.primaryGold : colors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: selected ? AppColors.primaryGold : colors.inputBorder,
+                  ),
                 ),
-              ),
-              child: Text(
-                option,
-                style: AppTextStyles.caption.copyWith(
-                  color: selected ? AppColors.textOnGold : colors.textSecondary,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                child: Text(
+                  tab,
+                  style: AppTextStyles.caption.copyWith(
+                    color: selected ? AppColors.textOnGold : colors.textSecondary,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                  ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     ).animate().fadeIn(delay: 80.ms, duration: 300.ms);
   }
 
@@ -185,7 +222,7 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             Icon(Icons.history, color: colors.textSecondary, size: 40),
             const SizedBox(height: 12),
             Text(
-              'No rides in this filter yet',
+              'No $_selectedTab rides found',
               style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -205,67 +242,105 @@ class _RideHistoryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final isOngoing = ride.status == RideStatus.ongoing;
+
     return Material(
       color: colors.surface,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: isOngoing
+                ? Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6), width: 1.5)
+                : null,
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                height: 40,
-                width: 40,
-                decoration: BoxDecoration(
-                  color: colors.background,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.directions_car_filled_outlined,
-                  color: AppColors.primaryGold,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${ride.fromAddress}  →  ${ride.toAddress}',
-                      style: AppTextStyles.body.copyWith(color: colors.textPrimary),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: colors.background,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${ride.dateLabel} · ${ride.vehicleLabel}',
-                      style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                    child: Icon(
+                      isOngoing ? Icons.navigation : Icons.directions_car_filled_outlined,
+                      color: isOngoing ? AppColors.primaryGold : colors.textPrimary,
+                      size: 20,
                     ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: ride.status.color.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        ride.status.label,
-                        style: AppTextStyles.caption.copyWith(
-                          color: ride.status.color,
-                          fontWeight: FontWeight.w600,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${ride.fromAddress} → ${ride.toAddress}',
+                          style: AppTextStyles.body.copyWith(
+                            color: colors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${ride.dateLabel} · ${ride.vehicleLabel}',
+                          style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    ride.fare,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: ride.status.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      ride.rawStatus?.isNotEmpty == true ? ride.rawStatus! : ride.status.label,
+                      style: AppTextStyles.caption.copyWith(
+                        color: ride.status.color,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                ride.fare,
-                style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, color: colors.textPrimary),
+                  ),
+                  const Spacer(),
+                  if (isOngoing)
+                    Row(
+                      children: [
+                        Text(
+                          'Track Trip',
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.primaryGold,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.primaryGold),
+                      ],
+                    ),
+                ],
               ),
             ],
           ),

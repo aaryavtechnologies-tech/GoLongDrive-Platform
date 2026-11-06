@@ -50,10 +50,12 @@ const getCurrentRide = asyncHandler(async (req, res) => {
         RIDE_STATUS.DRIVER_ACCEPTED, 
         RIDE_STATUS.CONFIRMED, 
         RIDE_STATUS.DRIVER_ARRIVING, 
-        RIDE_STATUS.TRIP_STARTED
+        RIDE_STATUS.DRIVER_ARRIVED,
+        RIDE_STATUS.TRIP_STARTED,
+        RIDE_STATUS.AWAITING_PAYMENT,
       ] 
     }
-  }).populate('customer', 'fullName phoneNumber');
+  }).populate('customer', 'fullName phoneNumber ridePin profileImage');
 
   return sendSuccess(res, 200, 'Current ride fetched', { ride });
 });
@@ -167,17 +169,59 @@ const rejectRide = asyncHandler(async (req, res) => {
 });
 
 /**
+ * @route   POST /api/driver/rides/:id/arrive
+ * @access  Private (Driver)
+ */
+const arriveRide = asyncHandler(async (req, res) => {
+  const driverId = req.user._id;
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
+
+  if (!booking) throw ApiError.notFound('Booking not found');
+  if (![RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
+    throw ApiError.badRequest(`Cannot mark arrived. Current status is ${booking.rideStatus}`);
+  }
+
+  booking.rideStatus = RIDE_STATUS.DRIVER_ARRIVED;
+  booking.arrivedAt = new Date();
+  await booking.save();
+
+  await addTimelineEntry(booking._id, 'Driver Arrived', driverId, 'Driver arrived at pickup location');
+  
+  // Real-time notification to customer
+  const { getCustomerSocket, getIO } = require('../config/socket');
+  try {
+    const io = getIO();
+    if (booking.customer) {
+      const custId = booking.customer._id || booking.customer;
+      const socketId = getCustomerSocket(custId);
+      if (socketId) {
+        io.to(socketId).emit('ride:driver_arrived', {
+          bookingId: booking.bookingId,
+          message: 'Your driver has arrived at the pickup location!',
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Socket notification error on arrive:', err.message);
+  }
+
+  emitBookingEvent('ride:driver_arrived', { bookingId: booking.bookingId });
+
+  return sendSuccess(res, 200, 'Driver arrived at pickup location', { booking });
+});
+
+/**
  * @route   POST /api/driver/rides/:id/start
  * @access  Private (Driver)
  */
 const startRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const { otp } = req.body;
+  const { otp, startLat, startLng } = req.body;
   
   const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
-  if (![RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING].includes(booking.rideStatus)) {
+  if (![RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.DRIVER_ARRIVED].includes(booking.rideStatus)) {
     throw ApiError.badRequest(`Cannot start trip. Current status is ${booking.rideStatus}`);
   }
 
@@ -191,9 +235,30 @@ const startRide = asyncHandler(async (req, res) => {
 
   booking.rideStatus = RIDE_STATUS.TRIP_STARTED;
   booking.startedAt = new Date();
+  booking.rideStartedAt = new Date();
+  if (startLat && startLng) {
+    booking.startLocation = {
+      coordinates: [Number(startLng), Number(startLat)],
+    };
+  }
   await booking.save();
 
   await addTimelineEntry(booking._id, 'Trip Started', driverId, 'Driver started the trip');
+
+  try {
+    const { getCustomerSocket, getIO } = require('../config/socket');
+    const io = getIO();
+    if (booking.customer) {
+      const custId = booking.customer._id || booking.customer;
+      const socketId = getCustomerSocket(custId);
+      if (socketId) {
+        io.to(socketId).emit('ride:started', { bookingId: booking.bookingId });
+      }
+    }
+  } catch (err) {
+    console.error('Socket error on start ride:', err.message);
+  }
+
   emitBookingEvent('ride:started', { bookingId: booking.bookingId });
 
   return sendSuccess(res, 200, 'Trip started', { booking });
@@ -205,18 +270,55 @@ const startRide = asyncHandler(async (req, res) => {
  */
 const endRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId });
+  const { actualDistance, actualDuration, finalFare } = req.body;
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.rideStatus !== RIDE_STATUS.TRIP_STARTED) {
     throw ApiError.badRequest('Cannot end trip. Trip is not currently in progress.');
   }
 
+  if (actualDistance) booking.actualDistance = Number(actualDistance);
+  if (actualDuration) booking.actualDuration = Number(actualDuration);
+  
+  if (finalFare && Number(finalFare) > 0) {
+    booking.finalFare = Math.round(Number(finalFare));
+  } else if (booking.actualDistance > 0 && booking.pricePerKm > 0) {
+    booking.finalFare = Math.round(booking.baseFare + (booking.actualDistance * booking.pricePerKm));
+  } else {
+    booking.finalFare = booking.finalFare || booking.estimatedFare;
+  }
+
   booking.rideStatus = RIDE_STATUS.AWAITING_PAYMENT;
+  booking.rideCompletedAt = new Date();
   await booking.save();
 
-  await addTimelineEntry(booking._id, 'Awaiting Payment', driverId, 'Driver ended the trip, waiting for customer payment');
-  emitBookingEvent('ride:awaiting_payment', { bookingId: booking.bookingId });
+  await addTimelineEntry(booking._id, 'Awaiting Payment', driverId, `Driver ended the trip. Final fare: ₹${booking.finalFare}`);
+
+  try {
+    const { getCustomerSocket, getIO } = require('../config/socket');
+    const io = getIO();
+    if (booking.customer) {
+      const custId = booking.customer._id || booking.customer;
+      const socketId = getCustomerSocket(custId);
+      if (socketId) {
+        io.to(socketId).emit('ride:awaiting_payment', {
+          bookingId: booking.bookingId,
+          finalFare: booking.finalFare,
+          actualDistance: booking.actualDistance,
+          actualDuration: booking.actualDuration,
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Socket error on end ride:', err.message);
+  }
+
+  emitBookingEvent('ride:awaiting_payment', {
+    bookingId: booking.bookingId,
+    finalFare: booking.finalFare,
+    actualDistance: booking.actualDistance,
+  });
 
   return sendSuccess(res, 200, 'Trip ended, awaiting payment', { booking });
 });
@@ -268,6 +370,21 @@ const completeRide = asyncHandler(async (req, res) => {
   await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
 
   await addTimelineEntry(booking._id, 'Trip Completed', driverId, 'Driver completed the trip');
+
+  try {
+    const { getCustomerSocket, getIO } = require('../config/socket');
+    const io = getIO();
+    if (booking.customer) {
+      const custId = booking.customer._id || booking.customer;
+      const socketId = getCustomerSocket(custId);
+      if (socketId) {
+        io.to(socketId).emit('ride:completed', { bookingId: booking.bookingId });
+      }
+    }
+  } catch (err) {
+    console.error('Socket error on complete ride:', err.message);
+  }
+
   emitBookingEvent('ride:completed', { bookingId: booking.bookingId });
 
   return sendSuccess(res, 200, 'Trip completed', { booking });
@@ -367,6 +484,7 @@ module.exports = {
   getCurrentRide,
   acceptRide,
   rejectRide,
+  arriveRide,
   startRide,
   endRide,
   completeRide,

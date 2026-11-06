@@ -1,9 +1,12 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../app/theme.dart';
+import '../../core/data/api_service.dart';
 import '../../core/data/directions_service.dart';
+import '../../core/data/socket_service.dart';
 import '../../core/models/ride.dart';
 import '../../core/widgets/app_button.dart';
 
@@ -12,28 +15,18 @@ import '../../core/widgets/app_button.dart';
 /// navigation), a top banner shows the current turn instruction, and a
 /// bottom bar shows remaining distance/ETA. No handoff to an external maps
 /// app — everything here renders inside this screen.
-///
-/// How it works:
-/// - `DirectionsService` gives us the road-following route + turn-by-turn
-///   steps (each with a maneuver, an instruction, and where it ends).
-/// - `Geolocator.getPositionStream` streams live GPS fixes; each fix moves
-///   the driver marker, re-points the camera bearing to the direction of
-///   travel, and checks whether we've reached the end of the current step
-///   (within `_stepAdvanceRadiusMeters`) — if so, we advance to the next
-///   instruction.
-/// - Remaining distance/ETA are recomputed from the *current* step's
-///   leftover distance plus the distance of every step still ahead, so
-///   they count down as the driver actually drives, not just once at load.
 class InAppNavigationScreen extends StatefulWidget {
   final Ride ride;
   final LatLng destination;
   final String destinationLabel;
+  final bool isPickupNavigation;
 
   const InAppNavigationScreen({
     super.key,
     required this.ride,
     required this.destination,
     required this.destinationLabel,
+    this.isPickupNavigation = false,
   });
 
   @override
@@ -43,12 +36,11 @@ class InAppNavigationScreen extends StatefulWidget {
 class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
   static const double _stepAdvanceRadiusMeters = 25;
   static const double _arrivalRadiusMeters = 30;
-  // Rough average speed used only to convert "remaining meters" into an
-  // ETA between GPS fixes, so the ETA doesn't sit frozen between updates.
   static const double _fallbackSpeedMetersPerSecond = 8.3; // ~30 km/h
 
   GoogleMapController? _mapController;
   StreamSubscription<Position>? _positionSub;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   RouteResult? _route;
   bool _loadingRoute = true;
@@ -56,14 +48,20 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
   String? _locationError;
 
   LatLng? _driverPos;
+  LatLng? _lastPos;
   double _heading = 0;
   int _currentStepIndex = 0;
   bool _arrived = false;
   double _remainingMeters = 0;
+  double _drivenMeters = 0;
+  double _liveFare = 0;
+  bool _actionLoading = false;
+  DateTime? _lastLocationEmit;
 
   @override
   void initState() {
     super.initState();
+    _liveFare = widget.ride.fare > 0 ? widget.ride.fare : widget.ride.estimatedFare;
     _init();
   }
 
@@ -129,9 +127,6 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
 
   void _onPosition(Position position) {
     final newPos = LatLng(position.latitude, position.longitude);
-    // `heading` is -1 when the device can't determine it (e.g. stationary
-    // on some Android devices) — keep the last known heading rather than
-    // snapping the camera back to 0/north.
     final heading = position.heading >= 0 ? position.heading : _heading;
 
     setState(() {
@@ -139,10 +134,57 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
       _heading = heading;
     });
 
+    // Real-time GPS location broadcast to customer via backend socket
+    final now = DateTime.now();
+    if (_lastLocationEmit == null || now.difference(_lastLocationEmit!).inSeconds >= 3) {
+      _lastLocationEmit = now;
+      SocketService.emitDriverLocation(
+        bookingId: widget.ride.id,
+        customerId: widget.ride.customerId,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        heading: heading,
+        speed: position.speed,
+      );
+    }
+
+    // Cumulative distance calculation and real-time live fare update
+    if (_lastPos != null) {
+      final delta = Geolocator.distanceBetween(
+        _lastPos!.latitude,
+        _lastPos!.longitude,
+        newPos.latitude,
+        newPos.longitude,
+      );
+      if (delta >= 3 && delta <= 300) {
+        _drivenMeters += delta;
+        _recalculateLiveFare();
+      }
+    }
+    _lastPos = newPos;
+
     _advanceStepIfNeeded(newPos);
     _updateRemainingDistance(newPos);
     _checkArrival(newPos);
     _followCamera(newPos, heading);
+  }
+
+  void _recalculateLiveFare() {
+    if (widget.isPickupNavigation) return;
+    final distKm = _drivenMeters / 1000.0;
+    final base = widget.ride.baseFare > 0 ? widget.ride.baseFare : 50.0;
+    final rate = widget.ride.pricePerKm > 0 ? widget.ride.pricePerKm : 15.0;
+    final calc = base + (distKm * rate);
+    setState(() {
+      _liveFare = calc > widget.ride.estimatedFare ? calc : widget.ride.estimatedFare;
+    });
+  }
+
+  Future<void> _playInstructionChime() async {
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource('sounds/ride_request.mp3'));
+    } catch (_) {}
   }
 
   void _advanceStepIfNeeded(LatLng pos) {
@@ -159,6 +201,7 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
 
     if (distToStepEnd < _stepAdvanceRadiusMeters && _currentStepIndex < steps.length - 1) {
       setState(() => _currentStepIndex++);
+      _playInstructionChime();
     }
   }
 
@@ -190,6 +233,55 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     );
     if (distToDest < _arrivalRadiusMeters && !_arrived) {
       setState(() => _arrived = true);
+      _playInstructionChime();
+    }
+  }
+
+  Future<void> _handleBottomAction() async {
+    if (widget.isPickupNavigation) {
+      setState(() => _actionLoading = true);
+      try {
+        await ApiService.post('/driver/bookings/rides/${widget.ride.id}/arrive');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Arrival confirmed! Please ask customer for Ride PIN.'),
+              backgroundColor: AppColors.gold,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        if (mounted) Navigator.of(context).pop(true);
+      } finally {
+        if (mounted) setState(() => _actionLoading = false);
+      }
+    } else {
+      // Ending ride
+      setState(() => _actionLoading = true);
+      try {
+        final distKm = _drivenMeters > 0 ? (_drivenMeters / 1000.0) : widget.ride.distanceKm;
+        await ApiService.post(
+          '/driver/bookings/rides/${widget.ride.id}/end',
+          body: {
+            'actualDistance': distKm.toStringAsFixed(1),
+            'finalFare': _liveFare.round(),
+          },
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Trip ended! Passenger has been prompted for payment.'),
+              backgroundColor: AppColors.gold,
+            ),
+          );
+          Navigator.of(context).pop(true);
+        }
+      } catch (e) {
+        if (mounted) Navigator.of(context).pop(true);
+      } finally {
+        if (mounted) setState(() => _actionLoading = false);
+      }
     }
   }
 
@@ -220,6 +312,7 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
   void dispose() {
     _positionSub?.cancel();
     _mapController?.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -260,119 +353,134 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     final topInset = MediaQuery.of(context).padding.top;
     final showInstructionArea = _locationError == null && (currentStep != null || _arrived);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          if (_locationError != null)
-            _CenteredMessage(
-              icon: Icons.location_off_outlined,
-              message: _locationError!,
-              onClose: () => Navigator.of(context).pop(),
-            )
-          else if (_loadingRoute || _driverPos == null)
-            const Center(child: CircularProgressIndicator(color: AppColors.gold))
-          else
-            GoogleMap(
-              initialCameraPosition: CameraPosition(target: _driverPos!, zoom: 17.5, tilt: 55),
-              onMapCreated: (c) {
-                _mapController = c;
-                _applyDarkStyle(c);
-                _recenterCamera();
-              },
-              polylines: {
-                if (_route != null)
-                  Polyline(
-                    polylineId: const PolylineId('nav-route'),
-                    points: _route!.points,
-                    color: AppColors.gold,
-                    width: 6,
-                    jointType: JointType.round,
-                    startCap: Cap.roundCap,
-                    endCap: Cap.roundCap,
-                  ),
-              },
-              markers: {
-                Marker(
-                  markerId: const MarkerId('destination'),
-                  position: widget.destination,
-                  icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
-                  infoWindow: InfoWindow(title: widget.destinationLabel),
-                ),
-                if (_driverPos != null)
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Navigation in progress. Screen is locked to this active trip.'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.gold,
+          ),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: Stack(
+          children: [
+            if (_locationError != null)
+              _CenteredMessage(
+                icon: Icons.location_off_outlined,
+                message: _locationError!,
+                onClose: () => Navigator.of(context).pop(),
+              )
+            else if (_loadingRoute || _driverPos == null)
+              const Center(child: CircularProgressIndicator(color: AppColors.gold))
+            else
+              GoogleMap(
+                initialCameraPosition: CameraPosition(target: _driverPos!, zoom: 17.5, tilt: 55),
+                onMapCreated: (c) {
+                  _mapController = c;
+                  _applyDarkStyle(c);
+                  _recenterCamera();
+                },
+                polylines: {
+                  if (_route != null)
+                    Polyline(
+                      polylineId: const PolylineId('nav-route'),
+                      points: _route!.points,
+                      color: AppColors.gold,
+                      width: 6,
+                      jointType: JointType.round,
+                      startCap: Cap.roundCap,
+                      endCap: Cap.roundCap,
+                    ),
+                },
+                markers: {
                   Marker(
-                    markerId: const MarkerId('driver'),
-                    position: _driverPos!,
-                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
-                    rotation: _heading,
-                    anchor: const Offset(0.5, 0.5),
-                    flat: true,
-                    zIndexInt: 2,
+                    markerId: const MarkerId('destination'),
+                    position: widget.destination,
+                    icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+                    infoWindow: InfoWindow(title: widget.destinationLabel),
                   ),
-              },
-              myLocationEnabled: false,
-              myLocationButtonEnabled: false,
-              zoomControlsEnabled: false,
-              compassEnabled: false,
-              mapToolbarEnabled: false,
-              liteModeEnabled: false,
-            ),
-
-          // --- Top turn instruction banner ---
-          if (currentStep != null && !_arrived && _locationError == null)
-            Positioned(
-              top: topInset + 12,
-              left: 16,
-              right: 16,
-              child: _InstructionBanner(
-                icon: _maneuverIcon(currentStep.maneuver),
-                instruction: currentStep.instruction,
-                distanceText: currentStep.distanceText,
+                  if (_driverPos != null)
+                    Marker(
+                      markerId: const MarkerId('driver'),
+                      position: _driverPos!,
+                      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                      rotation: _heading,
+                      anchor: const Offset(0.5, 0.5),
+                      flat: true,
+                      zIndexInt: 2,
+                    ),
+                },
+                myLocationEnabled: false,
+                myLocationButtonEnabled: false,
+                zoomControlsEnabled: false,
+                compassEnabled: false,
+                mapToolbarEnabled: false,
+                liteModeEnabled: false,
               ),
-            ),
 
-          if (_arrived)
-            Positioned(
-              top: topInset + 12,
-              left: 16,
-              right: 16,
-              child: _ArrivedBanner(label: widget.destinationLabel),
-            ),
-
-          // --- Close button (top-right; sits beside the banner once one
-          // is showing, or alone in the corner before the route loads) ---
-          if (_locationError == null)
-            Positioned(
-              top: topInset + 12,
-              right: 16,
-              child: showInstructionArea
-                  ? const SizedBox.shrink()
-                  : _CloseButton(onTap: () => Navigator.of(context).pop()),
-            ),
-
-          // --- Bottom ETA / distance bar ---
-          if (!_loadingRoute && _locationError == null)
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 20,
-              child: _BottomEtaBar(
-                distanceLabel: _formatRemainingDistance(_remainingMeters),
-                etaLabel: _formatEta(_remainingMeters),
-                destinationLabel: widget.destinationLabel,
-                arrived: _arrived,
-                onEnd: () => Navigator.of(context).pop(),
+            // --- Top turn instruction banner ---
+            if (currentStep != null && !_arrived && _locationError == null)
+              Positioned(
+                top: topInset + 12,
+                left: 16,
+                right: 16,
+                child: _InstructionBanner(
+                  icon: _maneuverIcon(currentStep.maneuver),
+                  instruction: currentStep.instruction,
+                  distanceText: currentStep.distanceText,
+                ),
               ),
-            ),
 
-          // --- Recenter button ---
-          if (!_loadingRoute && _locationError == null && !_arrived)
-            Positioned(
-              right: 16,
-              bottom: 110,
-              child: _RecenterButton(onTap: _recenterCamera),
-            ),
-        ],
+            if (_arrived)
+              Positioned(
+                top: topInset + 12,
+                left: 16,
+                right: 16,
+                child: _ArrivedBanner(label: widget.destinationLabel),
+              ),
+
+            // --- Close button (top-right) ---
+            if (_locationError == null)
+              Positioned(
+                top: topInset + 12,
+                right: 16,
+                child: showInstructionArea
+                    ? const SizedBox.shrink()
+                    : _CloseButton(onTap: () => Navigator.of(context).pop()),
+              ),
+
+            // --- Bottom ETA / distance / live fare bar ---
+            if (!_loadingRoute && _locationError == null)
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 20,
+                child: _BottomEtaBar(
+                  distanceLabel: _formatRemainingDistance(_remainingMeters),
+                  etaLabel: _formatEta(_remainingMeters),
+                  destinationLabel: widget.destinationLabel,
+                  liveFare: _liveFare,
+                  isPickupNavigation: widget.isPickupNavigation,
+                  arrived: _arrived,
+                  actionLoading: _actionLoading,
+                  onAction: _handleBottomAction,
+                ),
+              ),
+
+            // --- Recenter button ---
+            if (!_loadingRoute && _locationError == null && !_arrived)
+              Positioned(
+                right: 16,
+                bottom: 110,
+                child: _RecenterButton(onTap: _recenterCamera),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -509,15 +617,21 @@ class _BottomEtaBar extends StatelessWidget {
   final String distanceLabel;
   final String etaLabel;
   final String destinationLabel;
+  final double liveFare;
+  final bool isPickupNavigation;
   final bool arrived;
-  final VoidCallback onEnd;
+  final bool actionLoading;
+  final VoidCallback onAction;
 
   const _BottomEtaBar({
     required this.distanceLabel,
     required this.etaLabel,
     required this.destinationLabel,
+    required this.liveFare,
+    required this.isPickupNavigation,
     required this.arrived,
-    required this.onEnd,
+    required this.actionLoading,
+    required this.onAction,
   });
 
   @override
@@ -528,7 +642,12 @@ class _BottomEtaBar extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.borderSubtle2),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, -4))
+        ],
       ),
       child: Row(
         children: [
@@ -546,22 +665,40 @@ class _BottomEtaBar extends StatelessWidget {
                 Row(
                   children: [
                     Text(etaLabel,
-                        style: TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
+                        style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800)),
                     const SizedBox(width: 8),
                     Text('· $distanceLabel',
-                        style: TextStyle(color: AppColors.textMuted, fontSize: 14, fontWeight: FontWeight.w600)),
+                        style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600)),
+                    if (!isPickupNavigation && liveFare > 0) ...[
+                      const SizedBox(width: 8),
+                      Text('· ₹${liveFare.round()}',
+                          style: const TextStyle(
+                              color: AppColors.gold,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold)),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
           SizedBox(
-            width: 120,
+            width: 135,
             child: AppButton(
-              label: arrived ? 'Done' : 'End',
+              label: actionLoading
+                  ? 'Loading...'
+                  : (isPickupNavigation
+                      ? (arrived ? "I've Arrived" : 'Confirm Arrived')
+                      : (arrived ? 'End Ride' : 'End Ride')),
               height: 44,
-              variant: AppButtonVariant.secondary,
-              onPressed: onEnd,
+              variant: arrived ? AppButtonVariant.primary : AppButtonVariant.secondary,
+              onPressed: actionLoading ? null : onAction,
             ),
           ),
         ],

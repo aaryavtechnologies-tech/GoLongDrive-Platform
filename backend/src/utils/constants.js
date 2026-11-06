@@ -48,6 +48,7 @@ const RIDE_STATUS = Object.freeze({
   DRIVER_REJECTED: 'Driver Rejected',
   CONFIRMED: 'Confirmed',
   DRIVER_ARRIVING: 'Driver Arriving',
+  DRIVER_ARRIVED: 'Driver Arrived',
   TRIP_STARTED: 'Trip Started',
   TRIP_COMPLETED: 'Trip Completed',
   AWAITING_PAYMENT: 'Awaiting Payment',

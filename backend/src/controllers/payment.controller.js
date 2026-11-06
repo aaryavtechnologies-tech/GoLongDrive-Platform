@@ -55,8 +55,26 @@ const verifyPayment = asyncHandler(async (req, res) => {
   if (payment.paymentStatus === 'Paid') {
     generateInvoice(payment.booking, payment._id).catch(err => console.error('Invoice generation failed:', err));
     const booking = await Booking.findById(payment.booking);
-    if(booking) {
-        emitBookingEvent('payment:received', { bookingId: booking.bookingId, paymentId: payment._id });
+    if (booking) {
+      booking.paymentStatus = 'Paid';
+      await booking.save();
+
+      const { getDriverSocket, getIO } = require('../config/socket');
+      if (booking.driver) {
+        const driverSock = getDriverSocket(booking.driver);
+        if (driverSock) {
+          getIO().to(driverSock).emit('payment:received', {
+            bookingId: booking.bookingId,
+            paymentId: payment._id,
+            amount: payment.amount,
+          });
+        }
+      }
+      emitBookingEvent('payment:received', {
+        bookingId: booking.bookingId,
+        paymentId: payment._id,
+        amount: payment.amount,
+      });
     }
   }
 

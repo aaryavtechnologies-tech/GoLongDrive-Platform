@@ -47,6 +47,37 @@ const initSocket = (httpServer) => {
       }
     });
 
+    // ── Ride Room Join ───────────────────────────────────────────────────────
+    socket.on('ride:join', ({ bookingId }) => {
+      if (bookingId) {
+        socket.join(`ride:${bookingId}`);
+        logger.info(`🚗  Socket ${socket.id} joined ride:${bookingId}`);
+      }
+    });
+
+    // ── Real-time Driver GPS Broadcast ───────────────────────────────────────
+    socket.on('driver:location_update', (data) => {
+      const { bookingId, customerId, latitude, longitude, heading, speed } = data || {};
+      const payload = {
+        bookingId,
+        latitude,
+        longitude,
+        heading: heading || 0,
+        speed: speed || 0,
+        timestamp: Date.now(),
+      };
+
+      if (customerId) {
+        const custSockId = customerSockets.get(customerId.toString());
+        if (custSockId) {
+          io.to(custSockId).emit('driver:location', payload);
+        }
+      }
+      if (bookingId) {
+        socket.to(`ride:${bookingId}`).emit('driver:location', payload);
+      }
+    });
+
     // ── Cleanup on disconnect ────────────────────────────────────────────────
     socket.on('disconnect', (reason) => {
       // Remove driver if disconnected

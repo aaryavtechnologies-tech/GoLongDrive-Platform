@@ -50,6 +50,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   Ride? _ride;
   bool _loading = true;
   bool _actionLoading = false;
+  bool _isPaymentReceived = false;
   StreamSubscription? _paymentSub;
 
   @override
@@ -59,11 +60,15 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     _paymentSub = SocketService.onPaymentReceived.listen((data) {
       if (!mounted) return;
       if (_ride != null && data['bookingId'] == _ride!.id) {
-        // Payment was received, move to verify PIN & complete
+        setState(() {
+          _isPaymentReceived = true;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payment received! You can now complete the trip.')),
+          const SnackBar(
+            content: Text('Payment received! You can now complete the trip with passenger PIN.'),
+            backgroundColor: AppColors.success,
+          ),
         );
-        // Status remains awaitingPayment, but now driver can proceed
       }
     });
   }
@@ -91,6 +96,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                 _stage = _TripStage.awaitingPayment;
               } else if (status == 'Trip Completed') {
                 _stage = _TripStage.completed;
+              } else if (status == 'Driver Arrived') {
+                _stage = _TripStage.arrived;
               } else if (status == 'Driver Arriving' || status == 'Confirmed') {
                 _stage = _TripStage.arriving;
               } else {
@@ -114,8 +121,22 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
 
     try {
       if (_stage == _TripStage.arriving) {
-        // Just local state transition, no API for "arrived" in the current backend
-        setState(() => _stage = _TripStage.arrived);
+        // Driver arrived at pickup location - notify backend and customer
+        final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/arrive');
+        if (res.statusCode == 200) {
+          if (mounted) {
+            setState(() => _stage = _TripStage.arrived);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Arrival confirmed! Customer has been notified.'),
+                backgroundColor: AppColors.gold,
+              ),
+            );
+          }
+        } else {
+          // Fallback to local state transition if offline/error
+          if (mounted) setState(() => _stage = _TripStage.arrived);
+        }
       } else if (_stage == _TripStage.arrived) {
         // Prompt for passenger 4-digit PIN
         setState(() => _actionLoading = false);
@@ -129,8 +150,8 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           '/driver/bookings/rides/${_ride!.id}/start',
           body: {
             'otp': pin, // Backend expects 'otp' which matches customer.ridePin
-            'startLat': 23.0225, // Fallback lat
-            'startLng': 72.5714 // Fallback lng
+            'startLat': _ride!.pickupLat ?? 23.0225,
+            'startLng': _ride!.pickupLng ?? 72.5714,
           },
         );
         if (res.statusCode == 200) {
@@ -151,10 +172,25 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         }
       } else if (_stage == _TripStage.inProgress) {
         // End Trip - transitions to Awaiting Payment
-        final res = await ApiService.post('/driver/bookings/rides/${_ride!.id}/end');
+        final double dist = _ride!.distanceKm > 0 ? _ride!.distanceKm : 1.0;
+        final double fare = _ride!.fare > 0 ? _ride!.fare : (_ride!.baseFare + (dist * _ride!.pricePerKm));
+        final res = await ApiService.post(
+          '/driver/bookings/rides/${_ride!.id}/end',
+          body: {
+            'actualDistance': dist,
+            'actualDuration': _ride!.durationMin,
+            'finalFare': fare.round(),
+          },
+        );
         if (res.statusCode == 200) {
           if (mounted) {
             setState(() => _stage = _TripStage.awaitingPayment);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Trip ended! Customer has been prompted for payment.'),
+                backgroundColor: AppColors.gold,
+              ),
+            );
           }
         } else {
           if (mounted) {
@@ -176,6 +212,12 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         if (res.statusCode == 200) {
           if (mounted) {
             setState(() => _stage = _TripStage.completed);
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Trip completed successfully!'),
+                backgroundColor: AppColors.success,
+              ),
+            );
             context.pop();
           }
         } else {
@@ -279,6 +321,33 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     );
   }
 
+  Future<void> _startAutoNavigationToPickup() async {
+    final ride = _ride;
+    if (ride == null) return;
+
+    final resolved = await GeocodingService.geocodeRide(ride);
+    if (!mounted) return;
+
+    final target = resolved ?? ride;
+    if (target.pickupLat == null || target.pickupLng == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't locate pickup coordinates for navigation.")),
+      );
+      return;
+    }
+
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (_) => InAppNavigationScreen(
+          ride: target,
+          destination: LatLng(target.pickupLat!, target.pickupLng!),
+          destinationLabel: target.pickupAddress,
+          isPickupNavigation: true,
+        ),
+      ),
+    );
+  }
+
   /// Resolves the current ride's drop coordinates (geocoding the address as
   /// a fallback if the ride has none) and pushes the full-screen in-app
   /// navigation screen automatically. Shows a snackbar instead of silently
@@ -375,79 +444,210 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 24, 8),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back,
-                            color: AppColors.textPrimary),
-                        onPressed: () => context.pop(),
-                      ),
-                      const SizedBox(width: 4),
-                      Text('Current Ride', style: AppText.cardHeadline),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 140),
-                    children: [
-                      // --- RideStatusCard ---
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: rideCardDecoration(),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 10,
-                                  height: 10,
-                                  decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.success),
+    final bool canLeave = _stage == _TripStage.completed;
+
+    return PopScope(
+      canPop: canLeave,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Screen is locked during active ride. Please complete the trip.'),
+            duration: Duration(seconds: 2),
+            backgroundColor: AppColors.gold,
+          ),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 24, 8),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.arrow_back,
+                              color: canLeave ? AppColors.textPrimary : AppColors.textMuted),
+                          onPressed: () {
+                            if (canLeave) {
+                              context.pop();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Trip is in progress. Navigation is locked.'),
+                                  duration: Duration(seconds: 2),
                                 ),
-                                const SizedBox(width: 10),
-                                Text(_stage.label,
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(width: 4),
+                        Text('Current Ride', style: AppText.cardHeadline),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 140),
+                      children: [
+                        // --- RideStatusCard ---
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: rideCardDecoration(),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 10,
+                                    height: 10,
+                                    decoration: const BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.success),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(_stage.label,
+                                      style: TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              _stageStepper(),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- RideRouteMap (Phase 6) ---
+                        RideRouteMapTappable(
+                          ride: ride,
+                          height: 180,
+                          showDriverLocation: true,
+                          navTarget: _stage == _TripStage.inProgress ||
+                                  _stage == _TripStage.completed
+                              ? NavTarget.drop
+                              : NavTarget.pickup,
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- Turn-by-Turn In-App Navigation Primary Button ---
+                        if (_stage != _TripStage.completed) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                if (_stage == _TripStage.arriving || _stage == _TripStage.arrived) {
+                                  _startAutoNavigationToPickup();
+                                } else {
+                                  _startAutoNavigationToDrop();
+                                }
+                              },
+                              icon: const Icon(Icons.navigation, color: Colors.black),
+                              label: Text(
+                                _stage == _TripStage.arriving || _stage == _TripStage.arrived
+                                    ? 'Turn-by-Turn to Pickup'
+                                    : 'Turn-by-Turn to Drop',
+                                style: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.gold,
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        // --- Google Maps External Button ---
+                        if (_stage != _TripStage.completed)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _openGoogleMaps,
+                                icon: const Icon(Icons.map, color: AppColors.gold),
+                                label: const Text('Open in Google Maps App',
                                     style: TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w700)),
+                                        color: AppColors.gold,
+                                        fontWeight: FontWeight.bold)),
+                                style: OutlinedButton.styleFrom(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 16),
+                                  side: BorderSide(
+                                      color:
+                                          AppColors.gold.withValues(alpha: 0.5)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // --- Payment Status Card if Awaiting Payment ---
+                        if (_stage == _TripStage.awaitingPayment)
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: _isPaymentReceived ? AppColors.success : AppColors.gold,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _isPaymentReceived ? Icons.check_circle : Icons.hourglass_top,
+                                      color: _isPaymentReceived ? AppColors.success : AppColors.gold,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _isPaymentReceived ? 'Payment Verified' : 'Awaiting Customer Payment',
+                                      style: TextStyle(
+                                        color: _isPaymentReceived ? AppColors.success : AppColors.gold,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Final Fare: ₹${ride.fare.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  _isPaymentReceived
+                                      ? 'The passenger has completed online payment! Please enter their completion PIN to finalize the trip.'
+                                      : 'Passenger is completing payment on their app. Please wait or collect cash if chosen.',
+                                  style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            _stageStepper(),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // --- RideRouteMap (Phase 6) ---
-                      RideRouteMapTappable(
-                        ride: ride,
-                        height: 180,
-                        showDriverLocation: true,
-                        navTarget: _stage == _TripStage.inProgress ||
-                                _stage == _TripStage.completed
-                            ? NavTarget.drop
-                            : NavTarget.pickup,
-                      ),
-                      const SizedBox(height: 16),
-
-                      // --- Google Maps Button ---
-                      if (_stage != _TripStage.completed)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: SizedBox(
+                          ),
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: _openGoogleMaps,
@@ -617,6 +817,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

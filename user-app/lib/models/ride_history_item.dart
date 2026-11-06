@@ -5,11 +5,15 @@ import '../core/theme/app_colors.dart';
 
 /// Terminal states a *past* ride can be in. Deliberately excludes any
 /// "in progress" state — active rides live in [UpcomingRide], not here.
-enum RideStatus { completed, cancelled }
+enum RideStatus { ongoing, upcoming, completed, cancelled }
 
 extension RideStatusInfo on RideStatus {
   String get label {
     switch (this) {
+      case RideStatus.ongoing:
+        return 'Ongoing';
+      case RideStatus.upcoming:
+        return 'Upcoming';
       case RideStatus.completed:
         return 'Completed';
       case RideStatus.cancelled:
@@ -19,6 +23,10 @@ extension RideStatusInfo on RideStatus {
 
   Color get color {
     switch (this) {
+      case RideStatus.ongoing:
+        return AppColors.primaryGold;
+      case RideStatus.upcoming:
+        return const Color(0xFF2196F3);
       case RideStatus.completed:
         return AppColors.success;
       case RideStatus.cancelled:
@@ -61,6 +69,8 @@ extension RideStatusInfo on RideStatus {
 class RideHistoryItem {
   // --- Row fields (always populated) ---
   final String id;
+  final String? bookingId;
+  final String? rawStatus;
   final String fromAddress;
   final String toAddress;
   final String dateLabel; // display string, e.g. "Yesterday, 6:42 PM"
@@ -85,6 +95,8 @@ class RideHistoryItem {
 
   const RideHistoryItem({
     required this.id,
+    this.bookingId,
+    this.rawStatus,
     required this.fromAddress,
     required this.toAddress,
     required this.dateLabel,
