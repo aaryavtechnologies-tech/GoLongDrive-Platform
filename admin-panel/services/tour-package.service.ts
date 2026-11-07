@@ -14,6 +14,8 @@ export interface TourPackage {
   includes: string[];
   excludes?: string[];
   imageUrl?: string;
+  destinations?: Array<{ name: string; lat: number; lng: number }>;
+  pricing?: Array<{ vehicleType: string; price: number }>;
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -118,6 +120,11 @@ export const tourPackageService = {
     const response = await apiClient.patch(`/admin/bookings/${bookingId}/cancel`, {
       reason: reason || 'Cancelled by admin',
     });
+    return response.data;
+  },
+
+  seedPackages: async (force: boolean = false): Promise<any> => {
+    const response = await apiClient.post('/tour-packages/seed', { force });
     return response.data;
   },
 };

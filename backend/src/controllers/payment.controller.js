@@ -18,14 +18,21 @@ const createOrder = asyncHandler(async (req, res) => {
   const { bookingId, paymentMethod } = req.body;
   const customerId = req.user._id;
 
-  const booking = await Booking.findById(bookingId);
+  const mongoose = require('mongoose');
+  let booking = null;
+  if (mongoose.Types.ObjectId.isValid(bookingId)) {
+    booking = await Booking.findById(bookingId);
+  }
+  if (!booking) {
+    booking = await Booking.findOne({ bookingId: String(bookingId) });
+  }
   if (!booking) throw ApiError.notFound('Booking not found');
   if (booking.customer.toString() !== customerId.toString()) {
     throw ApiError.forbidden('Access denied');
   }
 
   const { payment, orderDetails } = await createPaymentOrder({
-    bookingId,
+    bookingId: booking._id,
     customerId,
     amount: booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare,
     paymentMethod,

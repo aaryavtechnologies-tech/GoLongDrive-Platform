@@ -20,13 +20,17 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
   DateTime? _selectedDate;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
   int _passengers = 1;
+  String? _selectedVehicleType;
   bool _isBooking = false;
 
   @override
   void initState() {
     super.initState();
-    _passengers = widget.package.numberOfPersons > 0 ? widget.package.numberOfPersons : 1;
+    _passengers = widget.package.numberOfPersons > 0 ? widget.package.numberOfPersons : 2;
     _selectedDate = DateTime.now().add(const Duration(days: 2));
+    if (widget.package.pricing.isNotEmpty) {
+      _selectedVehicleType = widget.package.pricing.first.vehicleType;
+    }
   }
 
   @override
@@ -36,6 +40,13 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
   }
 
   double get _calculatedFare {
+    if (_selectedVehicleType != null && widget.package.pricing.isNotEmpty) {
+      final tier = widget.package.pricing.firstWhere(
+        (p) => p.vehicleType == _selectedVehicleType,
+        orElse: () => widget.package.pricing.first,
+      );
+      return tier.price.toDouble();
+    }
     if (widget.package.pricePerPerson > 0) {
       return widget.package.pricePerPerson * _passengers;
     }
@@ -61,7 +72,7 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
         'pickupAddress': _pickupAddressController.text.trim().isNotEmpty
             ? _pickupAddressController.text.trim()
             : (widget.package.route ?? widget.package.title),
-        'vehicleType': 'Tour Cab',
+        'vehicleType': _selectedVehicleType ?? 'Tour Cab',
       };
 
       final result = await _service.bookTourPackage(bookingPayload);
@@ -415,6 +426,111 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                           );
                         }).toList(),
                       ),
+                    ),
+                  ],
+
+                  // What is NOT Included (Exclusions)
+                  if (pkg.excludes.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'What is Not Included',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colors.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: colors.divider.withValues(alpha: 0.4)),
+                      ),
+                      child: Column(
+                        children: pkg.excludes.map((item) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 18),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    item,
+                                    style: AppTextStyles.body.copyWith(
+                                      color: colors.textSecondary,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+
+                  // Vehicle Options (if available)
+                  if (pkg.pricing.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Choose Your Vehicle Type',
+                      style: AppTextStyles.subtitle.copyWith(
+                        color: colors.textPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: pkg.pricing.map((tier) {
+                        final isSelected = _selectedVehicleType == tier.vehicleType;
+                        return InkWell(
+                          onTap: () => setState(() => _selectedVehicleType = tier.vehicleType),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.12) : colors.surface,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primaryGold : colors.divider.withValues(alpha: 0.5),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.directions_car_rounded,
+                                  color: isSelected ? AppColors.primaryGold : colors.textSecondary,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    tier.vehicleType,
+                                    style: TextStyle(
+                                      color: colors.textPrimary,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '₹${tier.price.toInt()}',
+                                  style: TextStyle(
+                                    color: isSelected ? AppColors.primaryGold : colors.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ],
 

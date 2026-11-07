@@ -8,6 +8,7 @@ const {
   deletePackage,
   suggestCustomTour,
   uploadPackageImage,
+  seedPackages,
 } = require('../controllers/tourPackage.controller');
 
 const { authenticate } = require('../middleware/auth.middleware');
@@ -27,6 +28,7 @@ router.post('/suggest', requireRole(ROLES.CUSTOMER), suggestCustomTour);
 
 // Admin only routes
 router.use(requireRole(ROLES.ADMIN));
+router.post('/seed', seedPackages);
 router.post('/upload-image', uploadTourPackageImage, uploadPackageImage);
 router.post('/', uploadTourPackageImage, createPackage);
 router.put('/:id', uploadTourPackageImage, updatePackage);

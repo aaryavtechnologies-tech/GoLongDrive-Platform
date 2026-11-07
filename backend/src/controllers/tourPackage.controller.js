@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const logger = require('../utils/logger');
 const fs = require('fs');
 const path = require('path');
+const { seedTourPackages } = require('../seeds/seedTourPackages');
 
 const parseArray = (field) => {
   if (!field) return [];
@@ -266,5 +267,23 @@ exports.suggestCustomTour = async (req, res) => {
   } catch (error) {
     logger.error(`Error in suggestCustomTour: ${error.message}`);
     res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+// @desc    Seed default tour packages (Admin)
+// @route   POST /api/v1/tour-packages/seed
+// @access  Private (Admin)
+exports.seedPackages = async (req, res) => {
+  try {
+    const force = req.query.force === 'true' || req.body.force === true;
+    const result = await seedTourPackages(force);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      count: result.count,
+    });
+  } catch (error) {
+    logger.error(`Error in seedPackages: ${error.message}`);
+    res.status(500).json({ success: false, message: error.message });
   }
 };

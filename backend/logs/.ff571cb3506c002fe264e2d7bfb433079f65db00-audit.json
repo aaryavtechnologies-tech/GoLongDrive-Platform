@@ -9,6 +9,11 @@
             "date": 1793880570048,
             "name": "/Users/wefix/Documents/chirag-projects/GoLongDrive-Platform/backend/logs/application-2026-11-05.log",
             "hash": "136d6d43ee973fd45601676217644ca9568716fd9fe304d2721a76e43ad93899"
+        },
+        {
+            "date": 1794035999060,
+            "name": "/Users/wefix/Documents/chirag-projects/GoLongDrive-Platform/backend/logs/application-2026-11-07.log",
+            "hash": "f0aa6ba2c55e4c2db1fa5de4ed9bad1df3c769cce0932fdf178211e47c528a9c"
         }
     ],
     "hashType": "sha256"

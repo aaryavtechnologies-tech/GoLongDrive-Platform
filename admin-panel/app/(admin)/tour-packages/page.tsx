@@ -32,6 +32,7 @@ import {
 import { AddEditTourPackageDialog } from '@/components/tour-packages/AddEditTourPackageDialog';
 import { AssignTourDriverDialog } from '@/components/tour-packages/AssignTourDriverDialog';
 import { TourBookingDetailsDialog } from '@/components/tour-packages/TourBookingDetailsDialog';
+import { TourPackageDetailsDialog } from '@/components/tour-packages/TourPackageDetailsDialog';
 
 export default function TourPackagesPage() {
   const [activeTab, setActiveTab] = useState<'packages' | 'bookings'>('packages');
@@ -42,6 +43,9 @@ export default function TourPackagesPage() {
   const [packageSearch, setPackageSearch] = useState('');
   const [editingPackage, setEditingPackage] = useState<TourPackage | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [viewingPackage, setViewingPackage] = useState<TourPackage | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   // Bookings State
   const [bookings, setBookings] = useState<TourBooking[]>([]);
@@ -92,9 +96,28 @@ export default function TourPackagesPage() {
       await tourPackageService.deletePackage(id);
       toast.success('Tour package deleted successfully');
       setPackages((prev) => prev.filter((p) => p._id !== id));
+      if (viewingPackage?._id === id) {
+        setIsViewOpen(false);
+        setViewingPackage(null);
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.response?.data?.message || err.message || 'Failed to delete');
+    }
+  };
+
+  const handleSeedPackages = async () => {
+    if (!confirm('Populate database with curated tour packages with real Unsplash images? Existing packages will be refreshed.')) return;
+    setSeeding(true);
+    try {
+      const res = await tourPackageService.seedPackages(true);
+      toast.success(res.message || 'Seeded 8 tour packages successfully');
+      fetchPackages();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || 'Failed to seed packages');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -157,6 +180,18 @@ export default function TourPackagesPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={seeding}
+            onClick={handleSeedPackages}
+            className="border-yellow-400/40 text-yellow-400 hover:bg-yellow-400/10 text-xs font-semibold"
+            title="Populate curated tour packages with real Unsplash images"
+          >
+            <Compass className={`w-4 h-4 mr-1.5 ${seeding ? 'animate-spin' : ''}`} />
+            {seeding ? 'Seeding...' : 'Seed Curated Tours'}
+          </Button>
+
           <Button
             variant="outline"
             size="sm"
@@ -245,7 +280,13 @@ export default function TourPackagesPage() {
                   className="bg-zinc-900 border-zinc-800 shadow-xl overflow-hidden flex flex-col group hover:border-zinc-700 transition-all duration-300"
                 >
                   {/* Package Image */}
-                  <div className="h-44 w-full relative bg-zinc-950 overflow-hidden">
+                  <div
+                    onClick={() => {
+                      setViewingPackage(pkg);
+                      setIsViewOpen(true);
+                    }}
+                    className="h-44 w-full relative bg-zinc-950 overflow-hidden cursor-pointer"
+                  >
                     {pkg.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -259,13 +300,30 @@ export default function TourPackagesPage() {
                         <span className="text-xs">No image uploaded</span>
                       </div>
                     )}
-                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-yellow-400 border border-yellow-400/20">
+                    <div className="absolute top-3 left-3">
+                      <Badge
+                        className={`text-[10px] font-semibold ${
+                          pkg.isActive
+                            ? 'bg-emerald-500/90 text-white'
+                            : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
+                        }`}
+                      >
+                        {pkg.isActive ? 'Active' : 'Hidden'}
+                      </Badge>
+                    </div>
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-full text-xs font-semibold text-yellow-400 border border-yellow-400/20">
                       {pkg.days} Days / {pkg.nights || 0} Nights
                     </div>
                   </div>
 
                   <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-lg text-white font-bold line-clamp-1">
+                    <CardTitle
+                      onClick={() => {
+                        setViewingPackage(pkg);
+                        setIsViewOpen(true);
+                      }}
+                      className="text-lg text-white font-bold line-clamp-1 hover:text-yellow-400 cursor-pointer transition-colors"
+                    >
                       {pkg.title}
                     </CardTitle>
                     {pkg.route && (
@@ -324,6 +382,19 @@ export default function TourPackagesPage() {
                         size="sm"
                         variant="outline"
                         onClick={() => {
+                          setViewingPackage(pkg);
+                          setIsViewOpen(true);
+                        }}
+                        className="border-zinc-800 text-xs text-yellow-400 hover:text-yellow-300 hover:bg-yellow-400/10"
+                        title="View Full Package Details"
+                      >
+                        <Eye className="w-3.5 h-3.5 mr-1" />
+                        Details
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
                           setEditingPackage(pkg);
                           setIsEditOpen(true);
                         }}
@@ -332,6 +403,16 @@ export default function TourPackagesPage() {
                         <Edit className="w-3.5 h-3.5 mr-1" />
                         Edit
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeletePackage(pkg._id, pkg.title)}
+                        className="border-zinc-800 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                        title="Delete Package"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
                       <Button
                         size="sm"
                         variant="outline"
@@ -516,6 +597,23 @@ export default function TourPackagesPage() {
             </Card>
           )}
         </div>
+      )}
+
+      {/* View Package Details Dialog */}
+      {isViewOpen && (
+        <TourPackageDetailsDialog
+          pkg={viewingPackage}
+          isOpen={isViewOpen}
+          onClose={() => {
+            setIsViewOpen(false);
+            setViewingPackage(null);
+          }}
+          onEdit={(pkg) => {
+            setEditingPackage(pkg);
+            setIsEditOpen(true);
+          }}
+          onDelete={handleDeletePackage}
+        />
       )}
 
       {/* Edit Package Dialog */}

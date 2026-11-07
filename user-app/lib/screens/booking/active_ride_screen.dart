@@ -78,7 +78,18 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _rideAwaitingPaymentSub = UserSocketService.onRideAwaitingPayment.listen((data) {
       if (!mounted) return;
-      if (data['bookingId'] == widget.bookingId) {
+      final incomingId = (data['bookingId'] ?? data['_id'] ?? data['id'])?.toString();
+      final currentBookingId = widget.bookingId.toString();
+      final rideDocId = _rideDetails?['_id']?.toString();
+      final rideBookingId = _rideDetails?['bookingId']?.toString();
+
+      final matches = incomingId == currentBookingId ||
+          incomingId == rideDocId ||
+          incomingId == rideBookingId ||
+          currentBookingId == rideDocId ||
+          currentBookingId == rideBookingId;
+
+      if (matches) {
         setState(() {
           _isPaymentPending = true;
         });
@@ -90,7 +101,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _rideCompletedSub = UserSocketService.onRideCompleted.listen((data) {
       if (!mounted) return;
-      if (data['bookingId'] == widget.bookingId) {
+      final incomingId = (data['bookingId'] ?? data['_id'] ?? data['id'])?.toString();
+      final currentBookingId = widget.bookingId.toString();
+      final rideDocId = _rideDetails?['_id']?.toString();
+      final rideBookingId = _rideDetails?['bookingId']?.toString();
+
+      final matches = incomingId == currentBookingId ||
+          incomingId == rideDocId ||
+          incomingId == rideBookingId;
+
+      if (matches) {
         Navigator.of(context).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
       }
     });
@@ -103,8 +123,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         setState(() {
           _rideDetails = details;
           final status = (details['rideStatus'] ?? '').toString();
-          if (status == 'Awaiting Payment') {
+          if (status == 'Awaiting Payment' || status == 'AwaitingPayment') {
+            final wasPending = _isPaymentPending;
             _isPaymentPending = true;
+            if (!wasPending) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _startPayment();
+              });
+            }
           } else if (status == 'Driver Arrived') {
             _driverHasArrived = true;
           }
@@ -247,8 +273,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         : (_rideDetails!['estimatedFare'] ?? 100);
 
     try {
+      final effectiveBookingId = _rideDetails?['_id'] ?? _rideDetails?['bookingId'] ?? widget.bookingId;
       final orderRes = await BookingService.initiatePayment(
-        bookingId: widget.bookingId,
+        bookingId: effectiveBookingId,
         paymentMethod: 'Online',
       );
 
