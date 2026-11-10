@@ -10,36 +10,9 @@ Admin Login Details :
 email : admin@golongdrive.com
 password : admin123 
 
-
-Driver Login : 
-
+---- prompt which used to fix and make the apps and platform for it so ------------------------------------
 
 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-before making any changes on the system check my current booking system and explain me my logical error and 
-thing which i miss and make a plan with my suggestions and with yours too 
 
 okey so when i try to book the ride is getting book but is not asgin the drive if he is online or avaliable so for that
 fix it and also make the driver finding screen for the user app if the driver is asgin or finding and also play the
@@ -87,18 +60,37 @@ so make all the require changes in the system and make it user friendly and bug 
 and after the work complete make the checkpoint file to save the changes which you have done and also tell me about the changes which you have done and how you fix the logical errors and all. in another file 
 
 ---------------------------------------------------------------------
+prompt 1 : 
 
 on the driver app the redesign the earning screens the current theme and syles and that screen should be very user friendly and attractive and also it should be very user friendly to use and also make the 2 different types of earning screen (one is for today and other one is for lifetime) and also
-show the graph of total distance cover in and also correct states and calculations of the today and lifetime and also the total rides done by the driver. and also make the payout and wallet options working on the app and 
-also show the payout request and history screens so make new fews screens more if need to make this feature completly and working and also bug free 
+show the graph of total distance cover in and also correct states and calculations of the today and lifetime and also the total rides done by the driver. and also make the payout and wallet options working on the app and also show the payout request and history screens so make new fews screens more if need to make this feature completly and working and also bug free 
 
-on the admin panel give the option to give to make the drives earning and payment and payout managements and all. and also give the option to and mark as paid after they paid to the drivers . so make the all require changes in the system and make it user friendly and bug free and also update that in the driver apps payment or payout system, 
 
-and also give a option to view all the bookings history, upcoming bookings, cancelled bookings, ongoing bookings, completed bookings and details of each booking.
+prompt 2 : 
 
+
+
+
+on the admin panel give the option to give to make the drives earning and payment and payout managements and all. and also give the option to and mark as paid after they paid to the drivers . so make the all require changes in the system and make it user friendly and bug free and also update that in the driver apps payment or payout system, and also give a option to view all the bookings history, upcoming bookings, cancelled bookings, ongoing bookings, completed bookings and details of each booking.
 and also give the opion in the driver app that they also create or submit the support tickets for any problem they are facing and also in the user app they can also submit the support tickets for any problem they are facing. so make the require changes in the system and make it user friendly and bug free. 
-
 and also make the support tickets system in the admin panel too so manage the tickets in he admin panel so make the pages and all as required and also give the option to reply them and update the status of the ticket in both apps. and in the admin panel 
-
 and after conpleting the all the above task we have to make a checkpoint files for the all the changes and task and also tell me about the changes which you have done and how you fix the logical errors and all. in another file 
+
+
+
+prompt 3 : 
+
+
+on the user app the paymenet model is not open why fix that in the user aoo after the ride ends the payment model is not opening why and how the user will pay the paymement so fix that error in the user app 
+
+ when driver is assigned to user then it should show the driver details and car details to user and also show the live location of the driver and also show the route preview and the google maps direction for the driver too go from current location to pickup location to drop location and on each step of the navigation say the instruction like the google maps do and also lock the sreen when the 
+driver is on the ride.  and also when driver is arrived at the pickup location then it should automatically then driver have to tap on the confirm arriavl then ask the pin to the user to confirm the ride start then it should start the journey and from start journey to end journey it should track the live location and also calculate the fare base on the distance and time and also when driver reach the drop location then it should automatically calculate the fare and show the payment 
+option when driver end the ride open the rozarpay in user app to collect the payment and show the final ride details to user. and also update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
+
+for google maps thing driver app 
+   -> show the route preivew 
+   -> after the ride accpe show the google maps direction and turn by turn navigation until he reach the drop location 
+   -> then it should automatically calculate the fare and show the payment 
+   -> then driver have to tap on end ride to show the final payment and ride details
+   -> then it should update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
 
