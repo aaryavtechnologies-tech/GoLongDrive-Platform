@@ -122,7 +122,7 @@ const getBookingHistory = asyncHandler(async (req, res) => {
   const bookings = await Booking.find({ customer: customerId })
     .populate('customer', 'ridePin')
     .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
-    .populate('driver', 'fullName phoneNumber vehicleType')
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
     .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Booking history retrieved', { bookings });
 });
@@ -138,7 +138,7 @@ const getUpcomingBookings = asyncHandler(async (req, res) => {
     rideStatus: { $in: [RIDE_STATUS.PENDING, RIDE_STATUS.SEARCHING_DRIVER, RIDE_STATUS.DRIVER_ASSIGNED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.CONFIRMED] } 
   })
     .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
-    .populate('driver', 'fullName phoneNumber vehicleType')
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
     .sort({ pickupDate: 1 });
   return sendSuccess(res, 200, 'Upcoming bookings retrieved', { bookings });
 });
@@ -154,7 +154,7 @@ const getCompletedBookings = asyncHandler(async (req, res) => {
     rideStatus: RIDE_STATUS.TRIP_COMPLETED 
   })
     .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
-    .populate('driver', 'fullName phoneNumber vehicleType')
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
     .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Completed bookings retrieved', { bookings });
 });
@@ -170,7 +170,7 @@ const getCancelledBookings = asyncHandler(async (req, res) => {
     rideStatus: { $in: [RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN] } 
   })
     .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore')
-    .populate('driver', 'fullName phoneNumber vehicleType')
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
     .sort({ createdAt: -1 });
   return sendSuccess(res, 200, 'Cancelled bookings retrieved', { bookings });
 });

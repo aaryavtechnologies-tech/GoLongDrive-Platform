@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../core/data/api_service.dart';
 import '../../core/widgets/app_button.dart';
-import '../../core/widgets/card_decoration.dart';
 import 'payout_history_screen.dart';
 
 class PayoutRequestScreen extends StatefulWidget {

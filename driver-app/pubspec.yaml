@@ -19,6 +19,8 @@ dependencies:
   flutter_background_service: ^5.0.5
   flutter_local_notifications: ^17.1.2
   audioplayers: ^6.0.0
+  flutter_tts: ^4.2.2
+  wakelock_plus: ^1.2.8
   toastification: ^3.0.3
   shared_preferences: ^2.2.0
   flutter_secure_storage: ^9.2.4

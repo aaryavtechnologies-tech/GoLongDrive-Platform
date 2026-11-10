@@ -52,6 +52,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   bool _actionLoading = false;
   bool _isPaymentReceived = false;
   StreamSubscription? _paymentSub;
+  StreamSubscription? _completeSub;
 
   @override
   void initState() {
@@ -59,16 +60,29 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     _fetchCurrentRide();
     _paymentSub = SocketService.onPaymentReceived.listen((data) {
       if (!mounted) return;
-      if (_ride != null && data['bookingId'] == _ride!.id) {
+      final incId = (data['bookingId'] ?? data['_id'])?.toString();
+      if (_ride != null && incId == _ride!.id) {
         setState(() {
           _isPaymentReceived = true;
+          _stage = _TripStage.completed;
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Payment received! You can now complete the trip with passenger PIN.'),
+            content: Text('Payment confirmed! Trip completed.'),
             backgroundColor: AppColors.success,
           ),
         );
+      }
+    });
+
+    _completeSub = SocketService.onRideCompleted.listen((data) {
+      if (!mounted) return;
+      final incId = (data['bookingId'] ?? data['_id'])?.toString();
+      if (_ride != null && incId == _ride!.id) {
+        setState(() {
+          _stage = _TripStage.completed;
+          _isPaymentReceived = true;
+        });
       }
     });
   }
@@ -76,7 +90,47 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   @override
   void dispose() {
     _paymentSub?.cancel();
+    _completeSub?.cancel();
     super.dispose();
+  }
+
+  Future<void> _confirmCashCollected() async {
+    if (_ride == null || _actionLoading) return;
+    setState(() => _actionLoading = true);
+    try {
+      final res = await ApiService.post(
+        '/driver/bookings/rides/${_ride!.id}/complete',
+        body: {'cashCollected': true},
+      );
+      if (res.statusCode == 200) {
+        if (mounted) {
+          setState(() {
+            _stage = _TripStage.completed;
+            _isPaymentReceived = true;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Cash payment confirmed! Trip completed.'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        }
+      } else {
+        String msg = 'Failed to confirm cash payment.';
+        try {
+          msg = jsonDecode(res.body)['message'] ?? msg;
+        } catch (_) {}
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error')));
+      }
+    } finally {
+      if (mounted) setState(() => _actionLoading = false);
+    }
   }
 
   Future<void> _fetchCurrentRide() async {
@@ -597,7 +651,7 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                           ),
 
                         // --- Payment Status Card if Awaiting Payment ---
-                        if (_stage == _TripStage.awaitingPayment)
+                        if (_stage == _TripStage.awaitingPayment) ...[
                           Container(
                             padding: const EdgeInsets.all(20),
                             margin: const EdgeInsets.only(bottom: 16),
@@ -641,39 +695,34 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   _isPaymentReceived
-                                      ? 'The passenger has completed online payment! Please enter their completion PIN to finalize the trip.'
-                                      : 'Passenger is completing payment on their app. Please wait or collect cash if chosen.',
+                                      ? 'Payment has been confirmed! Trip completed.'
+                                      : 'Passenger is paying via Razorpay on their app. If passenger pays cash, tap Confirm Cash below.',
                                   style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                                 ),
                               ],
                             ),
                           ),
-
-                        // --- Google Maps Button ---
-                        if (_stage != _TripStage.completed)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: SizedBox(
-                              width: double.infinity,
-                              child: OutlinedButton.icon(
-                                onPressed: _openGoogleMaps,
-                                icon: const Icon(Icons.map, color: AppColors.gold),
-                                label: const Text('Open in Google Maps',
-                                    style: TextStyle(
-                                        color: AppColors.gold,
-                                        fontWeight: FontWeight.bold)),
-                                style: OutlinedButton.styleFrom(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 16),
-                                  side: BorderSide(
-                                      color:
-                                          AppColors.gold.withValues(alpha: 0.5)),
-                                  shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12)),
+                          if (!_isPaymentReceived)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton.icon(
+                                  onPressed: _actionLoading ? null : _confirmCashCollected,
+                                  icon: const Icon(Icons.payments, color: Colors.black),
+                                  label: Text(
+                                    'Confirm Cash Received (₹${ride.fare.round()})',
+                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
+                                  ),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.success,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                        ],
 
                       // --- RideTimeline (pickup / drop) ---
                       Container(

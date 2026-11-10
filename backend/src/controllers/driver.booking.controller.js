@@ -191,16 +191,21 @@ const arriveRide = asyncHandler(async (req, res) => {
   const { getCustomerSocket, getIO } = require('../config/socket');
   try {
     const io = getIO();
+    const payload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      message: 'Your driver has arrived at the pickup location!',
+      ridePin: booking.customer?.ridePin || '',
+    };
     if (booking.customer) {
       const custId = booking.customer._id || booking.customer;
       const socketId = getCustomerSocket(custId);
       if (socketId) {
-        io.to(socketId).emit('ride:driver_arrived', {
-          bookingId: booking.bookingId,
-          message: 'Your driver has arrived at the pickup location!',
-        });
+        io.to(socketId).emit('ride:driver_arrived', payload);
       }
     }
+    io.to(`ride:${booking.bookingId}`).emit('ride:driver_arrived', payload);
+    io.to(`ride:${booking._id}`).emit('ride:driver_arrived', payload);
   } catch (err) {
     console.error('Socket notification error on arrive:', err.message);
   }
@@ -216,7 +221,8 @@ const arriveRide = asyncHandler(async (req, res) => {
  */
 const startRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const { otp, startLat, startLng } = req.body;
+  const { otp, pin, startLat, startLng } = req.body;
+  const inputPin = otp || pin;
   
   const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
@@ -226,10 +232,10 @@ const startRide = asyncHandler(async (req, res) => {
   }
 
   // Validate OTP against customer's ridePin
-  if (!otp) {
+  if (!inputPin) {
     throw ApiError.badRequest('OTP (Ride PIN) is required to start the trip');
   }
-  if (booking.customer && booking.customer.ridePin !== otp) {
+  if (booking.customer && booking.customer.ridePin && booking.customer.ridePin !== inputPin) {
     throw ApiError.badRequest('Invalid OTP. Please check with the passenger.');
   }
 
@@ -248,13 +254,20 @@ const startRide = asyncHandler(async (req, res) => {
   try {
     const { getCustomerSocket, getIO } = require('../config/socket');
     const io = getIO();
+    const payload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      message: 'Your journey has started!',
+    };
     if (booking.customer) {
       const custId = booking.customer._id || booking.customer;
       const socketId = getCustomerSocket(custId);
       if (socketId) {
-        io.to(socketId).emit('ride:started', { bookingId: booking.bookingId });
+        io.to(socketId).emit('ride:started', payload);
       }
     }
+    io.to(`ride:${booking.bookingId}`).emit('ride:started', payload);
+    io.to(`ride:${booking._id}`).emit('ride:started', payload);
   } catch (err) {
     console.error('Socket error on start ride:', err.message);
   }
@@ -298,18 +311,22 @@ const endRide = asyncHandler(async (req, res) => {
   try {
     const { getCustomerSocket, getIO } = require('../config/socket');
     const io = getIO();
+    const payload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      finalFare: booking.finalFare,
+      actualDistance: booking.actualDistance,
+      actualDuration: booking.actualDuration,
+    };
     if (booking.customer) {
       const custId = booking.customer._id || booking.customer;
       const socketId = getCustomerSocket(custId);
       if (socketId) {
-        io.to(socketId).emit('ride:awaiting_payment', {
-          bookingId: booking.bookingId,
-          finalFare: booking.finalFare,
-          actualDistance: booking.actualDistance,
-          actualDuration: booking.actualDuration,
-        });
+        io.to(socketId).emit('ride:awaiting_payment', payload);
       }
     }
+    io.to(`ride:${booking.bookingId}`).emit('ride:awaiting_payment', payload);
+    io.to(`ride:${booking._id}`).emit('ride:awaiting_payment', payload);
   } catch (err) {
     console.error('Socket error on end ride:', err.message);
   }
@@ -329,26 +346,43 @@ const endRide = asyncHandler(async (req, res) => {
  */
 const completeRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const { otp } = req.body;
+  const { otp, pin, cashCollected } = req.body;
   const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
-  if (booking.rideStatus !== RIDE_STATUS.AWAITING_PAYMENT) {
-    throw ApiError.badRequest('Cannot complete trip. Trip must be awaiting payment first.');
+  if (booking.rideStatus !== RIDE_STATUS.AWAITING_PAYMENT && booking.rideStatus !== RIDE_STATUS.TRIP_STARTED) {
+    throw ApiError.badRequest(`Cannot complete trip. Current status is ${booking.rideStatus}`);
   }
 
-  // Validate OTP against customer's ridePin again
-  if (!otp) {
-    throw ApiError.badRequest('OTP (Ride PIN) is required to complete the trip');
-  }
-  if (booking.customer && booking.customer.ridePin !== otp) {
-    throw ApiError.badRequest('Invalid OTP. Please check with the passenger.');
+  // Check if payment is completed online or cash collected
+  let payment = await Payment.findOne({ booking: booking._id, paymentStatus: 'Paid' });
+  const isCash = cashCollected === true || booking.paymentMethod === 'Cash';
+
+  if (!payment && !isCash) {
+    throw ApiError.badRequest('Payment has not been completed by the customer yet. Please confirm cash or wait for online payment.');
   }
 
-  // Check if payment is completed
-  const payment = await Payment.findOne({ booking: booking._id, paymentStatus: 'Paid' });
-  if (!payment && booking.paymentMethod !== 'Cash') {
-    throw ApiError.badRequest('Payment has not been completed by the customer yet.');
+  if (isCash && (!payment || payment.paymentStatus !== 'Paid')) {
+    booking.paymentMethod = 'Cash';
+    booking.paymentStatus = 'Paid';
+    if (!payment) {
+      payment = new Payment({
+        paymentId: `PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
+        booking: booking._id,
+        customer: booking.customer?._id || booking.customer,
+        driver: driverId,
+        amount: booking.finalFare || booking.estimatedFare,
+        paymentMethod: 'Cash',
+        paymentStatus: 'Paid',
+        paymentDate: new Date(),
+      });
+      await payment.save();
+    } else {
+      payment.paymentStatus = 'Paid';
+      payment.paymentMethod = 'Cash';
+      payment.paymentDate = new Date();
+      await payment.save();
+    }
   }
 
   booking.rideStatus = RIDE_STATUS.TRIP_COMPLETED;
@@ -356,15 +390,13 @@ const completeRide = asyncHandler(async (req, res) => {
   await booking.save();
 
   // Generate earning record
-  // Driver gets finalFare minus platform fee (e.g. 10%)
   const Setting = require('../models/Setting.model');
   const settings = await Setting.findOne();
   const feePercent = settings?.platformFeePercentage || 10;
-  const platformFee = (booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare) * (feePercent / 100);
+  const fare = booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare;
+  const platformFee = fare * (feePercent / 100);
   
-  // If cash, the driver has collected the full amount. We still generate an earning record, 
-  // but it might reduce their wallet balance by the platform fee.
-  await generateEarningRecord(booking, platformFee, booking.paymentMethod === 'Cash');
+  await generateEarningRecord(booking, platformFee, booking.paymentMethod === 'Cash').catch(err => console.error('Earning error:', err));
 
   // Mark driver available again
   await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
@@ -372,20 +404,33 @@ const completeRide = asyncHandler(async (req, res) => {
   await addTimelineEntry(booking._id, 'Trip Completed', driverId, 'Driver completed the trip');
 
   try {
-    const { getCustomerSocket, getIO } = require('../config/socket');
+    const { getCustomerSocket, getDriverSocket, getIO } = require('../config/socket');
     const io = getIO();
+    const payload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      finalFare: booking.finalFare,
+      paymentStatus: 'Paid',
+    };
     if (booking.customer) {
       const custId = booking.customer._id || booking.customer;
       const socketId = getCustomerSocket(custId);
       if (socketId) {
-        io.to(socketId).emit('ride:completed', { bookingId: booking.bookingId });
+        io.to(socketId).emit('payment:confirmed', { bookingId: booking.bookingId, amount: fare });
+        io.to(socketId).emit('ride:completed', payload);
       }
     }
+    const driverSock = getDriverSocket(driverId);
+    if (driverSock) {
+      io.to(driverSock).emit('ride:completed', payload);
+    }
+    io.to(`ride:${booking.bookingId}`).emit('ride:completed', payload);
+    io.to(`ride:${booking._id}`).emit('ride:completed', payload);
   } catch (err) {
     console.error('Socket error on complete ride:', err.message);
   }
 
-  emitBookingEvent('ride:completed', { bookingId: booking.bookingId });
+  emitBookingEvent('ride:completed', { bookingId: booking.bookingId, _id: booking._id });
 
   return sendSuccess(res, 200, 'Trip completed', { booking });
 });

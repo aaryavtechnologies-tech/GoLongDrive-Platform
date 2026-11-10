@@ -64,23 +64,68 @@ const verifyPayment = asyncHandler(async (req, res) => {
     const booking = await Booking.findById(payment.booking);
     if (booking) {
       booking.paymentStatus = 'Paid';
+      booking.rideStatus = 'Trip Completed';
+      booking.completedAt = new Date();
       await booking.save();
 
-      const { getDriverSocket, getIO } = require('../config/socket');
+      // Free driver and calculate earnings
       if (booking.driver) {
-        const driverSock = getDriverSocket(booking.driver);
-        if (driverSock) {
-          getIO().to(driverSock).emit('payment:received', {
-            bookingId: booking.bookingId,
-            paymentId: payment._id,
-            amount: payment.amount,
-          });
-        }
+        const Driver = require('../models/Driver.model');
+        const { AVAILABILITY_STATUS } = require('../utils/constants');
+        await Driver.findByIdAndUpdate(booking.driver, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
+
+        const { generateEarningRecord } = require('../services/earning.service');
+        const Setting = require('../models/Setting.model');
+        const settings = await Setting.findOne();
+        const feePercent = settings?.platformFeePercentage || 10;
+        const platformFee = (booking.finalFare > 0 ? booking.finalFare : booking.estimatedFare) * (feePercent / 100);
+        await generateEarningRecord(booking, platformFee, false).catch(err => console.error('Earning record failed:', err));
       }
+
+      // Notify both customer and driver via direct sockets and ride room
+      const { getDriverSocket, getCustomerSocket, getIO } = require('../config/socket');
+      try {
+        const io = getIO();
+        const rideCompletedPayload = {
+          bookingId: booking.bookingId,
+          _id: booking._id,
+          finalFare: booking.finalFare,
+          paymentStatus: 'Paid',
+        };
+
+        if (booking.driver) {
+          const driverSock = getDriverSocket(booking.driver);
+          if (driverSock) {
+            io.to(driverSock).emit('payment:received', {
+              bookingId: booking.bookingId,
+              paymentId: payment._id,
+              amount: payment.amount,
+            });
+            io.to(driverSock).emit('ride:completed', rideCompletedPayload);
+          }
+        }
+
+        if (booking.customer) {
+          const custSock = getCustomerSocket(booking.customer);
+          if (custSock) {
+            io.to(custSock).emit('payment:confirmed', { bookingId: booking.bookingId, amount: payment.amount });
+            io.to(custSock).emit('ride:completed', rideCompletedPayload);
+          }
+        }
+
+        io.to(`ride:${booking.bookingId}`).emit('ride:completed', rideCompletedPayload);
+        io.to(`ride:${booking._id}`).emit('ride:completed', rideCompletedPayload);
+      } catch (sockErr) {
+        console.error('Socket emission error on payment verify:', sockErr.message);
+      }
+
       emitBookingEvent('payment:received', {
         bookingId: booking.bookingId,
         paymentId: payment._id,
         amount: payment.amount,
+      });
+      emitBookingEvent('ride:completed', {
+        bookingId: booking.bookingId,
       });
     }
   }

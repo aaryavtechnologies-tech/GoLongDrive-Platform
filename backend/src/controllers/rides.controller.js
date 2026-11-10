@@ -247,7 +247,7 @@ const bookRide = asyncHandler(async (req, res) => {
 const getRideDetails = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne(getBookingQuery(req.params.id))
     .populate('customer', 'fullName email phoneNumber ridePin')
-    .populate('driver', 'fullName phoneNumber profileImage vehicleType');
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating');
 
   if (!booking) throw ApiError.notFound('Booking not found');
 
@@ -260,7 +260,7 @@ const getRideDetails = asyncHandler(async (req, res) => {
 const getBoardingPass = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne(getBookingQuery(req.params.id))
     .populate('customer', 'fullName email phoneNumber ridePin')
-    .populate('driver', 'fullName phoneNumber profileImage vehicleType');
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating');
 
   if (!booking) throw ApiError.notFound('Booking not found');
 
@@ -338,22 +338,47 @@ const initiateRidePayment = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne(getBookingQuery(bookingId));
   if (!booking) throw ApiError.notFound('Booking not found');
 
-  let advanceAmount = booking.advanceAmount;
-  if (paymentMethod === PAYMENT_METHODS.ONLINE) {
-    advanceAmount = booking.estimatedFare;
+  // Handle Cash Payment option
+  if (paymentMethod === 'Cash' || paymentMethod === PAYMENT_METHODS.CASH) {
+    booking.paymentMethod = 'Cash';
+    await booking.save();
+
+    try {
+      const { getDriverSocket, getIO } = require('../config/socket');
+      if (booking.driver) {
+        const driverSock = getDriverSocket(booking.driver);
+        if (driverSock) {
+          getIO().to(driverSock).emit('payment:cash_selected', {
+            bookingId: booking.bookingId,
+            fare: booking.finalFare || booking.estimatedFare,
+          });
+        }
+      }
+    } catch (_) {}
+
+    return sendSuccess(res, 200, 'Cash payment selected', {
+      paymentMethod: 'Cash',
+      amount: booking.finalFare || booking.estimatedFare,
+    });
   }
 
+  // Handle Online (Razorpay) payment order creation
+  const fareToPay = (booking.finalFare && Number(booking.finalFare) > 0)
+    ? Number(booking.finalFare)
+    : (Number(booking.estimatedFare) || 100);
+
   const { payment, orderDetails } = await paymentService.createPaymentOrder({
-    bookingId,
+    bookingId: booking._id,
     customerId,
-    advanceAmount,
-    totalAmount: booking.estimatedFare,
-    paymentMethod: paymentMethod || PAYMENT_METHODS.PARTIAL_ADVANCE,
+    amount: fareToPay,
+    paymentMethod: paymentMethod || PAYMENT_METHODS.ONLINE,
   });
 
   return sendSuccess(res, 200, 'Payment initiated', {
     paymentId: payment.paymentId,
     order: orderDetails,
+    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_51bU28k12xyz',
+    amount: fareToPay,
   });
 });
 

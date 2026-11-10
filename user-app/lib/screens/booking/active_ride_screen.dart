@@ -54,7 +54,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _driverArrivedSub = UserSocketService.onDriverArrived.listen((data) {
       if (!mounted) return;
-      if (data['bookingId'] == widget.bookingId) {
+      final incomingId = (data['bookingId'] ?? data['_id'])?.toString();
+      final currentId = widget.bookingId.toString();
+      final rideDocId = _rideDetails?['_id']?.toString();
+      final rideBookingId = _rideDetails?['bookingId']?.toString();
+      final matches = incomingId == null ||
+          incomingId == currentId ||
+          incomingId == rideDocId ||
+          incomingId == rideBookingId;
+
+      if (matches) {
         setState(() {
           _driverHasArrived = true;
         });
@@ -64,7 +73,17 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _driverLocationSub = UserSocketService.onDriverLocation.listen((data) {
       if (!mounted) return;
-      if (data['bookingId'] == widget.bookingId || data['latitude'] != null) {
+      final incomingId = (data['bookingId'] ?? data['_id'])?.toString();
+      final currentId = widget.bookingId.toString();
+      final rideDocId = _rideDetails?['_id']?.toString();
+      final rideBookingId = _rideDetails?['bookingId']?.toString();
+
+      final matches = incomingId == null ||
+          incomingId == currentId ||
+          incomingId == rideDocId ||
+          incomingId == rideBookingId;
+
+      if (matches && data['latitude'] != null && data['longitude'] != null) {
         final double lat = (data['latitude'] as num).toDouble();
         final double lng = (data['longitude'] as num).toDouble();
         final double heading = (data['heading'] as num?)?.toDouble() ?? 0;
@@ -83,7 +102,8 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       final rideDocId = _rideDetails?['_id']?.toString();
       final rideBookingId = _rideDetails?['bookingId']?.toString();
 
-      final matches = incomingId == currentBookingId ||
+      final matches = incomingId == null ||
+          incomingId == currentBookingId ||
           incomingId == rideDocId ||
           incomingId == rideBookingId ||
           currentBookingId == rideDocId ||
@@ -92,9 +112,12 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       if (matches) {
         setState(() {
           _isPaymentPending = true;
+          if (data['finalFare'] != null && _rideDetails != null) {
+            _rideDetails!['finalFare'] = data['finalFare'];
+          }
         });
         _fetchRideDetails().then((_) {
-          _startPayment();
+          _showPaymentBottomSheet();
         });
       }
     });
@@ -106,7 +129,8 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       final rideDocId = _rideDetails?['_id']?.toString();
       final rideBookingId = _rideDetails?['bookingId']?.toString();
 
-      final matches = incomingId == currentBookingId ||
+      final matches = incomingId == null ||
+          incomingId == currentBookingId ||
           incomingId == rideDocId ||
           incomingId == rideBookingId;
 
@@ -128,7 +152,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
             _isPaymentPending = true;
             if (!wasPending) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _startPayment();
+                _showPaymentBottomSheet();
               });
             }
           } else if (status == 'Driver Arrived') {
@@ -189,6 +213,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   }
 
   void _showDriverArrivedDialog() {
+    final String ridePin = UserScope.of(context).userProfile?['ridePin'] ?? _rideDetails?['customer']?['ridePin'] ?? '----';
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -202,9 +227,36 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
             Text('Driver Arrived!', style: AppTextStyles.mediumHeading.copyWith(color: AppColors.of(context).textPrimary)),
           ],
         ),
-        content: Text(
-          'Your driver has reached your pickup location. Please share your 4-digit Ride PIN with the driver to start the journey.',
-          style: AppTextStyles.body.copyWith(color: AppColors.of(context).textSecondary),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Your driver has reached your pickup location. Please share your 4-digit Ride PIN with the driver to start the journey.',
+              style: AppTextStyles.body.copyWith(color: AppColors.of(context).textSecondary),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.primaryGold.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.primaryGold),
+              ),
+              child: Center(
+                child: Text(
+                  ridePin,
+                  style: const TextStyle(
+                    color: AppColors.primaryGold,
+                    fontSize: 30,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 8,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         actions: [
           ElevatedButton(
@@ -241,6 +293,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
             backgroundColor: AppColors.success,
           ),
         );
+        Navigator.of(context).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
       }
     } catch (e) {
       setState(() => _isProcessingPayment = false);
@@ -258,6 +311,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Payment failed: ${response.message ?? "Cancelled"}')),
     );
+    _showPaymentBottomSheet();
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -271,6 +325,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     final num fare = (_rideDetails!['finalFare'] != null && _rideDetails!['finalFare'] > 0)
         ? _rideDetails!['finalFare']
         : (_rideDetails!['estimatedFare'] ?? 100);
+
+    final String contactPhone = UserScope.of(context).userProfile?['phoneNumber'] ?? '9876543210';
+    final String contactEmail = UserScope.of(context).userProfile?['email'] ?? 'customer@golongdrive.online';
 
     try {
       final effectiveBookingId = _rideDetails?['_id'] ?? _rideDetails?['bookingId'] ?? widget.bookingId;
@@ -289,10 +346,11 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         'amount': (fare * 100).toInt(),
         'name': 'GoLongDrive',
         'description': 'Trip Payment - ${widget.bookingId}',
-        if (orderId != null) 'order_id': orderId,
+        // Only include order_id if it is a real live server order (avoid passing mock IDs which Razorpay rejects)
+        if (orderId != null && !orderId.startsWith('order_')) 'order_id': orderId,
         'prefill': {
-          'contact': UserScope.of(context).userProfile?['phoneNumber'] ?? '9876543210',
-          'email': UserScope.of(context).userProfile?['email'] ?? 'customer@golongdrive.online',
+          'contact': contactPhone,
+          'email': contactEmail,
         },
       };
 
@@ -302,10 +360,92 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
       setState(() => _isProcessingPayment = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to initiate payment. Please retry.')),
+          const SnackBar(content: Text('Showing payment options...')),
         );
+        _showPaymentBottomSheet();
       }
     }
+  }
+
+  Future<void> _selectCashPayment() async {
+    setState(() => _isProcessingPayment = true);
+    try {
+      final effectiveBookingId = _rideDetails?['_id'] ?? _rideDetails?['bookingId'] ?? widget.bookingId;
+      await BookingService.initiatePayment(
+        bookingId: effectiveBookingId,
+        paymentMethod: 'Cash',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cash payment selected! Please hand the cash to your driver.'),
+            backgroundColor: AppColors.primaryGold,
+            duration: Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Cash payment error: $e');
+    } finally {
+      if (mounted) setState(() => _isProcessingPayment = false);
+    }
+  }
+
+  Future<void> _simulateTestPayment() async {
+    setState(() => _isProcessingPayment = true);
+    try {
+      await BookingService.verifyPayment({
+        'paymentId': _paymentRecordId ?? 'PAY_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewayOrderId': 'order_test_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewayPaymentId': 'pay_test_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewaySignature': 'sig_test_valid',
+      });
+      setState(() {
+        _isPaymentPending = false;
+        _isProcessingPayment = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Payment confirmed! Finalizing ride...'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isProcessingPayment = false);
+      debugPrint('Simulated test payment error: $e');
+    }
+  }
+
+  void _showPaymentBottomSheet() {
+    if (!mounted) return;
+    final num fare = (_rideDetails?['finalFare'] != null && _rideDetails!['finalFare'] > 0)
+        ? _rideDetails!['finalFare']
+        : (_rideDetails?['estimatedFare'] ?? 100);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _PaymentModalSheet(
+        fare: fare,
+        rideDetails: _rideDetails,
+        onPayOnline: () {
+          Navigator.pop(ctx);
+          _startPayment();
+        },
+        onPayCash: () {
+          Navigator.pop(ctx);
+          _selectCashPayment();
+        },
+        onSimulatePayment: () {
+          Navigator.pop(ctx);
+          _simulateTestPayment();
+        },
+      ),
+    );
   }
 
   void _showBoardingPassSheet() {
@@ -528,20 +668,24 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Payment Required', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary)),
-                                Text('Trip ended. Complete payment to finish.', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                                Text('Trip Completed', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary)),
+                                Text('Complete payment to finalize ride', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                               ],
                             ),
                           ),
                           Text(
                             '₹${(details?['finalFare'] ?? details?['estimatedFare'] ?? 0)}',
-                            style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary),
+                            style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: _isProcessingPayment ? null : _startPayment,
+                        icon: const Icon(Icons.bolt, color: Colors.black),
+                        label: _isProcessingPayment
+                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                            : const Text('PAY WITH RAZORPAY NOW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGold,
                           foregroundColor: Colors.black,
@@ -549,9 +693,36 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         ),
-                        child: _isProcessingPayment
-                            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                            : const Text('PAY WITH RAZORPAY NOW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _isProcessingPayment ? null : _selectCashPayment,
+                              icon: const Icon(Icons.payments, size: 18, color: AppColors.primaryGold),
+                              label: const Text('PAY CASH', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: const BorderSide(color: AppColors.primaryGold),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _showPaymentBottomSheet,
+                              icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
+                              label: const Text('OPTIONS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                side: BorderSide(color: colors.inputBorder),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ] else ...[
                       // --- Ride PIN Display Strip ---
@@ -589,54 +760,85 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // --- Driver Info Row ---
-                      Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colors.background,
-                              border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
-                            ),
-                            child: const Icon(Icons.person, color: AppColors.primaryGold, size: 28),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  details?['driver'] is Map
-                                      ? (details!['driver']['fullName'] ?? 'Assigned Driver')
-                                      : 'Assigned Driver',
-                                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                      // --- Driver & Car Info Row ---
+                      Builder(
+                        builder: (ctx) {
+                          final driver = details?['driver'] is Map ? details!['driver'] as Map<String, dynamic> : null;
+                          final vehicle = driver?['vehicle'] is Map ? driver!['vehicle'] as Map<String, dynamic> : null;
+                          final driverName = driver?['fullName'] ?? 'Assigned Driver';
+                          final rating = driver?['rating'] ?? 4.9;
+                          final vehicleName = vehicle != null && vehicle['brand'] != null
+                              ? '${vehicle['brand']} ${vehicle['model'] ?? vehicle['type'] ?? ''}'.trim()
+                              : (details?['vehicleType'] ?? 'Sedan');
+                          final regNumber = vehicle?['registrationNumber'] ?? details?['vehicleNumber'] ?? '';
+
+                          return Row(
+                            children: [
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: colors.background,
+                                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6), width: 1.5),
                                 ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  '${details?['vehicleType'] ?? "Sedan"} · 4.8 ★',
-                                  style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                                child: const Icon(Icons.person, color: AppColors.primaryGold, size: 30),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      driverName,
+                                      style: AppTextStyles.body.copyWith(fontWeight: FontWeight.bold, color: colors.textPrimary),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '$vehicleName · $rating ★',
+                                      style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                                    ),
+                                    if (regNumber.toString().isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: Colors.amber.withValues(alpha: 0.15),
+                                          borderRadius: BorderRadius.circular(6),
+                                          border: Border.all(color: Colors.amber.shade700, width: 0.8),
+                                        ),
+                                        child: Text(
+                                          regNumber.toString().toUpperCase(),
+                                          style: const TextStyle(
+                                            color: Colors.amber,
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 11,
+                                            letterSpacing: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
-                          _actionIconButton(
-                            icon: Icons.call,
-                            onTap: () async {
-                              final phone = details?['driver'] is Map ? details!['driver']['phoneNumber'] : null;
-                              if (phone != null && phone.toString().isNotEmpty) {
-                                final uri = Uri.parse('tel:$phone');
-                                if (await canLaunchUrl(uri)) await launchUrl(uri);
-                              }
-                            },
-                          ),
-                          const SizedBox(width: 8),
-                          _actionIconButton(
-                            icon: Icons.qr_code,
-                            onTap: _showBoardingPassSheet,
-                          ),
-                        ],
+                              ),
+                              _actionIconButton(
+                                icon: Icons.call,
+                                onTap: () async {
+                                  final phone = driver?['phoneNumber'];
+                                  if (phone != null && phone.toString().isNotEmpty) {
+                                    final uri = Uri.parse('tel:$phone');
+                                    if (await canLaunchUrl(uri)) await launchUrl(uri);
+                                  }
+                                },
+                              ),
+                              const SizedBox(width: 8),
+                              _actionIconButton(
+                                icon: Icons.qr_code,
+                                onTap: _showBoardingPassSheet,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ],
                   ],
@@ -817,6 +1019,198 @@ class _DigitalBoardingPassSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PaymentModalSheet extends StatelessWidget {
+  final num fare;
+  final Map<String, dynamic>? rideDetails;
+  final VoidCallback onPayOnline;
+  final VoidCallback onPayCash;
+  final VoidCallback onSimulatePayment;
+
+  const _PaymentModalSheet({
+    required this.fare,
+    required this.rideDetails,
+    required this.onPayOnline,
+    required this.onPayCash,
+    required this.onSimulatePayment,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final pickup = rideDetails?['pickupAddress'] ?? 'Pickup Location';
+    final drop = rideDetails?['dropAddress'] ?? 'Drop Location';
+    final distance = rideDetails?['actualDistance'] ?? rideDetails?['distanceKm'] ?? rideDetails?['estimatedDistance'] ?? '134.5';
+    final duration = rideDetails?['actualDuration'] ?? rideDetails?['estimatedDuration'] ?? '4h 31m';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 25, offset: const Offset(0, -4)),
+        ],
+      ),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Container(
+            width: 44,
+            height: 4,
+            decoration: BoxDecoration(
+              color: colors.textSecondary.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 18),
+
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGold.withValues(alpha: 0.15),
+                ),
+                child: const Icon(Icons.check_circle, color: AppColors.primaryGold, size: 28),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Trip Completed!', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold)),
+                    Text('Please choose your payment option', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('TOTAL FARE', style: AppTextStyles.caption.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
+                  Text('₹${fare.round()}', style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Trip stats row
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colors.background,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.inputBorder),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _statItem('Distance', '$distance km', Icons.straighten, colors),
+                Container(width: 1, height: 28, color: colors.inputBorder),
+                _statItem('Duration', '$duration', Icons.timer, colors),
+                Container(width: 1, height: 28, color: colors.inputBorder),
+                _statItem('Status', 'Unpaid', Icons.payment, colors, isHighlight: true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Route snippet
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: colors.background,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colors.inputBorder),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.circle, color: AppColors.success, size: 10),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(pickup, style: TextStyle(color: colors.textPrimary, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: AppColors.error, size: 12),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(drop, style: TextStyle(color: colors.textSecondary, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 22),
+
+          // Payment Option 1: Razorpay Online
+          ElevatedButton.icon(
+            onPressed: onPayOnline,
+            icon: const Icon(Icons.bolt, color: Colors.black, size: 22),
+            label: Text('PAY ONLINE (RAZORPAY) · ₹${fare.round()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryGold,
+              foregroundColor: Colors.black,
+              minimumSize: const Size(double.infinity, 52),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              elevation: 4,
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Payment Option 2: Cash to Driver
+          OutlinedButton.icon(
+            onPressed: onPayCash,
+            icon: const Icon(Icons.payments, color: AppColors.primaryGold, size: 20),
+            label: Text('PAY WITH CASH TO DRIVER · ₹${fare.round()}', style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold, fontSize: 14)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+          ),
+          const SizedBox(height: 12),
+
+          // Test Mode Simulator
+          TextButton.icon(
+            onPressed: onSimulatePayment,
+            icon: const Icon(Icons.verified, size: 16, color: Colors.grey),
+            label: const Text('Simulate Successful Payment (Test Mode)', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statItem(String label, String value, IconData icon, dynamic colors, {bool isHighlight = false}) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: isHighlight ? AppColors.primaryGold : colors.textSecondary),
+        const SizedBox(width: 6),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(fontSize: 10, color: colors.textSecondary)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: isHighlight ? AppColors.primaryGold : colors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

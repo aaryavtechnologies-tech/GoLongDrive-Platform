@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../app/theme.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/directions_service.dart';
@@ -41,6 +43,8 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
   GoogleMapController? _mapController;
   StreamSubscription<Position>? _positionSub;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterTts _flutterTts = FlutterTts();
+  String? _lastSpokenInstruction;
 
   RouteResult? _route;
   bool _loadingRoute = true;
@@ -66,6 +70,13 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
   }
 
   Future<void> _init() async {
+    try {
+      await WakelockPlus.enable();
+      await _flutterTts.setLanguage('en-IN');
+      await _flutterTts.setSpeechRate(0.5);
+      await _flutterTts.setVolume(1.0);
+    } catch (_) {}
+
     await _ensureLocationPermission();
     await _loadRoute();
     _startLocationUpdates();
@@ -113,7 +124,12 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
       _loadingRoute = false;
       _driverPos ??= origin;
     });
-    if (result != null) _recenterCamera();
+    if (result != null) {
+      _recenterCamera();
+      if (result.steps.isNotEmpty) {
+        _speakInstruction(result.steps.first.instruction);
+      }
+    }
   }
 
   void _startLocationUpdates() {
@@ -187,6 +203,19 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     } catch (_) {}
   }
 
+  Future<void> _speakInstruction(String? raw) async {
+    if (raw == null) return;
+    final clean = raw.replaceAll(RegExp(r'<[^>]*>'), '').replaceAll('&nbsp;', ' ').trim();
+    if (clean.isEmpty || clean == _lastSpokenInstruction) return;
+    _lastSpokenInstruction = clean;
+    try {
+      await _flutterTts.stop();
+      await _flutterTts.speak(clean);
+    } catch (_) {
+      _playInstructionChime();
+    }
+  }
+
   void _advanceStepIfNeeded(LatLng pos) {
     final steps = _route?.steps;
     if (steps == null || steps.isEmpty || _currentStepIndex >= steps.length) return;
@@ -202,6 +231,7 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     if (distToStepEnd < _stepAdvanceRadiusMeters && _currentStepIndex < steps.length - 1) {
       setState(() => _currentStepIndex++);
       _playInstructionChime();
+      _speakInstruction(steps[_currentStepIndex].instruction);
     }
   }
 
@@ -234,6 +264,9 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
     if (distToDest < _arrivalRadiusMeters && !_arrived) {
       setState(() => _arrived = true);
       _playInstructionChime();
+      _speakInstruction(widget.isPickupNavigation
+          ? 'You have arrived at the pickup location. Tap Confirm Arrival and ask customer for Ride PIN.'
+          : 'You have arrived at the destination. Please tap End Ride.');
     }
   }
 
@@ -318,6 +351,8 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
+    _flutterTts.stop();
     _positionSub?.cancel();
     _mapController?.dispose();
     _audioPlayer.dispose();

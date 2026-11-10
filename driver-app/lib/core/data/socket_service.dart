@@ -43,6 +43,12 @@ class SocketService {
   static Stream<Map<String, dynamic>> get onPaymentReceived =>
       _paymentReceivedController.stream;
 
+  /// Emits when trip is completed
+  static final StreamController<Map<String, dynamic>> _rideCompletedController =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideCompleted =>
+      _rideCompletedController.stream;
+
   // ── Reconnect state ──────────────────────────────────────────────────────────
   static bool _intentionalDisconnect = false;
   static int _reconnectDelaySeconds = 2;
@@ -141,6 +147,13 @@ class SocketService {
       debugPrint('📥 payment:received: $data');
       if (data is Map) {
         _paymentReceivedController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('ride:completed', (data) {
+      debugPrint('📥 ride:completed: $data');
+      if (data is Map) {
+        _rideCompletedController.add(Map<String, dynamic>.from(data));
       }
     });
     } finally {
