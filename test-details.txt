@@ -12,6 +12,9 @@ password : admin123
 
 ---- prompt which used to fix and make the apps and platform for it so ------------------------------------
 
+okey so on the user app when i try to make the payment i click on the pay online and its not opening on the user app so fix tha 
+
+
 
 
 okey so when i try to book the ride is getting book but is not asgin the drive if he is online or avaliable so for that

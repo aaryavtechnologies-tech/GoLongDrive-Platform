@@ -64,12 +64,26 @@ class _HomeScreenState extends State<HomeScreen>
       final List<RideHistoryItem> items = [];
       Map<String, dynamic>? activeRide;
 
+      const activeStatuses = [
+        'pending',
+        'searching driver',
+        'driver accepted',
+        'driver assigned',
+        'driver arriving',
+        'driver arrived',
+        'trip started',
+        'in progress',
+        'awaiting payment',
+        'awaitingpayment',
+      ];
+
       for (final b in bookings) {
         final statusStr =
             (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '')
-                .toLowerCase();
+                .toLowerCase()
+                .trim();
 
-        if (statusStr == 'pending' || statusStr == 'searching driver') {
+        if (activeStatuses.contains(statusStr)) {
           activeRide ??= b;
           continue;
         }
@@ -697,20 +711,56 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildActiveBookingBanner(AppColorPalette colors) {
+    final status = (_activeBooking?['rideStatus']?.toString() ??
+            _activeBooking?['status']?.toString() ??
+            '')
+        .toLowerCase()
+        .trim();
+
+    final bool isSearching =
+        status.isEmpty || status == 'pending' || status == 'searching driver';
+
+    String title = 'Ride Request Sent';
+    String subtitle = 'Waiting for drivers to accept...';
+    IconData icon = Icons.car_rental;
+
+    if (status.contains('awaiting')) {
+      title = 'Ride Completed · Payment Due';
+      subtitle = 'Tap to pay online via Razorpay';
+      icon = Icons.payment;
+    } else if (status.contains('started') || status.contains('progress')) {
+      title = 'Trip In Progress';
+      subtitle = 'Tap to view live map & ride info';
+      icon = Icons.navigation;
+    } else if (status.contains('arrived')) {
+      title = 'Driver Arrived at Pickup';
+      subtitle = 'Share your ride PIN with driver';
+      icon = Icons.pin_drop;
+    } else if (status.contains('accepted') || status.contains('assigned') || status.contains('arriving')) {
+      title = 'Driver En Route';
+      subtitle = 'Driver assigned! Tap to view live tracking';
+      icon = Icons.directions_car;
+    }
+
     return GestureDetector(
       onTap: () {
-        Navigator.of(context).pushNamed('/driver-assigned', arguments: {
-          'bookingId': _activeBooking!['bookingId'] ?? _activeBooking!['_id'],
-          'booking': _activeBooking,
-        }).then((_) => _fetchRecentBookings()); // refresh on return
+        final bId = _activeBooking!['bookingId'] ?? _activeBooking!['_id'];
+        if (isSearching) {
+          Navigator.of(context).pushNamed('/driver-assigned', arguments: {
+            'bookingId': bId,
+            'booking': _activeBooking,
+          }).then((_) => _fetchRecentBookings());
+        } else {
+          Navigator.of(context).pushNamed('/active-ride', arguments: bId)
+              .then((_) => _fetchRecentBookings());
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.primaryGold.withValues(alpha: 0.1),
+          color: AppColors.primaryGold.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(16),
-          border:
-              Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5)),
+          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6)),
         ),
         child: Row(
           children: [
@@ -720,7 +770,7 @@ class _HomeScreenState extends State<HomeScreen>
                 color: colors.background,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.car_rental, color: AppColors.primaryGold),
+              child: Icon(icon, color: AppColors.primaryGold),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -728,7 +778,7 @@ class _HomeScreenState extends State<HomeScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Ride Request Sent',
+                    title,
                     style: AppTextStyles.subtitle.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.w700,
@@ -736,9 +786,8 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Waiting for drivers to accept...',
-                    style: AppTextStyles.caption
-                        .copyWith(color: colors.textSecondary),
+                    subtitle,
+                    style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
                   ),
                 ],
               ),

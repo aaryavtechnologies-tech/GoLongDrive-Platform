@@ -149,8 +149,14 @@ class AppRoutes {
         return _page(BoardingPassScreen(bookingData: args), settings);
 
       case activeRide:
-        final args = settings.arguments as String? ?? '';
-        return _page(ActiveRideScreen(bookingId: args), settings);
+        String bId = '';
+        if (settings.arguments is String) {
+          bId = settings.arguments as String;
+        } else if (settings.arguments is Map) {
+          final m = settings.arguments as Map;
+          bId = (m['bookingId'] ?? m['_id'] ?? m['id'] ?? '').toString();
+        }
+        return _page(ActiveRideScreen(bookingId: bId), settings);
 
       case rideSummary:
         final args = settings.arguments as String? ?? '';

@@ -105,9 +105,11 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
       // Short delay so user can see the "Driver Found!" state before navigating
       Future.delayed(const Duration(seconds: 2), () {
         if (!mounted) return;
-        final args = Map<String, dynamic>.from(_args!);
-        if (driver != null) args['driverInfo'] = driver;
-        Navigator.of(context).pushReplacementNamed('/boarding-pass', arguments: args);
+        final targetBookingId = _bookingId ?? _mongoBookingId ?? '';
+        Navigator.of(context).pushReplacementNamed(
+          '/active-ride',
+          arguments: targetBookingId,
+        );
       });
     }
   }

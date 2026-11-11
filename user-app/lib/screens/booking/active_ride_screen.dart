@@ -27,11 +27,14 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   GoogleMapController? _mapController;
   StreamSubscription? _rideCompletedSub;
   StreamSubscription? _rideAwaitingPaymentSub;
+  StreamSubscription? _statusUpdateSub;
   StreamSubscription? _driverArrivedSub;
   StreamSubscription? _driverLocationSub;
+  Timer? _statusPollTimer;
 
   late Razorpay _razorpay;
   bool _isPaymentPending = false;
+  bool _isPaymentSheetOpen = false;
   bool _isProcessingPayment = false;
   Map<String, dynamic>? _rideDetails;
   String? _paymentRecordId;
@@ -41,6 +44,36 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   double _driverHeading = 0;
   bool _driverHasArrived = false;
   List<LatLng> _routePoints = [];
+
+  bool _matchesThisRide(dynamic data) {
+    if (data == null || data is! Map) return false;
+    final incomingBookingId = data['bookingId']?.toString();
+    final incomingMongoId = (data['_id'] ?? data['id'])?.toString();
+    final currentBookingId = widget.bookingId.toString();
+    final rideDocId = _rideDetails?['_id']?.toString();
+    final rideBookingId = _rideDetails?['bookingId']?.toString();
+
+    // If both IDs are missing, accept as match for current active ride
+    if (incomingBookingId == null && incomingMongoId == null) return true;
+
+    if (incomingBookingId != null) {
+      if (incomingBookingId == currentBookingId ||
+          incomingBookingId == rideDocId ||
+          incomingBookingId == rideBookingId) {
+        return true;
+      }
+    }
+
+    if (incomingMongoId != null) {
+      if (incomingMongoId == currentBookingId ||
+          incomingMongoId == rideDocId ||
+          incomingMongoId == rideBookingId) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 
   @override
   void initState() {
@@ -53,18 +86,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
     UserSocketService.joinRide(widget.bookingId);
     _fetchRideDetails();
 
+    // Polling fallback to guarantee payment sheet opens even if socket drops
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (mounted && !_isPaymentPending) {
+        _fetchRideDetails();
+      }
+    });
+
     _driverArrivedSub = UserSocketService.onDriverArrived.listen((data) {
       if (!mounted) return;
-      final incomingId = (data['bookingId'] ?? data['_id'])?.toString();
-      final currentId = widget.bookingId.toString();
-      final rideDocId = _rideDetails?['_id']?.toString();
-      final rideBookingId = _rideDetails?['bookingId']?.toString();
-      final matches = incomingId == null ||
-          incomingId == currentId ||
-          incomingId == rideDocId ||
-          incomingId == rideBookingId;
-
-      if (matches) {
+      if (_matchesThisRide(data)) {
         setState(() {
           _driverHasArrived = true;
         });
@@ -74,17 +105,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _driverLocationSub = UserSocketService.onDriverLocation.listen((data) {
       if (!mounted) return;
-      final incomingId = (data['bookingId'] ?? data['_id'])?.toString();
-      final currentId = widget.bookingId.toString();
-      final rideDocId = _rideDetails?['_id']?.toString();
-      final rideBookingId = _rideDetails?['bookingId']?.toString();
-
-      final matches = incomingId == null ||
-          incomingId == currentId ||
-          incomingId == rideDocId ||
-          incomingId == rideBookingId;
-
-      if (matches && data['latitude'] != null && data['longitude'] != null) {
+      if (_matchesThisRide(data) && data['latitude'] != null && data['longitude'] != null) {
         final double lat = (data['latitude'] as num).toDouble();
         final double lng = (data['longitude'] as num).toDouble();
         final double heading = (data['heading'] as num?)?.toDouble() ?? 0;
@@ -98,19 +119,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
     _rideAwaitingPaymentSub = UserSocketService.onRideAwaitingPayment.listen((data) {
       if (!mounted) return;
-      final incomingId = (data['bookingId'] ?? data['_id'] ?? data['id'])?.toString();
-      final currentBookingId = widget.bookingId.toString();
-      final rideDocId = _rideDetails?['_id']?.toString();
-      final rideBookingId = _rideDetails?['bookingId']?.toString();
-
-      final matches = incomingId == null ||
-          incomingId == currentBookingId ||
-          incomingId == rideDocId ||
-          incomingId == rideBookingId ||
-          currentBookingId == rideDocId ||
-          currentBookingId == rideBookingId;
-
-      if (matches) {
+      if (_matchesThisRide(data)) {
         setState(() {
           _isPaymentPending = true;
           if (data['finalFare'] != null && _rideDetails != null) {
@@ -118,24 +127,31 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           }
         });
         _fetchRideDetails().then((_) {
-          _showPaymentBottomSheet();
+          if (mounted) _showPaymentBottomSheet();
         });
+      }
+    });
+
+    _statusUpdateSub = UserSocketService.onStatusUpdate.listen((data) {
+      if (!mounted) return;
+      if (_matchesThisRide(data)) {
+        final status = (data['status'] ?? '').toString();
+        if (status == 'Awaiting Payment' || status == 'AwaitingPayment') {
+          setState(() => _isPaymentPending = true);
+          _fetchRideDetails().then((_) {
+            if (mounted) _showPaymentBottomSheet();
+          });
+        } else if (status.contains('Complete')) {
+          Navigator.of(context).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
+        } else {
+          _fetchRideDetails();
+        }
       }
     });
 
     _rideCompletedSub = UserSocketService.onRideCompleted.listen((data) {
       if (!mounted) return;
-      final incomingId = (data['bookingId'] ?? data['_id'] ?? data['id'])?.toString();
-      final currentBookingId = widget.bookingId.toString();
-      final rideDocId = _rideDetails?['_id']?.toString();
-      final rideBookingId = _rideDetails?['bookingId']?.toString();
-
-      final matches = incomingId == null ||
-          incomingId == currentBookingId ||
-          incomingId == rideDocId ||
-          incomingId == rideBookingId;
-
-      if (matches) {
+      if (_matchesThisRide(data)) {
         Navigator.of(context).pushReplacementNamed('/ride-summary', arguments: widget.bookingId);
       }
     });
@@ -160,6 +176,15 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
             _driverHasArrived = true;
           }
         });
+
+        // Ensure we are joined to both Mongo ID and human-readable bookingId rooms
+        if (details['bookingId'] != null) {
+          UserSocketService.joinRide(details['bookingId'].toString());
+        }
+        if (details['_id'] != null) {
+          UserSocketService.joinRide(details['_id'].toString());
+        }
+
         _loadRoutePolyline();
       }
     } catch (e) {
@@ -309,10 +334,15 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   void _handlePaymentError(PaymentFailureResponse response) {
     setState(() => _isProcessingPayment = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Payment failed: ${response.message ?? "Cancelled"}')),
-    );
-    _showPaymentBottomSheet();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Payment not completed: ${response.message ?? "Cancelled"}'),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+      _showPaymentBottomSheet();
+    }
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
@@ -350,21 +380,34 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         'amount': (fare * 100).toInt(),
         'name': 'GoLongDrive',
         'description': 'Trip Payment - ${widget.bookingId}',
-        // Only include order_id if it is a real live server order (avoid passing mock IDs which Razorpay rejects)
-        if (orderId != null && !orderId.startsWith('order_')) 'order_id': orderId,
+        if (orderId != null && orderId.toString().isNotEmpty) 'order_id': orderId,
         'prefill': {
           'contact': contactPhone,
           'email': contactEmail,
         },
+        'external': {
+          'wallets': ['paytm']
+        }
       };
 
-      _razorpay.open(options);
+      try {
+        _razorpay.open(options);
+      } catch (sdkError) {
+        debugPrint('Razorpay SDK open error: $sdkError');
+        setState(() => _isProcessingPayment = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Payment SDK error: $sdkError. Choose payment option below.')),
+          );
+          _showPaymentBottomSheet();
+        }
+      }
     } catch (e) {
       debugPrint('Payment initiation error: $e');
       setState(() => _isProcessingPayment = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Showing payment options...')),
+          SnackBar(content: Text('Payment setup: $e')),
         );
         _showPaymentBottomSheet();
       }
@@ -400,7 +443,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   }
 
   void _showPaymentBottomSheet() {
-    if (!mounted) return;
+    if (!mounted || _isPaymentSheetOpen) return;
+    _isPaymentSheetOpen = true;
+
     final num fare = (_rideDetails?['finalFare'] != null && _rideDetails!['finalFare'] > 0)
         ? _rideDetails!['finalFare']
         : (_rideDetails?['estimatedFare'] ?? 100);
@@ -421,7 +466,9 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
           _simulateTestPayment();
         },
       ),
-    );
+    ).whenComplete(() {
+      _isPaymentSheetOpen = false;
+    });
   }
 
   void _showBoardingPassSheet() {
@@ -439,6 +486,8 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
 
   @override
   void dispose() {
+    _statusPollTimer?.cancel();
+    _statusUpdateSub?.cancel();
     _driverArrivedSub?.cancel();
     _driverLocationSub?.cancel();
     _rideCompletedSub?.cancel();

@@ -23,6 +23,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
   bool _showPin = true;
   String? _errorMsg;
   StreamSubscription? _rideStartedSub;
+  StreamSubscription? _rideAwaitingPaymentSub;
 
   @override
   void initState() {
@@ -30,10 +31,24 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
     _loadBoardingPass();
     _rideStartedSub = UserSocketService.onRideStarted.listen((data) {
       if (!mounted) return;
-      if (data['bookingId'] == widget.bookingData['bookingId']) {
+      final targetId = widget.bookingData['bookingId']?.toString() ?? widget.bookingData['_id']?.toString();
+      final incoming = data['bookingId']?.toString() ?? data['_id']?.toString();
+      if (incoming == null || incoming == targetId) {
         Navigator.of(context).pushReplacementNamed(
           '/active-ride',
-          arguments: data['bookingId'],
+          arguments: targetId ?? incoming ?? '',
+        );
+      }
+    });
+
+    _rideAwaitingPaymentSub = UserSocketService.onRideAwaitingPayment.listen((data) {
+      if (!mounted) return;
+      final targetId = widget.bookingData['bookingId']?.toString() ?? widget.bookingData['_id']?.toString();
+      final incoming = data['bookingId']?.toString() ?? data['_id']?.toString();
+      if (incoming == null || incoming == targetId) {
+        Navigator.of(context).pushReplacementNamed(
+          '/active-ride',
+          arguments: targetId ?? incoming ?? '',
         );
       }
     });
@@ -42,6 +57,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
   @override
   void dispose() {
     _rideStartedSub?.cancel();
+    _rideAwaitingPaymentSub?.cancel();
     super.dispose();
   }
 
@@ -516,11 +532,31 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                   ),
                   const SizedBox(height: 16),
                   PrimaryButton(
-                    label: 'Go to My Bookings',
+                    label: 'Live Ride Info & Tracking (Locked)',
+                    onPressed: () {
+                      final bId = _passData?['bookingId']?.toString() ??
+                          _passData?['_id']?.toString() ??
+                          widget.bookingData['bookingId']?.toString() ??
+                          widget.bookingData['_id']?.toString() ??
+                          '';
+                      Navigator.of(context).pushReplacementNamed(
+                        '/active-ride',
+                        arguments: bId,
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
                     onPressed: () {
                       Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
                       Navigator.of(context).pushNamed('/my-rides');
                     },
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: BorderSide(color: colors.inputBorder),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text('Go to My Bookings', style: AppTextStyles.button.copyWith(color: colors.textPrimary)),
                   ),
                   const SizedBox(height: 32),
                 ],
