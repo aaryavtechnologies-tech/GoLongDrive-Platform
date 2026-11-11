@@ -30,7 +30,7 @@ const invoiceSchema = new mongoose.Schema(
     },
     companyName: {
       type: String,
-      default: 'Long Distance Taxi Platform',
+      default: 'GoLongDrive',
     },
     // Storing snapshots of details in case referenced objects change later
     customerDetails: {

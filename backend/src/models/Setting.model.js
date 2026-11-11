@@ -4,9 +4,9 @@ const mongoose = require('mongoose');
 
 const settingSchema = new mongoose.Schema(
   {
-    companyName: { type: String, default: 'Long Distance Taxi' },
-    companyEmail: { type: String, default: 'info@taxiapp.com' },
-    supportEmail: { type: String, default: 'support@taxiapp.com' },
+    companyName: { type: String, default: 'GoLongDrive' },
+    companyEmail: { type: String, default: 'info@golongdrive.online' },
+    supportEmail: { type: String, default: 'support@golongdrive.online' },
     supportPhone: { type: String, default: '+91-0000000000' },
     whatsappNumber: { type: String, default: '+91-0000000000' },
     officeAddress: { type: String, default: '123 Main Street, City, Country' },

@@ -12,7 +12,7 @@ password : admin123
 
 ---- prompt which used to fix and make the apps and platform for it so ------------------------------------
 
-okey so on the user app when i try to make the payment i click on the pay online and its not opening on the user app so fix tha 
+
 
 
 
@@ -97,3 +97,14 @@ for google maps thing driver app
    -> then driver have to tap on end ride to show the final payment and ride details
    -> then it should update the confirm payment in both apps and updates screenns in the driver apo according to that and same for the user app 
 
+
+
+
+
+
+
+
+
+
+
+okey so on the user app when i try to make the payment i click on the pay online and its not opening on the user app so fix tha 
