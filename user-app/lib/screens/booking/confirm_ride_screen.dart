@@ -31,8 +31,12 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
     super.initState();
     _journeyDate = widget.bookingArgs['date'] ?? DateTime.now();
     _pickupTime = widget.bookingArgs['time'] ?? const TimeOfDay(hour: 8, minute: 30);
-    _passengers = widget.bookingArgs['passengers'] ?? 2;
-    _luggage = widget.bookingArgs['luggage'] ?? 2;
+    _passengers = widget.bookingArgs['passengers'] is int
+        ? widget.bookingArgs['passengers']
+        : int.tryParse(widget.bookingArgs['passengers']?.toString() ?? '') ?? 2;
+    _luggage = widget.bookingArgs['luggage'] is int
+        ? widget.bookingArgs['luggage']
+        : int.tryParse(widget.bookingArgs['luggage']?.toString() ?? '') ?? 2;
   }
 
   @override
