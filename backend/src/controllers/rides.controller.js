@@ -300,8 +300,8 @@ const getBoardingPass = asyncHandler(async (req, res) => {
     journey: {
       date: booking.pickupDate,
       time: booking.pickupTime,
-      distanceKm: booking.estimatedDistance,
-      durationText: `${Math.round((booking.estimatedDistance * 1.5))} mins` // estimate
+      distanceKm: booking.estimatedDistance || 0,
+      durationText: booking.estimatedDistance ? `${Math.round(booking.estimatedDistance * 1.5)} mins` : 'Flexible'
     },
     passenger: {
       name: booking.customer?.fullName || 'N/A',
@@ -314,15 +314,21 @@ const getBoardingPass = asyncHandler(async (req, res) => {
       registrationNumber: 'GJ01AB1234', // Simulated
       driverName: booking.driver.fullName,
       driverPhone: booking.driver.phoneNumber
-    } : null,
+    } : {
+      name: booking.vehicleType || 'Tour Cab',
+      model: booking.vehicleType || 'Tour Cab',
+      registrationNumber: 'Pending',
+      driverName: 'Driver Assigned on Dispatch',
+      driverPhone: 'N/A'
+    },
     pricing: {
       baseFare: booking.baseFare || 2000,
       distanceCharge: booking.distanceCharge || 0,
       pricePerKm: booking.pricePerKm || 0,
-      totalFare: booking.finalFare || booking.estimatedFare,
-      advancePaid: booking.paymentStatus === PAYMENT_STATUS.PENDING ? 0 : booking.advanceAmount,
-      remainingAmount: booking.remainingAmount,
-      paymentMethod: booking.paymentMethod
+      totalFare: booking.finalFare || booking.estimatedFare || booking.fareAmount || 0,
+      advancePaid: booking.paymentStatus === PAYMENT_STATUS.PENDING ? 0 : (booking.advanceAmount || booking.advancePaid || 0),
+      remainingAmount: booking.remainingAmount || ((booking.fareAmount || 0) - (booking.advancePaid || 0)),
+      paymentMethod: booking.paymentMethod || 'Online'
     }
   });
 });

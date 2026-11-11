@@ -120,17 +120,17 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
       );
     }
 
-    final String bookingId = _passData!['bookingId']?.toString() ?? widget.bookingData['bookingId']?.toString() ?? 'CAB-XXXX';
-    final String status = _passData!['status']?.toString() ?? 'Pending';
-    final String from = _passData!['pickup']?['address']?.toString() ?? widget.bookingData['from']?.toString() ?? 'Unknown Pickup';
-    final String to = _passData!['destination']?['address']?.toString() ?? widget.bookingData['to']?.toString() ?? 'Unknown Destination';
+    final String bookingId = _passData?['bookingId']?.toString() ?? widget.bookingData['bookingId']?.toString() ?? 'CAB-XXXX';
+    final String status = _passData?['status']?.toString() ?? widget.bookingData['status']?.toString() ?? 'Pending';
+    final String from = (_passData?['pickup'] is Map ? _passData!['pickup']['address']?.toString() : null) ?? widget.bookingData['from']?.toString() ?? 'Unknown Pickup';
+    final String to = (_passData?['destination'] is Map ? _passData!['destination']['address']?.toString() : null) ?? widget.bookingData['to']?.toString() ?? 'Unknown Destination';
     
-    final journeyDateStr = _passData!['journey']?['date']?.toString();
+    final journeyDateStr = (_passData?['journey'] is Map ? _passData!['journey']['date']?.toString() : null);
     DateTime? journeyDate;
     if (journeyDateStr != null) {
       journeyDate = DateTime.tryParse(journeyDateStr);
     }
-    final String timeString = _passData!['journey']?['time']?.toString() ?? widget.bookingData['time']?.toString() ?? '08:30 AM';
+    final String timeString = (_passData?['journey'] is Map ? _passData!['journey']['time']?.toString() : null) ?? widget.bookingData['time']?.toString() ?? '08:30 AM';
     
     final String dateString = journeyDate != null 
         ? '${journeyDate.day.toString().padLeft(2, '0')} ${_getMonthName(journeyDate.month).toUpperCase()} ${journeyDate.year}'
@@ -142,23 +142,54 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
         ? luggage
         : '$luggage bags';
 
-    final String model = _passData!['vehicle']?['model']?.toString() ?? widget.bookingData['car']?['model']?.toString() ?? widget.bookingData['car']?.toString() ?? 'Toyota Etios';
-    final String distance = _passData!['journey']?['distanceKm'] != null 
-        ? '${_passData!['journey']['distanceKm']} KM'
-        : widget.bookingData['car']?['distance']?.toString() ?? widget.bookingData['distance']?['distanceText']?.toString() ?? 'N/A';
+    // Safely extract vehicle model (widget.bookingData['car'] can be String like 'Tour Cab' or Map)
+    String model = 'Toyota Etios';
+    if (_passData?['vehicle'] is Map && _passData!['vehicle']['model'] != null) {
+      model = _passData!['vehicle']['model'].toString();
+    } else if (widget.bookingData['car'] is Map && widget.bookingData['car']['model'] != null) {
+      model = widget.bookingData['car']['model'].toString();
+    } else if (widget.bookingData['car'] != null && widget.bookingData['car'].toString().isNotEmpty) {
+      model = widget.bookingData['car'].toString();
+    }
+
+    // Safely extract distance (widget.bookingData['car'] and 'distance' can be String or Map)
+    String distance = 'N/A';
+    if (_passData?['journey'] is Map && _passData!['journey']['distanceKm'] != null) {
+      distance = '${_passData!['journey']['distanceKm']} KM';
+    } else if (widget.bookingData['car'] is Map && widget.bookingData['car']['distance'] != null) {
+      distance = widget.bookingData['car']['distance'].toString();
+    } else if (widget.bookingData['distance'] is Map && widget.bookingData['distance']['distanceText'] != null) {
+      distance = widget.bookingData['distance']['distanceText'].toString();
+    } else if (widget.bookingData['distance'] != null) {
+      distance = widget.bookingData['distance'].toString();
+    }
+
+    // Safely extract passenger name
+    String passengerName = 'Passenger';
+    if (_passData?['passenger'] is Map && _passData!['passenger']['name'] != null) {
+      passengerName = _passData!['passenger']['name'].toString();
+    } else if (widget.bookingData['passengerName'] != null) {
+      passengerName = widget.bookingData['passengerName'].toString();
+    } else if (widget.bookingData['customer'] is Map && widget.bookingData['customer']['fullName'] != null) {
+      passengerName = widget.bookingData['customer']['fullName'].toString();
+    } else if (widget.bookingData['customer'] != null) {
+      passengerName = widget.bookingData['customer'].toString();
+    }
+
+    final String ridePin = (_passData?['passenger'] is Map ? _passData!['passenger']['ridePin']?.toString() : null) ?? widget.bookingData['otp']?.toString() ?? 'N/A';
     
-    final String passengerName = _passData!['passenger']?['name']?.toString() ?? widget.bookingData['passengerName']?.toString() ?? widget.bookingData['customer']?['fullName']?.toString() ?? 'Passenger';
-    final String ridePin = _passData!['passenger']?['ridePin']?.toString() ?? widget.bookingData['otp']?.toString() ?? 'N/A';
+    final String carNumber = (_passData?['vehicle'] is Map ? _passData!['vehicle']['registrationNumber']?.toString() : null) ?? 'Pending';
+    final String driverName = (_passData?['vehicle'] is Map ? _passData!['vehicle']['driverName']?.toString() : null) ?? 'Pending';
     
-    final String carNumber = _passData!['vehicle']?['registrationNumber']?.toString() ?? 'GJ01AB1234';
-    final String driverName = _passData!['vehicle']?['driverName']?.toString() ?? 'Rajesh Kumar';
-    
-    final double totalFare = _parseDouble(_passData!['pricing']?['totalFare'], _parseDouble(widget.bookingData['total']));
-    final double advancePaid = _parseDouble(_passData!['pricing']?['advancePaid'], _parseDouble(widget.bookingData['advancePaid'] ?? widget.bookingData['advance']));
-    final double remainingAmount = _parseDouble(_passData!['pricing']?['remainingAmount'], totalFare - advancePaid);
-    final String paymentStatus = _passData!['paymentStatus']?.toString() ?? widget.bookingData['paymentStatus']?.toString() ?? 'Pending';
-    final double baseFare = _parseDouble(_passData!['pricing']?['baseFare'], 2000.0);
-    final double distanceCharge = _parseDouble(_passData!['pricing']?['distanceCharge'], 0.0);
+    final Map<String, dynamic> pricing = (_passData?['pricing'] is Map)
+        ? Map<String, dynamic>.from(_passData!['pricing'])
+        : {};
+    final double totalFare = _parseDouble(pricing['totalFare'], _parseDouble(widget.bookingData['total']));
+    final double advancePaid = _parseDouble(pricing['advancePaid'], _parseDouble(widget.bookingData['advancePaid'] ?? widget.bookingData['advance']));
+    final double remainingAmount = _parseDouble(pricing['remainingAmount'], totalFare - advancePaid);
+    final String paymentStatus = _passData?['paymentStatus']?.toString() ?? widget.bookingData['paymentStatus']?.toString() ?? 'Pending';
+    final double baseFare = _parseDouble(pricing['baseFare'], 2000.0);
+    final double distanceCharge = _parseDouble(pricing['distanceCharge'], 0.0);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -325,7 +356,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                                   Expanded(child: _buildPassDetail(colors, 'Vehicle', model)),
                                 ],
                               ),
-                              if (_passData!['vehicle'] != null) ...[
+                              if (_passData?['vehicle'] is Map) ...[
                                 const SizedBox(height: 20),
                                 Row(
                                   children: [
