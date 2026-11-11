@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
@@ -336,7 +337,10 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         paymentMethod: 'Online',
       );
 
-      final String? rzpKey = orderRes['keyId'] ?? orderRes['key'] ?? 'rzp_test_51bU28k12xyz';
+      final String? rzpKey = orderRes['keyId'] ??
+          orderRes['key'] ??
+          (dotenv.isInitialized ? dotenv.env['RAZORPAY_KEY_ID'] : null) ??
+          'rzp_test_51bU28k12xyz';
       final String? orderId = orderRes['order']?['id'] ?? orderRes['order']?['orderId'] ?? orderRes['gatewayOrderId'];
       _paymentRecordId = orderRes['payment']?['paymentId'] ?? orderRes['paymentId'];
       _razorpayOrderId = orderId;
@@ -364,30 +368,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         );
         _showPaymentBottomSheet();
       }
-    }
-  }
-
-  Future<void> _selectCashPayment() async {
-    setState(() => _isProcessingPayment = true);
-    try {
-      final effectiveBookingId = _rideDetails?['_id'] ?? _rideDetails?['bookingId'] ?? widget.bookingId;
-      await BookingService.initiatePayment(
-        bookingId: effectiveBookingId,
-        paymentMethod: 'Cash',
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cash payment selected! Please hand the cash to your driver.'),
-            backgroundColor: AppColors.primaryGold,
-            duration: Duration(seconds: 4),
-          ),
-        );
-      }
-    } catch (e) {
-      debugPrint('Cash payment error: $e');
-    } finally {
-      if (mounted) setState(() => _isProcessingPayment = false);
     }
   }
 
@@ -435,10 +415,6 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
         onPayOnline: () {
           Navigator.pop(ctx);
           _startPayment();
-        },
-        onPayCash: () {
-          Navigator.pop(ctx);
-          _selectCashPayment();
         },
         onSimulatePayment: () {
           Navigator.pop(ctx);
@@ -695,34 +671,16 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _isProcessingPayment ? null : _selectCashPayment,
-                              icon: const Icon(Icons.payments, size: 18, color: AppColors.primaryGold),
-                              label: const Text('PAY CASH', style: TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                side: const BorderSide(color: AppColors.primaryGold),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _showPaymentBottomSheet,
-                              icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
-                              label: const Text('OPTIONS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                side: BorderSide(color: colors.inputBorder),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                          ),
-                        ],
+                      OutlinedButton.icon(
+                        onPressed: _showPaymentBottomSheet,
+                        icon: const Icon(Icons.receipt_long, size: 18, color: Colors.white),
+                        label: const Text('VIEW BILL BREAKDOWN', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(double.infinity, 46),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(color: colors.inputBorder),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       ),
                     ] else ...[
                       // --- Ride PIN Display Strip ---
@@ -1027,14 +985,12 @@ class _PaymentModalSheet extends StatelessWidget {
   final num fare;
   final Map<String, dynamic>? rideDetails;
   final VoidCallback onPayOnline;
-  final VoidCallback onPayCash;
   final VoidCallback onSimulatePayment;
 
   const _PaymentModalSheet({
     required this.fare,
     required this.rideDetails,
     required this.onPayOnline,
-    required this.onPayCash,
     required this.onSimulatePayment,
   });
 
@@ -1086,7 +1042,7 @@ class _PaymentModalSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Trip Completed!', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold)),
-                    Text('Please choose your payment option', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
+                    Text('Pay online via Razorpay to finalize', style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
                   ],
                 ),
               ),
@@ -1116,7 +1072,7 @@ class _PaymentModalSheet extends StatelessWidget {
                 Container(width: 1, height: 28, color: colors.inputBorder),
                 _statItem('Duration', '$duration', Icons.timer, colors),
                 Container(width: 1, height: 28, color: colors.inputBorder),
-                _statItem('Status', 'Unpaid', Icons.payment, colors, isHighlight: true),
+                _statItem('Payment', 'Online', Icons.payment, colors, isHighlight: true),
               ],
             ),
           ),
@@ -1152,7 +1108,7 @@ class _PaymentModalSheet extends StatelessWidget {
           ),
           const SizedBox(height: 22),
 
-          // Payment Option 1: Razorpay Online
+          // Razorpay Online Button
           ElevatedButton.icon(
             onPressed: onPayOnline,
             icon: const Icon(Icons.bolt, color: Colors.black, size: 22),
@@ -1167,18 +1123,19 @@ class _PaymentModalSheet extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Payment Option 2: Cash to Driver
-          OutlinedButton.icon(
-            onPressed: onPayCash,
-            icon: const Icon(Icons.payments, color: AppColors.primaryGold, size: 20),
-            label: Text('PAY WITH CASH TO DRIVER · ₹${fare.round()}', style: const TextStyle(color: AppColors.primaryGold, fontWeight: FontWeight.bold, fontSize: 14)),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 48),
-              side: const BorderSide(color: AppColors.primaryGold, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
+          // Security note
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.lock, size: 14, color: Colors.grey),
+              const SizedBox(width: 6),
+              Text(
+                '100% Secure Checkout via Razorpay (UPI, Cards, NetBanking)',
+                style: TextStyle(color: colors.textSecondary, fontSize: 11),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Test Mode Simulator
           TextButton.icon(

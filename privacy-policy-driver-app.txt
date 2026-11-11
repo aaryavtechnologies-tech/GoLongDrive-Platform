@@ -1,0 +1,181 @@
+PRIVACY POLICY FOR GOLONGDRIVE DRIVER (DRIVER PARTNER APP)
+Last Updated: November 11, 2026
+Effective Date: November 11, 2026
+
+================================================================================
+1. APP AND DEVELOPER / PUBLISHER IDENTIFICATION
+================================================================================
+Privacy Policy for Go Long Drive Driver
+App name: GoLongDrive Driver (Go Long Drive Driver Partner App)
+Package name: com.golongdrive.driverapp (development identifier: com.example.golongdrive)
+Developer / Publisher on Google Play: ETCHTECH GLOBAL SOLUTIONS LLP
+Registered address: 1st Floor, 581, D1, Atrium Coworks, Anna Salai, Teynampet, Chennai - 600006, India
+Developed and operated by: Aaryav Technologies, Near Raj Hotel, Bavisa Faliya, Silvassa - 396230, India
+Contact email: support@golongdrive.online
+Official Website: https://golongdrive.online
+
+This policy applies to the GoLongDrive Driver app published on Google Play by ETCHTECH GLOBAL SOLUTIONS LLP.
+
+ETCHTECH GLOBAL SOLUTIONS LLP ("Publisher") and Aaryav Technologies ("Operator", "we", "us", or "Company") operate the GoLongDrive Driver mobile application ("Driver App") and the GoLongDrive Platform. We are committed to maintaining the privacy, confidentiality, and data protection of all registered driver partners ("Driver", "you", or "driver partner"). This Driver Privacy Policy comprehensively explains how we collect, use, store, process, and disclose your personal, location, vehicle, and financial data when you register, accept ride requests, provide transportation services, and receive payouts through our platform.
+
+
+================================================================================
+2. INFORMATION WE COLLECT FROM DRIVER PARTNERS
+================================================================================
+To register, verify, dispatch rides, calculate fares, and disburse payouts, GoLongDrive Driver collects the following categories of information:
+
+A. Driver Profile & Authentication Data
+- Full Legal Name, Date of Birth, Gender, and Profile Photograph (captured via device camera or gallery).
+- Mobile Phone Number (used for login authentication and rider communication).
+- Email Address (used for official communications, account statements, and support).
+- Account password (stored securely as a salted cryptographic hash; plain text passwords are never stored or accessible).
+- Residential Address (Street address, City, State, and PIN code).
+
+B. Vehicle Information & Verification Documents (KYC)
+- Vehicle Details: Make/Brand, Model, Registration Number, Vehicle Category (Sedan, SUV, Hatchback, Premium), Fuel Type, Year of Manufacture, Available Passenger Seats, and Air Conditioning (AC) availability.
+- Exterior Vehicle Photo: Front photograph of the vehicle for rider identification.
+- Know Your Customer (KYC) Verification Documents:
+  * Government-issued Driving License (DL number, front photo, and back photo).
+  * Vehicle Registration Certificate (RC front photo and back photo).
+  * Motor Vehicle Insurance Policy document/photo.
+  * Pollution Under Control (PUC) Certificate document/photo.
+  * Aadhaar Card (front photo and back photo) for identity verification.
+
+C. Precise Location Information (Foreground Service Location)
+- FOREGROUND SERVICE LOCATION DISCLOSURE:
+  GoLongDrive Driver accesses precise geographic location data (using GPS, Wi-Fi, and cellular network signals) when the driver is toggled "Online" and available to receive trip requests, as well as throughout the duration of an active ride.
+- Persistent Notification & Foreground Service:
+  Location updates operate via an Android Foreground Service (type: FOREGROUND_SERVICE_LOCATION) accompanied by an ongoing, visible notification in the device notification bar ("GoLongDrive Driver - Running in background / Online for rides"). The app does NOT request or use the ACCESS_BACKGROUND_LOCATION permission.
+- Why Location is Collected:
+  * Ride Dispatch & Matching: To determine your current vehicle location and dispatch nearby customer pickup requests to you.
+  * Turn-by-Turn Navigation & Route Display: To guide you from your current location to the rider's pickup point and subsequent destination via Google Maps.
+  * Accurate Fare Calculation: To calculate total distance traveled and elapsed trip time for fair, transparent fare computation.
+  * Passenger Live Tracking: To share your vehicle's live approaching coordinates with the booking passenger so they can track pickup arrival.
+- Driver Location Controls:
+  * Location tracking ceases immediately when you toggle your status to "Offline" or log out of the Driver App.
+  * You can revoke location permissions at any time via Android System Settings.
+
+D. Trip Operations & Safety Data
+- 4-Digit Passenger Ride PIN: Entered by the driver upon arrival to verify the passenger's identity and begin the journey.
+- Trip timestamps (Pickup arrival, Trip Start, and Trip Completion).
+- Trip route waypoint logs, total distance traveled, and trip duration.
+- Cancellation details (timestamp and selected cancellation reason, if applicable).
+
+E. Financial & Payout Information
+- Bank Account Details: Bank Account Number, Bank Name, Account Holder Name, and Bank IFSC Code.
+- UPI ID (Virtual Payment Address) for payout transfers.
+- Driver Earnings Ledger: Daily earnings, completed trip fare breakdown, platform commission deductions, and net earnings balance.
+- Payout Requests: Withdrawal request history, requested amounts, status, and manual bank/UPI settlement reference numbers.
+
+F. In-App Support Inquiries
+- Inquiries or grievances submitted to our help desk (category, description, submitted images, and support resolution messages).
+
+
+================================================================================
+3. HOW WE USE DRIVER INFORMATION
+================================================================================
+We use the collected information for specific, legitimate operational purposes:
+- Verification & Compliance: To authenticate identity, check driver license validity, verify vehicle commercial eligibility, and activate driver accounts.
+- Trip Allocation & Dispatch: To match available drivers with nearby passengers based on real-time vehicle location.
+- Live Route Guidance: To provide real-time navigation directions from pickup to drop-off.
+- Trip Verification: To authenticate passenger boarding using the 4-digit ride start PIN.
+- Fare Computation: To accurately calculate distance-based and time-based ride charges upon trip completion.
+- Payout Processing: To calculate driver earnings and disburse payouts directly to the driver's submitted bank account or UPI ID.
+- Safety & Accountability: To display vehicle details and driver identity to the assigned passenger.
+- Customer Support: To investigate and resolve partner inquiries, payment disputes, or operational questions.
+
+
+================================================================================
+4. DATA SHARING AND DISCLOSURE
+================================================================================
+We do not sell, rent, or monetize driver personal information. Data is shared strictly as necessary to deliver platform services:
+
+A. With Passengers
+When you accept a ride booking, the passenger is provided:
+- Your first name and driver profile photo.
+- Vehicle make, model, category, and license plate registration number.
+- Real-time GPS location and Estimated Time of Arrival (ETA).
+- Calling Option: A direct call button that opens the device's native dialer to facilitate coordination. Note: Standard cellular calls display your actual phone number to the passenger, and the passenger's phone number to you.
+- Your bank account details, full home address, Aadhaar card, and government identity documents are NEVER disclosed to passengers.
+
+B. With Third-Party Service Providers
+We share data with trusted third-party technology providers bound by confidentiality and data security obligations:
+- Google Maps Platform: To provide map rendering, route polyline calculations, and distance measurements.
+- Real-Time Communication (WebSocket Infrastructure): To synchronize ride requests, driver acceptance, and live coordinates between drivers, passengers, and platform servers.
+- Cloud Infrastructure & Hosting: Secure cloud servers with database encryption and access controls.
+- Note: Payouts are reviewed by platform administration and disbursed via direct bank transfer (NEFT/IMPS/RTGS) or UPI; no automated payout gateway SDK runs within the driver application.
+
+C. Legal & Regulatory Obligations
+We may share driver identity, vehicle documents, and trip logs with law enforcement authorities, transport regulators, or judicial bodies when legally mandated under the Motor Vehicles Act, Indian Information Technology Act, or a valid subpoena.
+
+
+================================================================================
+5. DATA RETENTION & SECURITY SAFEGUARDS
+================================================================================
+- Encryption in Transit: All data exchanged between the GoLongDrive Driver App and backend servers is encrypted in transit using industry-standard Transport Layer Security (TLS/SSL).
+- Credential Protection: Passwords are protected using salted cryptographic hashes (bcrypt). Sensitive financial records are accessible only to authorized finance administrators.
+- Document Retention: KYC verification documents, vehicle records, and driver profiles are retained for the duration of the driver's active partnership.
+- Statutory Archival: Following account closure, completed trip invoices, tax records, and payout transactions are retained for statutory retention periods mandated under Indian tax and accounting laws.
+
+
+================================================================================
+6. DRIVER ACCOUNT DELETION & DATA RIGHTS
+================================================================================
+Driver partners have full control over their personal data and account status:
+
+A. How to Request Account Deletion:
+1. In-App Option: Open the GoLongDrive Driver App -> Navigate to Profile -> Settings -> Tap "Delete Account" -> Follow the on-screen instructions.
+2. Web Deletion Portal: Visit our public account deletion portal at https://golongdrive.online/account-deletion (Select "Driver" user type and submit your registered phone number).
+3. Email Request: Email support@golongdrive.online with the subject line "Driver Account Deletion Request" from your registered email address, specifying your registered mobile number.
+
+B. Deletion Processing & Retention Exceptions:
+- Profile deactivation occurs promptly upon receipt and verification of your deletion request.
+- Personal identity data, stored KYC documents, and vehicle photos are scheduled for permanent deletion from active databases within 30 days.
+- In accordance with applicable Indian laws, records of completed rides, financial ledger transactions, and tax invoices are retained in secure archives solely for statutory auditing, tax compliance, and legal liability requirements.
+
+
+================================================================================
+7. PERMISSIONS REQUIRED BY THE DRIVER APP (ANDROID)
+================================================================================
+The GoLongDrive Driver App requests only the permissions necessary to operate its core features:
+
+1. ACCESS_FINE_LOCATION & ACCESS_COARSE_LOCATION
+   Used to obtain precise and approximate GPS coordinates for ride dispatch, route navigation, and distance calculation.
+2. FOREGROUND_SERVICE & FOREGROUND_SERVICE_LOCATION
+   Used to maintain continuous GPS location updates and navigation while the driver is Online or engaged in an active ride, even if the driver minimizes the app or turns off the screen. Accompanied by a persistent notification in the notification drawer.
+3. FOREGROUND_SERVICE_DATA_SYNC
+   Used for reliable real-time trip status synchronization with backend servers.
+4. WAKE_LOCK
+   Keeps the device screen active during navigation so drivers can safely reference route directions without screen timeouts.
+5. RECEIVE_BOOT_COMPLETED
+   Ensures local notification channels and background services initialize reliably after a device reboot.
+6. INTERNET & ACCESS_NETWORK_STATE
+   Used to establish secure TLS connections with backend APIs and real-time WebSocket servers.
+7. CAMERA & PHOTO LIBRARY ACCESS (Image Picker)
+   Requested at runtime when the driver captures or uploads profile photos, vehicle photos, and KYC documents (Aadhaar, Driving License, RC, Insurance, PUC).
+8. DEVICE PHONE DIALER (url_launcher with tel: scheme)
+   Tapping the call button on an active trip opens the phone's native phone dialer with the passenger's contact number pre-filled. The app does not declare or require the dangerous CALL_PHONE permission.
+
+
+================================================================================
+8. CHANGES TO THIS PRIVACY POLICY
+================================================================================
+We may update this Privacy Policy from time to time to reflect operational, technological, or regulatory developments. When updates are published, the "Last Updated" date at the top of this policy will be revised. Drivers are encouraged to review this policy periodically. Continued use of the GoLongDrive Driver platform following updates signifies acceptance of the revised policy.
+
+
+================================================================================
+9. DEVELOPER & PUBLISHER CONTACT INFORMATION
+================================================================================
+If you have questions, concerns, or requests regarding this Privacy Policy, your personal data, or KYC documentation, please contact our Legal & Privacy team:
+
+App Name: GoLongDrive Driver (Go Long Drive Driver Partner App)
+Package Name: com.golongdrive.driverapp (development identifier: com.example.golongdrive)
+Developer / Publisher on Google Play: ETCHTECH GLOBAL SOLUTIONS LLP
+Registered Address: 1st Floor, 581, D1, Atrium Coworks, Anna Salai, Teynampet, Chennai - 600006, India
+Developed and Operated by: Aaryav Technologies, Near Raj Hotel, Bavisa Faliya, Silvassa - 396230, India
+Contact Email: support@golongdrive.online
+Official Website: https://golongdrive.online
+Public Account Deletion URL: https://golongdrive.online/account-deletion
+Country / Jurisdiction: India
+
+This policy applies to the GoLongDrive Driver app published on Google Play by ETCHTECH GLOBAL SOLUTIONS LLP.

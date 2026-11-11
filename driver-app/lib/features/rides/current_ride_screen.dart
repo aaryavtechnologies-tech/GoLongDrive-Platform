@@ -94,45 +94,6 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
     super.dispose();
   }
 
-  Future<void> _confirmCashCollected() async {
-    if (_ride == null || _actionLoading) return;
-    setState(() => _actionLoading = true);
-    try {
-      final res = await ApiService.post(
-        '/driver/bookings/rides/${_ride!.id}/complete',
-        body: {'cashCollected': true},
-      );
-      if (res.statusCode == 200) {
-        if (mounted) {
-          setState(() {
-            _stage = _TripStage.completed;
-            _isPaymentReceived = true;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Cash payment confirmed! Trip completed.'),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-      } else {
-        String msg = 'Failed to confirm cash payment.';
-        try {
-          msg = jsonDecode(res.body)['message'] ?? msg;
-        } catch (_) {}
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Network error')));
-      }
-    } finally {
-      if (mounted) setState(() => _actionLoading = false);
-    }
-  }
-
   Future<void> _fetchCurrentRide() async {
     try {
       final res = await ApiService.get('/driver/bookings/rides/current');
@@ -695,33 +656,13 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   _isPaymentReceived
-                                      ? 'Payment has been confirmed! Trip completed.'
-                                      : 'Passenger is paying via Razorpay on their app. If passenger pays cash, tap Confirm Cash below.',
+                                      ? 'Payment has been confirmed via Razorpay! Trip completed.'
+                                      : 'Passenger is completing online payment via Razorpay on their app. Please wait for confirmation.',
                                   style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                                 ),
                               ],
                             ),
                           ),
-                          if (!_isPaymentReceived)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton.icon(
-                                  onPressed: _actionLoading ? null : _confirmCashCollected,
-                                  icon: const Icon(Icons.payments, color: Colors.black),
-                                  label: Text(
-                                    'Confirm Cash Received (₹${ride.fare.round()})',
-                                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15),
-                                  ),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: AppColors.success,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                  ),
-                                ),
-                              ),
-                            ),
                         ],
 
                       // --- RideTimeline (pickup / drop) ---

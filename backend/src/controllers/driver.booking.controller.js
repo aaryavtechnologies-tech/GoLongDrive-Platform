@@ -354,35 +354,10 @@ const completeRide = asyncHandler(async (req, res) => {
     throw ApiError.badRequest(`Cannot complete trip. Current status is ${booking.rideStatus}`);
   }
 
-  // Check if payment is completed online or cash collected
-  let payment = await Payment.findOne({ booking: booking._id, paymentStatus: 'Paid' });
-  const isCash = cashCollected === true || booking.paymentMethod === 'Cash';
-
-  if (!payment && !isCash) {
-    throw ApiError.badRequest('Payment has not been completed by the customer yet. Please confirm cash or wait for online payment.');
-  }
-
-  if (isCash && (!payment || payment.paymentStatus !== 'Paid')) {
-    booking.paymentMethod = 'Cash';
-    booking.paymentStatus = 'Paid';
-    if (!payment) {
-      payment = new Payment({
-        paymentId: `PAY-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`,
-        booking: booking._id,
-        customer: booking.customer?._id || booking.customer,
-        driver: driverId,
-        amount: booking.finalFare || booking.estimatedFare,
-        paymentMethod: 'Cash',
-        paymentStatus: 'Paid',
-        paymentDate: new Date(),
-      });
-      await payment.save();
-    } else {
-      payment.paymentStatus = 'Paid';
-      payment.paymentMethod = 'Cash';
-      payment.paymentDate = new Date();
-      await payment.save();
-    }
+  // Check if payment is completed online via Razorpay
+  const payment = await Payment.findOne({ booking: booking._id, paymentStatus: 'Paid' });
+  if (!payment) {
+    throw ApiError.badRequest('Payment has not been completed by the customer yet. Please wait for the passenger to complete payment via Razorpay.');
   }
 
   booking.rideStatus = RIDE_STATUS.TRIP_COMPLETED;

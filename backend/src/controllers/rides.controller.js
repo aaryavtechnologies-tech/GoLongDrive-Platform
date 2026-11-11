@@ -338,31 +338,7 @@ const initiateRidePayment = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne(getBookingQuery(bookingId));
   if (!booking) throw ApiError.notFound('Booking not found');
 
-  // Handle Cash Payment option
-  if (paymentMethod === 'Cash' || paymentMethod === PAYMENT_METHODS.CASH) {
-    booking.paymentMethod = 'Cash';
-    await booking.save();
-
-    try {
-      const { getDriverSocket, getIO } = require('../config/socket');
-      if (booking.driver) {
-        const driverSock = getDriverSocket(booking.driver);
-        if (driverSock) {
-          getIO().to(driverSock).emit('payment:cash_selected', {
-            bookingId: booking.bookingId,
-            fare: booking.finalFare || booking.estimatedFare,
-          });
-        }
-      }
-    } catch (_) {}
-
-    return sendSuccess(res, 200, 'Cash payment selected', {
-      paymentMethod: 'Cash',
-      amount: booking.finalFare || booking.estimatedFare,
-    });
-  }
-
-  // Handle Online (Razorpay) payment order creation
+  // Online (Razorpay) payment order creation
   const fareToPay = (booking.finalFare && Number(booking.finalFare) > 0)
     ? Number(booking.finalFare)
     : (Number(booking.estimatedFare) || 100);

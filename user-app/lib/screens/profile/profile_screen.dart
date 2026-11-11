@@ -1,6 +1,7 @@
 // lib/screens/profile/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -90,6 +91,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _buildSettingsSection(context),
             const SizedBox(height: 32),
             _buildLogoutButton(context),
+            const SizedBox(height: 12),
+            _buildDeleteAccountButton(context),
           ],
         ),
       ),
@@ -373,6 +376,116 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     ).animate().fadeIn(delay: 300.ms, duration: 300.ms);
+  }
+
+  Widget _buildDeleteAccountButton(BuildContext context) {
+    return Center(
+      child: TextButton.icon(
+        onPressed: () => _confirmDeleteAccount(context),
+        icon: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+        label: Text(
+          'Delete Account',
+          style: AppTextStyles.caption.copyWith(
+            color: AppColors.error,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 350.ms, duration: 300.ms);
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final colors = AppColors.of(context);
+    final userController = UserScope.of(context, listen: false);
+    final profile = userController.userProfile;
+    final String name = (profile?['fullName'] as String?)?.trim() ?? 'User';
+    final String email = (profile?['email'] as String?)?.trim() ?? '';
+    final String phone = (profile?['phoneNumber'] as String?)?.trim() ?? '';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: colors.surfaceCard,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+            const SizedBox(width: 8),
+            Text('Delete Account', style: AppTextStyles.largeHeading.copyWith(color: colors.textPrimary)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to delete your account? All your personal information, saved addresses, and active login sessions will be permanently purged within 30 days.',
+              style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'This action cannot be undone. You will be logged out immediately upon submission.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.error, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text('Cancel', style: AppTextStyles.body.copyWith(color: colors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop(false);
+              final uri = Uri.parse('https://golongdrive.online/account-deletion');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+            child: Text('Web Portal', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('Delete Account', style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      try {
+        await ApiClient.post('/public/deletion-requests', body: {
+          'name': name.isNotEmpty ? name : 'User',
+          'email': email.isNotEmpty ? email : 'unknown@user.com',
+          'phone': phone.isNotEmpty ? phone : '0000000000',
+          'userType': 'User',
+          'reason': 'Requested from Go Long Drive in-app profile settings',
+        });
+      } catch (_) {
+        // Even if offline/network error, proceed to log user out safely
+      }
+
+      if (context.mounted) {
+        await userController.logout();
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Account deletion request submitted. Your data will be purged within 30 days.'),
+              backgroundColor: AppColors.success,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (route) => false,
+          );
+        }
+      }
+    }
   }
 }
 

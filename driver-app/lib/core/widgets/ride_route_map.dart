@@ -9,6 +9,7 @@ import '../models/ride.dart';
 import '../utils/navigation_launcher.dart';
 import 'app_button.dart';
 import 'card_decoration.dart';
+import 'location_disclosure_dialog.dart';
 import '../../features/navigation/in_app_navigation_screen.dart';
 
 /// Which leg of the trip "Start Navigation" should point at. The driver
@@ -101,6 +102,10 @@ class _RideRouteMapState extends State<RideRouteMap> {
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (mounted) {
+        final accepted = await LocationDisclosureDialog.showProminentDisclosure(context);
+        if (!accepted) return;
+      }
       permission = await Geolocator.requestPermission();
     }
 

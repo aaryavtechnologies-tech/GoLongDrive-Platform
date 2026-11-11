@@ -1,39 +1,70 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
+import '../../core/constants/app_legal_info.dart';
 import '../../core/widgets/card_decoration.dart';
 
-/// Settings → Privacy Policy.
-/// Static content screen — placeholder copy until legal provides the real
-/// policy text; structure (sections + last-updated date) is ready to swap
-/// in the final content without touching layout.
-class PrivacyPolicyScreen extends StatelessWidget {
+/// Privacy Policy Screen for GoLongDrive Driver.
+/// Displays developer identification card, policy summary, and provides a direct
+/// link to view the full, official policy hosted at https://golongdrive.online/driver-policy.
+/// Fully functional WITHOUT requiring user authentication.
+class PrivacyPolicyScreen extends StatefulWidget {
   const PrivacyPolicyScreen({super.key});
 
-  static const _sections = [
+  @override
+  State<PrivacyPolicyScreen> createState() => _PrivacyPolicyScreenState();
+}
+
+class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
+  bool _isLaunching = false;
+  String? _launchError;
+
+  Future<void> _openFullPolicy() async {
+    setState(() {
+      _isLaunching = true;
+      _launchError = null;
+    });
+
+    try {
+      final uri = Uri.parse(AppLegalInfo.privacyPolicyUrl);
+      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched) {
+        throw Exception('Could not open browser');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _launchError = 'Could not open browser. Please visit:\n${AppLegalInfo.privacyPolicyUrl}';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLaunching = false);
+      }
+    }
+  }
+
+  static const _summarySections = [
     (
-      'Information We Collect',
-      'We collect information you provide directly, such as your name, phone number, email, vehicle details, and documents submitted during registration. We also collect ride and location data while you are online, to match you with riders and calculate fares.',
+      '1. Information Collected from Drivers',
+      'We collect personal details (full name, phone number, email, address, date of birth), vehicle details (brand, model, registration plate number, fuel type), KYC documentation (Aadhaar, Commercial Driving License, Vehicle RC, Insurance, PUC, and selfie photo), and banking details (account number, IFSC code, UPI ID) to verify driver eligibility and disburse earnings.',
     ),
     (
-      'How We Use Your Information',
-      'Your information is used to operate the driver app: matching you with ride requests, processing payments, verifying your documents, and providing support. We may also use it to improve safety and app performance.',
+      '2. Location & Foreground Services',
+      'GoLongDrive Driver collects precise GPS location data continuously while you are Online or on an active trip using an Android Foreground Service with type location (FOREGROUND_SERVICE_LOCATION). This is required to dispatch nearby passenger bookings, provide turn-by-turn navigation, measure trip distance for transparent fare calculation, and show your live arrival to passengers. Location tracking stops immediately when you go Offline or log out. We never sell location data to third parties.',
     ),
     (
-      'Location Data',
-      'We collect precise location data while you are online and during active trips, so riders can see your position and so we can calculate accurate routes, ETAs, and fares. You can disable location access in your device settings, but this will prevent you from receiving ride requests.',
+      '3. Trip Security & Passenger Calling',
+      'Trips begin only when the driver inputs the passenger\'s 4-digit Ride Confirmation PIN upon arrival. When calling the passenger for pickup coordination, the app launches your phone\'s native telephone dialer via standard tel: intents (CALL_PHONE permission is not required or requested). The driver and passenger see each other\'s real contact numbers on caller ID.',
     ),
     (
-      'Sharing Your Information',
-      'We share limited information (such as your name, vehicle, and rating) with riders for an active trip. We do not sell your personal information to third parties.',
+      '4. Driver Earnings & Manual Payouts',
+      'Your trip earnings are recorded in your in-app driver wallet. When you submit a payout request (minimum ₹100), payouts are processed manually by our platform administration via direct bank transfer (NEFT/IMPS) or UPI to your verified bank account.',
     ),
     (
-      'Data Retention',
-      'We retain your information for as long as your account is active and as needed to comply with legal obligations, resolve disputes, and enforce our agreements.',
-    ),
-    (
-      'Your Choices',
-      'You can review and update your profile information at any time from Settings → Edit Profile. You can also reach out to Support to request a copy of your data or ask that it be deleted, subject to legal requirements.',
+      '5. Driver Account & Data Deletion',
+      'You have the right to request deletion of your account and personal data at any time directly through the app (Profile → Delete Account), via our public web deletion portal at https://golongdrive.online/account-deletion, or by emailing support@golongdrive.online. Personal data and location logs are permanently purged within 30 days, while statutory billing records are retained as required by Indian tax and transport laws.',
     ),
   ];
 
@@ -50,37 +81,144 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     icon: Icon(Icons.arrow_back, color: AppColors.textPrimary),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/login');
+                      }
+                    },
                   ),
                   const SizedBox(width: 4),
-                  Text('Privacy Policy', style: AppText.cardHeadline),
+                  Text('Driver Privacy Policy', style: AppText.cardHeadline),
                 ],
               ),
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
                 children: [
-                  Text('Last updated: July 1, 2026',
-                      style: TextStyle(color: AppColors.textFaint, fontSize: 12)),
-                  const SizedBox(height: 16),
+                  // App & Publisher Identification Card
                   Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: cardDecoration(radius: 24),
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceAlt,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (var i = 0; i < _sections.length; i++) ...[
-                          Text(_sections[i].$1,
-                              style: TextStyle(
-                                  color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700)),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.gold.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                'Official Policy',
+                                style: TextStyle(
+                                  color: AppColors.gold,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Nov 11, 2026',
+                              style: TextStyle(color: AppColors.textFaint, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          AppLegalInfo.appName,
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _infoRow('Publisher on Google Play', AppLegalInfo.publisherName),
+                        const SizedBox(height: 4),
+                        _infoRow('Publisher Address', AppLegalInfo.publisherAddress),
+                        const SizedBox(height: 4),
+                        _infoRow('Developed & Operated by', AppLegalInfo.operatorName),
+                        const SizedBox(height: 4),
+                        _infoRow('Support Contact', AppLegalInfo.supportEmail),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _isLaunching ? null : _openFullPolicy,
+                            icon: _isLaunching
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                                  )
+                                : const Icon(Icons.open_in_browser, size: 18),
+                            label: Text(
+                              _isLaunching ? 'Opening Web Policy...' : 'Open Full Official Policy (Web)',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.gold,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                        if (_launchError != null) ...[
                           const SizedBox(height: 8),
-                          Text(_sections[i].$2,
-                              style: TextStyle(color: AppColors.textSecondary, fontSize: 13.5, height: 1.5)),
-                          if (i != _sections.length - 1) ...[
-                            const SizedBox(height: 20),
+                          Text(
+                            _launchError!,
+                            style: const TextStyle(color: AppColors.error, fontSize: 11),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  Text('Policy Overview', style: AppText.sectionTitle),
+                  const SizedBox(height: 12),
+
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: cardDecoration(radius: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (var i = 0; i < _summarySections.length; i++) ...[
+                          Text(
+                            _summarySections[i].$1,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            _summarySections[i].$2,
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 13,
+                              height: 1.45,
+                            ),
+                          ),
+                          if (i != _summarySections.length - 1) ...[
+                            const SizedBox(height: 16),
                             Divider(color: AppColors.divider, height: 1),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 16),
                           ],
                         ],
                       ],
@@ -91,6 +229,18 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.35),
+        children: [
+          TextSpan(text: '$label: ', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          TextSpan(text: value),
+        ],
       ),
     );
   }

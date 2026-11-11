@@ -228,11 +228,9 @@ export function AddEditTourPackageDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {!packageToEdit && (
-        <DialogTrigger asChild>
-          <Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold shadow-[0_0_20px_rgba(250,204,21,0.2)]">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Tour Package
-          </Button>
+        <DialogTrigger render={<Button className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold shadow-[0_0_20px_rgba(250,204,21,0.2)]" />}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Tour Package
         </DialogTrigger>
       )}
 

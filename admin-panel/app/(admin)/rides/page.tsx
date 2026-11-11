@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useRides } from '@/hooks/useRides';
-import { RideFilters as FilterTypes } from '@/types/ride';
+import { Ride, RideFilters as FilterTypes } from '@/types/ride';
 import { RideTable } from '@/components/rides/RideTable';
 import { RideFilters } from '@/components/rides/RideFilters';
 import { ErrorBoundary } from '@/components/common/error-boundary';
@@ -62,24 +62,24 @@ export default function RidesPage() {
     return <ErrorBoundary error={new Error('Failed to load rides')} reset={refetch} />;
   }
 
-  const allRides = data?.data || [];
+  const allRides: Ride[] = data?.data || [];
 
   // Categorize or filter rides based on category
   const rides = React.useMemo(() => {
     if (activeCategory === 'All') return allRides;
     if (activeCategory === 'Ongoing') {
       const ongoingStatuses = ['Trip Started', 'Driver Arrived', 'Driver Assigned', 'Driver Accepted', 'Confirmed'];
-      return allRides.filter(r => ongoingStatuses.includes(r.status));
+      return allRides.filter((r: Ride) => ongoingStatuses.includes(r.status));
     }
     if (activeCategory === 'Upcoming') {
       const upcomingStatuses = ['Pending', 'Searching Driver'];
-      return allRides.filter(r => upcomingStatuses.includes(r.status));
+      return allRides.filter((r: Ride) => upcomingStatuses.includes(r.status));
     }
     if (activeCategory === 'Completed') {
-      return allRides.filter(r => r.status === 'Trip Completed');
+      return allRides.filter((r: Ride) => r.status === 'Trip Completed');
     }
     if (activeCategory === 'Cancelled') {
-      return allRides.filter(r => r.status.toLowerCase().includes('cancel'));
+      return allRides.filter((r: Ride) => r.status.toLowerCase().includes('cancel'));
     }
     return allRides;
   }, [allRides, activeCategory]);
@@ -121,22 +121,22 @@ export default function RidesPage() {
           { 
             id: 'Ongoing', 
             label: 'Ongoing Bookings', 
-            count: allRides.filter(r => ['Trip Started', 'Driver Arrived', 'Driver Assigned', 'Driver Accepted', 'Confirmed'].includes(r.status)).length 
+            count: allRides.filter((r: Ride) => ['Trip Started', 'Driver Arrived', 'Driver Assigned', 'Driver Accepted', 'Confirmed'].includes(r.status)).length 
           },
           { 
             id: 'Upcoming', 
             label: 'Upcoming Bookings', 
-            count: allRides.filter(r => ['Pending', 'Searching Driver'].includes(r.status)).length 
+            count: allRides.filter((r: Ride) => ['Pending', 'Searching Driver'].includes(r.status)).length 
           },
           { 
             id: 'Completed', 
             label: 'Completed Bookings', 
-            count: allRides.filter(r => r.status === 'Trip Completed').length 
+            count: allRides.filter((r: Ride) => r.status === 'Trip Completed').length 
           },
           { 
             id: 'Cancelled', 
             label: 'Cancelled Bookings', 
-            count: allRides.filter(r => r.status.toLowerCase().includes('cancel')).length 
+            count: allRides.filter((r: Ride) => r.status.toLowerCase().includes('cancel')).length 
           },
         ].map((tab) => (
           <button

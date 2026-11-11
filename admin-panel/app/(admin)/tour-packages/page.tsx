@@ -413,15 +413,6 @@ export default function TourPackagesPage() {
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
                     </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeletePackage(pkg._id, pkg.title)}
-                        className="border-zinc-800 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               ))}

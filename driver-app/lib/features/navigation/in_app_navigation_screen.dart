@@ -11,6 +11,7 @@ import '../../core/data/directions_service.dart';
 import '../../core/data/socket_service.dart';
 import '../../core/models/ride.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/location_disclosure_dialog.dart';
 
 /// Real in-app turn-by-turn navigation — the driver's live location drives
 /// a rotating, tilted "chase camera" (like Google/Apple/Uber/Ola/Rapido
@@ -91,6 +92,13 @@ class _InAppNavigationScreenState extends State<InAppNavigationScreen> {
 
     var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
+      if (mounted) {
+        final accepted = await LocationDisclosureDialog.showProminentDisclosure(context);
+        if (!accepted) {
+          if (mounted) setState(() => _locationError = 'Location access is required for in-app navigation.');
+          return;
+        }
+      }
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.deniedForever) {

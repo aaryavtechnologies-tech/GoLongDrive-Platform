@@ -10,6 +10,7 @@ import '../../core/data/socket_service.dart';
 import '../../core/widgets/error_state.dart';
 import '../../core/widgets/card_decoration.dart';
 import '../../core/widgets/skeleton_loader.dart';
+import '../../core/widgets/location_disclosure_dialog.dart';
 import '../city_rides/city_rides_service.dart';
 import '../../screens/tour_packages/available_tour_packages_screen.dart';
 
@@ -225,6 +226,13 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Future<void> _toggleStatus(bool val) async {
+    if (val) {
+      final accepted = await LocationDisclosureDialog.hasAcceptedDisclosure();
+      if (!accepted && mounted) {
+        final agreed = await LocationDisclosureDialog.showProminentDisclosure(context);
+        if (!agreed) return;
+      }
+    }
     final original = _online;
     setState(() => _online = val);
     try {

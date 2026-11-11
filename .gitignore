@@ -4,7 +4,7 @@ node_modules/
 # Environment variables
 backend/.env
 .env
-
+git.txt
 # Uploaded files (keep folder structure, ignore actual files)
 backend/uploads/**/*
 !backend/uploads/profile/.gitkeep

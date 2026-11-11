@@ -1,0 +1,31 @@
+2. What is the "Policy Declaration" in Google Play Console?
+
+Because your driver app targets modern Android versions and declares FOREGROUND_SERVICE_LOCATION, Google Play Console will ask you to fill out a short questionnaire form under:
+
+Play Console → App Content → Foreground Service Permissions (or Action Required in Policy status).
+
+Here is the exact information to provide when completing that form in Play Console:
+
+A. Which foreground service type does your app use?
+Select checkbox: Location (FOREGROUND_SERVICE_LOCATION)
+B. What is the primary purpose / use case?
+Select or choose: Transportation / Ridesharing / Navigation
+C. Description of why the foreground service is required:
+
+(You can copy and paste this exact text into the Google Play box)
+
+"GoLongDrive Driver is a ride-hailing driver partner application. When a driver partner toggles their status to 'Online' or starts an active passenger trip, the app uses a foreground service with continuous location tracking to:
+
+Match and dispatch nearby passenger ride bookings to the driver.
+Provide continuous turn-by-turn navigation from pickup to destination, even when the driver locks the screen or briefly navigates to another app.
+Transmit real-time vehicle GPS coordinates to waiting passengers for safety and accurate ETA arrival tracking.
+Accurately measure total trip distance and elapsed time for transparent fare computation. Location tracking displays an ongoing, visible notification in the notification bar and terminates immediately when the driver toggles 'Offline' or logs out."
+D. Video demonstration link (if requested by Play Console):
+
+If Google Play Console asks for a video demonstration link:
+
+Record a short 30–60 second phone screen video showing:
+Opening the app and logging in.
+The Location Disclosure Dialog popping up and tapping "Agree & Continue".
+Toggling "Online" and swiping down the notification drawer showing the ongoing notification banner.
+Upload it as an unlisted link (e.g. Google Drive or YouTube unlisted) and paste the URL.

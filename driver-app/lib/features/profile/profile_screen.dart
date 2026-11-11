@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../app/theme.dart';
 import '../../core/config/env_config.dart';
+import '../../core/constants/app_legal_info.dart';
 import '../../core/data/api_service.dart';
 import '../../core/data/auth_service.dart';
 import '../../core/widgets/card_decoration.dart';
@@ -346,6 +348,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () => context.push('/profile/privacy')),
                 _menuItem(
                   context,
+                  Icons.delete_outline,
+                  'Delete Account',
+                  isDestructive: true,
+                  onTap: () => _confirmDeleteAccount(context),
+                ),
+                _menuItem(
+                  context,
                   Icons.logout,
                   'Log Out',
                   isDestructive: true,
@@ -419,6 +428,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         if (showDivider) Divider(color: AppColors.borderSubtle, height: 1, indent: 16, endIndent: 16),
       ],
+    );
+  }
+
+  void _confirmDeleteAccount(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.surfaceAlt,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.error, size: 24),
+            const SizedBox(width: 8),
+            Text(
+              'Delete Account',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Deleting your driver account will deactivate your profile and begin the process of permanently deleting your personal details, KYC documentation, and vehicle records after a 30-day processing window.',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13, height: 1.4),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Tax and completed ride financial records may be retained as required by applicable laws.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 12, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                final uri = Uri.parse(AppLegalInfo.accountDeletionUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              child: const Text(
+                'Open Public Account Deletion Web Portal →',
+                style: TextStyle(
+                  color: AppColors.gold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.of(dialogContext).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Account deletion requested. Please complete your request on our deletion portal or email support.'),
+                  backgroundColor: AppColors.error,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+              final uri = Uri.parse(AppLegalInfo.accountDeletionUrl);
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Proceed to Portal'),
+          ),
+        ],
+      ),
     );
   }
 
