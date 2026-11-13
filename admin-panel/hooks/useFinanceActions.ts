@@ -47,8 +47,24 @@ export function useCreateCoupon() {
       queryClient.invalidateQueries({ queryKey: ['coupons'] });
       toast.success('Coupon created successfully');
     },
-    onError: () => {
-      toast.error('Failed to create coupon');
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to create coupon');
+    }
+  });
+}
+
+export function useUpdateCoupon() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Coupon> }) => couponService.updateCoupon(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['coupons'] });
+      queryClient.invalidateQueries({ queryKey: ['coupon', variables.id] });
+      toast.success('Coupon updated successfully');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to update coupon');
     }
   });
 }
@@ -60,6 +76,7 @@ export function useUpdateCouponStatus() {
     mutationFn: ({ id, status }: { id: string; status: CouponStatus }) => couponService.updateCouponStatus(id, status),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['coupons'] });
+      queryClient.invalidateQueries({ queryKey: ['coupon', data.id] });
       toast.success(`Coupon marked as ${data.status}`);
     },
     onError: () => {

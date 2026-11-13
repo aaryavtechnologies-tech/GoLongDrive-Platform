@@ -8,7 +8,12 @@
  */
 
 const router = require('express').Router();
-const { getSettings, updateSettings, getSystemStatus } = require('../controllers/admin.settings.controller');
+const {
+  getSettings,
+  updateSettings,
+  getSystemStatus,
+  testEmailSettings,
+} = require('../controllers/admin.settings.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { requireRole } = require('../middleware/role.middleware');
 const { requirePermission } = require('../middleware/permission.middleware');
@@ -18,46 +23,10 @@ const isAdmin = [authenticate, requireRole(ROLES.ADMIN)];
 const canReadSettings = requirePermission('Settings', 'read');
 const canManageSettings = requirePermission('Settings', 'manage');
 
-/**
- * @swagger
- * /api/admin/settings:
- *   get:
- *     summary: Get system settings
- *     tags: [System Settings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Settings retrieved
- */
 router.get('/', isAdmin, canReadSettings, getSettings);
-
-/**
- * @swagger
- * /api/admin/settings/system/status:
- *   get:
- *     summary: Get system status
- *     tags: [System Settings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: System status retrieved
- */
-router.get('/system/status', isAdmin, canReadSettings, getSystemStatus);
-
-/**
- * @swagger
- * /api/admin/settings:
- *   put:
- *     summary: Update system settings
- *     tags: [System Settings]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Settings updated
- */
 router.put('/', isAdmin, canManageSettings, updateSettings);
+router.get('/system/status', isAdmin, canReadSettings, getSystemStatus);
+router.post('/email/test', isAdmin, canManageSettings, testEmailSettings);
+router.post('/test-email', isAdmin, canManageSettings, testEmailSettings);
 
 module.exports = router;

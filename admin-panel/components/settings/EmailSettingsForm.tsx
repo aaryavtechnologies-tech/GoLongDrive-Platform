@@ -6,10 +6,12 @@ import * as z from 'zod';
 import { useSettings } from '@/hooks/useSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { testSmtpEmail } from '@/services/settings.service';
+import { Send, CheckCircle2, Mail } from 'lucide-react';
 
 const formSchema = z.object({
   host: z.string().min(1, 'Host is required'),
@@ -23,6 +25,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function EmailSettingsForm() {
   const { settings, updateSettings, isUpdating, isLoading } = useSettings();
+  const [isTesting, setIsTesting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -51,9 +54,25 @@ export function EmailSettingsForm() {
     await updateSettings({ smtpSettings: data });
   };
 
-  const handleTestEmail = () => {
-    // Mock test email functionality
-    toast.success('Test email sent successfully! (Mocked)');
+  const handleTestEmail = async () => {
+    const values = form.getValues();
+    if (!values.host || !values.user || !values.pass) {
+      toast.error('Please enter host, username and password before testing.');
+      return;
+    }
+
+    setIsTesting(true);
+    try {
+      const res = await testSmtpEmail({
+        ...values,
+        testEmail: settings?.supportEmail || values.user,
+      });
+      toast.success(res.message || 'SMTP verified and test email sent!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || err.message || 'SMTP connection test failed');
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -61,9 +80,12 @@ export function EmailSettingsForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>SMTP Email Settings</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Mail className="h-5 w-5 text-yellow-400" />
+          SMTP Email Settings
+        </CardTitle>
         <CardDescription>
-          Configure the SMTP server for sending system emails.
+          Configure the SMTP mail server used by GoLongDrive to deliver booking confirmations and OTPs.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -71,21 +93,33 @@ export function EmailSettingsForm() {
           <div className="grid gap-6 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">SMTP Host</label>
-              <Input {...form.register('host')} placeholder="smtp.example.com" />
+              <Input {...form.register('host')} placeholder="smtp.gmail.com or smtp.mailgun.org" />
+              {form.formState.errors.host && (
+                <p className="text-xs text-red-400">{form.formState.errors.host.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">SMTP Port</label>
-              <Input {...form.register('port')} type="number" />
+              <Input {...form.register('port')} type="number" placeholder="587" />
+              {form.formState.errors.port && (
+                <p className="text-xs text-red-400">{form.formState.errors.port.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium">SMTP Username</label>
-              <Input {...form.register('user')} />
+              <label className="text-sm font-medium">SMTP Username (Email)</label>
+              <Input {...form.register('user')} placeholder="notifications@golongdrive.online" />
+              {form.formState.errors.user && (
+                <p className="text-xs text-red-400">{form.formState.errors.user.message}</p>
+              )}
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">SMTP Password</label>
-              <Input {...form.register('pass')} type="password" />
+              <Input {...form.register('pass')} type="password" placeholder="••••••••••••" />
+              {form.formState.errors.pass && (
+                <p className="text-xs text-red-400">{form.formState.errors.pass.message}</p>
+              )}
             </div>
-            <div className="flex items-center space-x-2 pt-8">
+            <div className="flex items-center space-x-2 pt-4 md:col-span-2">
               <Checkbox 
                 id="secure" 
                 checked={form.watch('secure')}
@@ -93,18 +127,29 @@ export function EmailSettingsForm() {
               />
               <label
                 htmlFor="secure"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium leading-none cursor-pointer"
               >
-                Use SSL/TLS Encryption
+                Use SSL/TLS (Enable for Port 465, disable for Port 587 STARTTLS)
               </label>
             </div>
           </div>
-          <div className="flex gap-4">
-            <Button type="submit" disabled={isUpdating}>
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <Button
+              type="submit"
+              disabled={isUpdating || isTesting}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold"
+            >
               {isUpdating ? 'Saving...' : 'Save Email Settings'}
             </Button>
-            <Button type="button" variant="outline" onClick={handleTestEmail}>
-              Send Test Email
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isUpdating || isTesting}
+              onClick={handleTestEmail}
+              className="border-white/10 text-white hover:bg-zinc-800"
+            >
+              <Send className="mr-2 h-3.5 w-3.5" />
+              {isTesting ? 'Testing Connection...' : 'Send Test Email'}
             </Button>
           </div>
         </form>

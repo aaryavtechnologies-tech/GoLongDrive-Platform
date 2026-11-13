@@ -356,10 +356,12 @@ const initiateRidePayment = asyncHandler(async (req, res) => {
     paymentMethod: paymentMethod || PAYMENT_METHODS.ONLINE,
   });
 
+  const { keyId } = await paymentService.getRazorpayCredentials();
+
   return sendSuccess(res, 200, 'Payment initiated', {
     paymentId: payment.paymentId,
     order: orderDetails,
-    keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_51bU28k12xyz',
+    keyId: keyId || process.env.RAZORPAY_KEY_ID || 'rzp_test_51bU28k12xyz',
     amount: fareToPay,
   });
 });

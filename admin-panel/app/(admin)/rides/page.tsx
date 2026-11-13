@@ -58,10 +58,6 @@ export default function RidesPage() {
     }
   };
 
-  if (isError) {
-    return <ErrorBoundary error={new Error('Failed to load rides')} reset={refetch} />;
-  }
-
   const allRides: Ride[] = data?.data || [];
 
   // Categorize or filter rides based on category
@@ -83,6 +79,10 @@ export default function RidesPage() {
     }
     return allRides;
   }, [allRides, activeCategory]);
+
+  if (isError) {
+    return <ErrorBoundary error={new Error('Failed to load rides')} reset={refetch} />;
+  }
 
   return (
     <div className="space-y-6">
@@ -174,7 +174,7 @@ export default function RidesPage() {
           </div>
           <h3 className="text-xl font-semibold text-white mb-2">No rides found</h3>
           <p className="text-sm text-zinc-400 max-w-sm mb-6">
-            We couldn't find any rides matching your criteria.
+            We couldn&apos;t find any rides matching your criteria.
           </p>
           <Button onClick={() => handleFilterChange({ search: '', status: 'All', tripType: 'All', paymentStatus: 'All', date: '' })} variant="outline" className="border-white/10 text-white hover:bg-zinc-900">
             Clear all filters

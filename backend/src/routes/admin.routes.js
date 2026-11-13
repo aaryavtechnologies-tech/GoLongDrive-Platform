@@ -4,47 +4,31 @@
  * @swagger
  * tags:
  *   name: Admin
- *   description: Admin authentication
+ *   description: Admin authentication and profile
  */
 
 const router = require('express').Router();
-const { login } = require('../controllers/admin.controller');
+const { login, getProfile, updateProfile } = require('../controllers/admin.controller');
 const { validate } = require('../middleware/validate.middleware');
+const { authenticate } = require('../middleware/auth.middleware');
+const { requireRole } = require('../middleware/role.middleware');
 const { emailRule } = require('../validators/auth.validator');
 const { body } = require('express-validator');
+const { ROLES } = require('../utils/constants');
 
-/**
- * @swagger
- * /api/admin/login:
- *   post:
- *     summary: Admin login
- *     tags: [Admin]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [email, password]
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: admin@taxiapp.com
- *               password:
- *                 type: string
- *                 example: Admin@1234
- *     responses:
- *       200:
- *         description: Login successful
- *       401:
- *         description: Invalid credentials
- */
+const isAdmin = [authenticate, requireRole(ROLES.ADMIN)];
+
+// ── Public Routes ─────────────────────────────────────────────────────────
 router.post(
   '/login',
   [emailRule, body('password').notEmpty().withMessage('Password is required')],
   validate,
   login
 );
+
+// ── Authenticated Admin Profile Routes ────────────────────────────────────
+router.get('/profile', isAdmin, getProfile);
+router.get('/me', isAdmin, getProfile);
+router.put('/profile', isAdmin, updateProfile);
 
 module.exports = router;

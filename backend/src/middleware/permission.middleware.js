@@ -33,12 +33,16 @@ const requirePermission = (moduleName, action) => {
 
     // Check permissions
     const hasAccess = role.permissions.some(p => {
-      const isModuleMatch = p.module === moduleName || p.module === 'All';
+      const isModuleMatch =
+        p.module === moduleName ||
+        p.module === 'All' ||
+        (moduleName === 'Settings' && (p.module === 'System Settings' || p.module === 'General Settings')) ||
+        (moduleName === 'System Settings' && p.module === 'Settings');
       const isActionMatch = p.action === action || p.action === 'manage';
       return isModuleMatch && isActionMatch;
     });
 
-    if (!hasAccess && !role.isSystem) { // if isSystem is true, it's Super Admin
+    if (!hasAccess && !role.isSystem && role.name !== 'Super Admin') { // Super Admin bypasses
       throw ApiError.forbidden(`Missing permission: ${action} on ${moduleName}`);
     }
 

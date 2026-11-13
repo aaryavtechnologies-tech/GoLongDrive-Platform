@@ -60,7 +60,9 @@ router.use('/auth',     authRoutes);
 
 // Financial routes
 router.use('/payments', paymentRoutes);
+router.use('/admin/payments', paymentRoutes);
 router.use('/coupons', couponRoutes);
+router.use('/admin/coupons', couponRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/earnings', earningsRoutes);
 router.use('/notifications', notificationRoutes);
@@ -69,6 +71,7 @@ router.use('/reviews', reviewRoutes);
 // Phase 6 Admin routes
 router.use('/admin/dashboard', adminDashboardRoutes);
 router.use('/admin/settings', adminSettingsRoutes);
+router.use('/settings', adminSettingsRoutes);
 router.use('/admin/cms', adminCmsRoutes);
 router.use('/admin/roles', adminRoleRoutes);
 router.use('/admin/admin-users', adminUserRoutes);

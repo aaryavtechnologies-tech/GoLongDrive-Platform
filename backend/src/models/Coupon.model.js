@@ -62,6 +62,19 @@ const couponSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    usages: [
+      {
+        bookingId: { type: mongoose.Schema.Types.ObjectId, ref: 'Booking' },
+        bookingCode: { type: String },
+        customer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        customerName: { type: String },
+        customerEmail: { type: String },
+        customerPhone: { type: String },
+        bookingAmount: { type: Number, default: 0 },
+        discountAmount: { type: Number, default: 0 },
+        usedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   {
     timestamps: true,

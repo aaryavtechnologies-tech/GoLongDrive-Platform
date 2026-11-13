@@ -89,3 +89,11 @@ export function useCoupons(params?: CouponFilters & { page?: number; limit?: num
     placeholderData: (previousData) => previousData,
   });
 }
+
+export function useCouponDetails(id: string) {
+  return useQuery({
+    queryKey: ['coupon', id],
+    queryFn: () => couponService.getCouponById(id),
+    enabled: Boolean(id),
+  });
+}
