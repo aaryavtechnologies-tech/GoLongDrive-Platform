@@ -121,7 +121,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                       fillColor: colors.background,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5A93C))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryYellow)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     items: const [
@@ -148,7 +148,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                       fillColor: colors.background,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5A93C))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryYellow)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     items: const [
@@ -174,7 +174,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                       fillColor: colors.background,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5A93C))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryYellow)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter a subject' : null,
@@ -195,7 +195,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                       fillColor: colors.background,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
                       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: colors.divider)),
-                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE5A93C))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primaryYellow)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     ),
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Please enter details' : null,
@@ -229,7 +229,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                         content: Text('Support ticket created successfully! We will get back to you shortly.'),
-                                        backgroundColor: Color(0xFF3B916E),
+                                        backgroundColor: AppColors.success,
                                       ),
                                     );
                                     _fetchTickets();
@@ -255,7 +255,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                               }
                             },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFE5A93C),
+                        backgroundColor: AppColors.primaryYellow,
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         elevation: 0,
@@ -296,30 +296,30 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'open':
-        return const Color(0xFFE5A93C);
+        return AppColors.primaryYellow;
       case 'in progress':
       case 'inprogress':
         return Colors.blue;
       case 'resolved':
-        return const Color(0xFF3B916E);
+        return AppColors.success;
       case 'closed':
-        return Colors.grey;
+        return AppColors.textSecondary;
       default:
-        return Colors.amber;
+        return AppColors.primaryYellow;
     }
   }
 
   Color _getPriorityColor(String priority) {
     switch (priority.toLowerCase()) {
       case 'urgent':
-        return Colors.red;
+        return AppColors.error;
       case 'high':
         return Colors.deepOrange;
       case 'medium':
-        return const Color(0xFFE5A93C);
+        return AppColors.primaryYellow;
       case 'low':
       default:
-        return const Color(0xFF3B916E);
+        return AppColors.success;
     }
   }
 
@@ -355,7 +355,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
               child: TabBar(
                 controller: _tabController,
                 indicator: BoxDecoration(
-                  color: const Color(0xFFE5A93C),
+                  color: AppColors.primaryYellow,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 labelColor: Colors.black,
@@ -388,12 +388,12 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
 
   Widget _buildTicketsTab(AppColorPalette colors) {
     if (_loadingTickets) {
-      return const Center(child: CircularProgressIndicator(color: Color(0xFFE5A93C)));
+      return const Center(child: CircularProgressIndicator(color: AppColors.primaryYellow));
     }
 
     return RefreshIndicator(
       onRefresh: _fetchTickets,
-      color: const Color(0xFFE5A93C),
+      color: AppColors.primaryYellow,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
         children: [
@@ -403,24 +403,24 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFE5A93C).withValues(alpha: 0.15),
-                  const Color(0xFFE5A93C).withValues(alpha: 0.05),
+                  AppColors.primaryYellow.withValues(alpha: 0.15),
+                  AppColors.primaryYellow.withValues(alpha: 0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE5A93C).withValues(alpha: 0.3)),
+              border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5A93C).withValues(alpha: 0.2),
+                    color: AppColors.primaryYellow.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.support_agent, color: Color(0xFFE5A93C), size: 28),
+                  child: const Icon(Icons.support_agent, color: AppColors.primaryYellow, size: 28),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -442,7 +442,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                 ElevatedButton(
                   onPressed: _openCreateTicketSheet,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE5A93C),
+                    backgroundColor: AppColors.primaryYellow,
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -511,7 +511,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> with SingleTicker
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(ticketId, style: const TextStyle(color: Color(0xFFE5A93C), fontWeight: FontWeight.bold, fontSize: 12)),
+                              Text(ticketId, style: const TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.bold, fontSize: 12)),
                               Row(
                                 children: [
                                   // Priority badge
@@ -772,7 +772,7 @@ class _TicketThreadModalState extends State<_TicketThreadModal> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.ticketCode, style: const TextStyle(color: Color(0xFFE5A93C), fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(widget.ticketCode, style: const TextStyle(color: AppColors.primaryYellow, fontWeight: FontWeight.bold, fontSize: 16)),
                     Text(
                       widget.initialTicket['subject'] ?? 'Support Thread',
                       style: TextStyle(color: colors.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
@@ -791,7 +791,7 @@ class _TicketThreadModalState extends State<_TicketThreadModal> {
           // Messages List
           Expanded(
             child: _loading && _messages.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFFE5A93C)))
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryYellow))
                 : ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.all(16),
@@ -811,7 +811,7 @@ class _TicketThreadModalState extends State<_TicketThreadModal> {
                           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                           decoration: BoxDecoration(
-                            color: isUser ? const Color(0xFFE5A93C) : colors.surfaceCard,
+                            color: isUser ? AppColors.primaryYellow : colors.surfaceCard,
                             borderRadius: BorderRadius.only(
                               topLeft: const Radius.circular(14),
                               topRight: const Radius.circular(14),
@@ -827,9 +827,9 @@ class _TicketThreadModalState extends State<_TicketThreadModal> {
                                 const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.support_agent, size: 14, color: Color(0xFFE5A93C)),
+                                    Icon(Icons.support_agent, size: 14, color: AppColors.primaryYellow),
                                     SizedBox(width: 4),
-                                    Text('Support Team', style: TextStyle(color: Color(0xFFE5A93C), fontSize: 11, fontWeight: FontWeight.bold)),
+                                    Text('Support Team', style: TextStyle(color: AppColors.primaryYellow, fontSize: 11, fontWeight: FontWeight.bold)),
                                   ],
                                 ),
                                 const SizedBox(height: 4),
@@ -886,7 +886,7 @@ class _TicketThreadModalState extends State<_TicketThreadModal> {
                   Container(
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      color: Color(0xFFE5A93C),
+                      color: AppColors.primaryYellow,
                     ),
                     child: IconButton(
                       icon: _sending

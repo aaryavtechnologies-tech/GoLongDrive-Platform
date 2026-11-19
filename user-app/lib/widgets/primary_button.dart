@@ -4,12 +4,9 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
-/// Main call-to-action button used across the app (e.g. "Get Started",
-/// "Login", "Create Account", "Verify"). Evergreen background complementing
-/// the logo, with a subtle scale-down animation on press.
-///
-/// This is UI-only: onPressed just triggers whatever local mock action or
-/// navigation the screen wires up — no API calls here.
+/// Main call-to-action button used across the GoLongDrive User App.
+/// Distinct yellow background (#FFC928) with bold black text (#111111).
+/// Subtle scale animation on press for responsive tactile feel.
 class PrimaryButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -33,7 +30,6 @@ class _PrimaryButtonState extends State<PrimaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final disabled = widget.onPressed == null || widget.isLoading;
 
     return Semantics(
@@ -53,9 +49,17 @@ class _PrimaryButtonState extends State<PrimaryButton> {
               height: widget.height,
               width: double.infinity,
               decoration: BoxDecoration(
-                gradient: disabled ? null : AppColors.primaryGradient,
-                color: disabled ? colors.divider : null,
-                borderRadius: BorderRadius.circular(18),
+                color: disabled ? AppColors.border : AppColors.primaryYellow,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: disabled
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: AppColors.primaryYellow.withValues(alpha: 0.35),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
               ),
               alignment: Alignment.center,
               child: widget.isLoading
@@ -65,15 +69,16 @@ class _PrimaryButtonState extends State<PrimaryButton> {
                       child: CircularProgressIndicator(
                         strokeWidth: 2.4,
                         valueColor:
-                            AlwaysStoppedAnimation<Color>(AppColors.textOnGold),
+                            AlwaysStoppedAnimation<Color>(AppColors.textOnYellow),
                       ),
                     )
                   : Text(
                       widget.label,
                       style: AppTextStyles.button.copyWith(
                         color: disabled
-                            ? colors.textSecondary
-                            : AppColors.textOnGold,
+                            ? AppColors.disabled
+                            : AppColors.textOnYellow,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
             ),

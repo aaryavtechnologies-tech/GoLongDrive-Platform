@@ -243,12 +243,12 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
-        border: Border.all(color: colors.inputBorder.withValues(alpha: 0.1)),
+        border: Border.all(color: colors.inputBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -263,13 +263,14 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                   height: 60,
                   width: 80,
                   decoration: BoxDecoration(
-                    color: colors.surfaceElevated,
+                    color: AppColors.primaryGold.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.directions_car,
-                    size: 40,
-                    color: colors.accentIcon,
+                    size: 36,
+                    color: AppColors.textOnYellow,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -425,8 +426,8 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: isLongRide
-                          ? AppColors.primaryGold.withValues(alpha: 0.12)
-                          : Colors.teal.withValues(alpha: 0.10),
+                          ? AppColors.primaryGold.withValues(alpha: 0.15)
+                          : AppColors.success.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -434,7 +435,7 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           ? '🛣️ Long Ride (≥$threshold km) — Base fare + KM charge'
                           : '⚡ Short Ride (<$threshold km) — KM charge only, no base fare',
                       style: AppTextStyles.caption.copyWith(
-                        color: isLongRide ? AppColors.primaryGold : Colors.teal,
+                        color: isLongRide ? AppColors.textPrimary : AppColors.success,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

@@ -531,7 +531,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: colors.inputBorder),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8),
+                          BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 2)),
                         ],
                       ),
                       child: Row(
@@ -585,7 +585,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                     color: AppColors.primaryGold,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 10),
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 3)),
                     ],
                   ),
                   child: const Row(
@@ -615,7 +615,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(color: colors.inputBorder),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 4)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -1293,8 +1293,8 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.5),
-            blurRadius: 25,
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 20,
             offset: const Offset(0, -4),
           ),
         ],

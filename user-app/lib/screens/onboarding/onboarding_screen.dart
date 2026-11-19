@@ -85,18 +85,45 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Skip button, hidden on the last page
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 20, top: 8),
-                child: Opacity(
-                  opacity: _isLastPage ? 0 : 1,
-                  child: TextButton(
-                    onPressed: _isLastPage ? null : _onSkip,
-                    child: Text('Skip', style: AppTextStyles.link),
+            // Top Bar with Brand Logo and Skip button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Image.asset(AppAssets.logo, fit: BoxFit.cover),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'GO LONG DRIVE',
+                    style: AppTextStyles.subtitle.copyWith(
+                      color: colors.textPrimary,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  const Spacer(),
+                  Opacity(
+                    opacity: _isLastPage ? 0 : 1,
+                    child: TextButton(
+                      onPressed: _isLastPage ? null : _onSkip,
+                      child: Text('Skip', style: AppTextStyles.link),
+                    ),
+                  ),
+                ],
               ),
             ),
 

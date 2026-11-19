@@ -4,10 +4,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
-/// Outlined / ghost-style button used for secondary actions that sit
-/// alongside a PrimaryButton (e.g. "Skip" next to "Next", "Cancel" next to
-/// "Confirm"). Transparent background, accent border + text, same press-scale
-/// feel as PrimaryButton for visual consistency.
+/// Clean secondary / outlined button for secondary actions.
+/// Clean light background (#F7F7F7) with crisp border (#EEEEEE) and black text (#111111).
 class SecondaryButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -29,7 +27,6 @@ class _SecondaryButtonState extends State<SecondaryButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     final disabled = widget.onPressed == null;
 
     return Semantics(
@@ -49,18 +46,19 @@ class _SecondaryButtonState extends State<SecondaryButton> {
               height: widget.height,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: disabled ? colors.divider : colors.accentIcon,
-                  width: 1.4,
+                  color: disabled ? AppColors.border : AppColors.border,
+                  width: 1.5,
                 ),
               ),
               alignment: Alignment.center,
               child: Text(
                 widget.label,
                 style: AppTextStyles.button.copyWith(
-                  color: disabled ? colors.textSecondary : colors.accentIcon,
+                  color: disabled ? AppColors.disabled : AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

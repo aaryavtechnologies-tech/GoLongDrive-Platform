@@ -67,7 +67,8 @@ class _TourPackagesScreenState extends State<TourPackagesScreen> {
         iconTheme: IconThemeData(color: colors.textPrimary),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppColors.primaryGold))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryGold))
           : _packages.isEmpty
               ? Center(
                   child: Padding(
@@ -75,17 +76,21 @@ class _TourPackagesScreenState extends State<TourPackagesScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.landscape_rounded, size: 70, color: colors.textSecondary.withValues(alpha: 0.4)),
+                        Icon(Icons.landscape_rounded,
+                            size: 70,
+                            color: colors.textSecondary.withValues(alpha: 0.4)),
                         const SizedBox(height: 16),
                         Text(
                           'No tour packages available right now.',
-                          style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary),
+                          style: AppTextStyles.subtitle
+                              .copyWith(color: colors.textPrimary),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Our team is designing new itineraries. You can also suggest a custom tour package below!',
-                          style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+                          style: AppTextStyles.bodySecondary
+                              .copyWith(color: colors.textSecondary),
                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -110,10 +115,12 @@ class _TourPackagesScreenState extends State<TourPackagesScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _suggestCustomTour,
         backgroundColor: AppColors.primaryGold,
-        icon: const Icon(Icons.lightbulb_outline, color: Colors.white),
+        icon:
+            const Icon(Icons.lightbulb_outline, color: AppColors.textOnYellow),
         label: const Text(
           'Suggest a Tour',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(
+              color: AppColors.textOnYellow, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -160,18 +167,21 @@ class _PackageCard extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(20)),
                   child: imageUrl != null && imageUrl.isNotEmpty
                       ? Image.network(
                           imageUrl,
                           height: 175,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
                             height: 175,
                             color: colors.surfaceElevated,
                             child: const Center(
-                              child: Icon(Icons.landscape_rounded, size: 50, color: Colors.grey),
+                              child: Icon(Icons.landscape_rounded,
+                                  size: 50, color: Colors.grey),
                             ),
                           ),
                         )
@@ -179,13 +189,15 @@ class _PackageCard extends StatelessWidget {
                           height: 175,
                           decoration: BoxDecoration(
                             color: colors.surfaceElevated,
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(20)),
                           ),
                           child: Center(
                             child: Icon(
                               Icons.landscape_rounded,
                               size: 60,
-                              color: AppColors.primaryGold.withValues(alpha: 0.5),
+                              color:
+                                  AppColors.primaryGold.withValues(alpha: 0.5),
                             ),
                           ),
                         ),
@@ -194,11 +206,13 @@ class _PackageCard extends StatelessWidget {
                   top: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.75),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                      border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       '${pkg.days} Days / ${pkg.nights} Nights',
@@ -230,7 +244,8 @@ class _PackageCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.route_rounded, size: 15, color: AppColors.primaryGold),
+                        const Icon(Icons.route_rounded,
+                            size: 15, color: AppColors.primaryGold),
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
@@ -281,7 +296,8 @@ class _PackageCard extends StatelessWidget {
                               const SizedBox(width: 4),
                               Text(
                                 'total',
-                                style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                                style: AppTextStyles.caption
+                                    .copyWith(color: colors.textSecondary),
                               ),
                             ],
                           ),
@@ -296,7 +312,8 @@ class _PackageCard extends StatelessWidget {
                         ],
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: AppColors.primaryGold,
                           borderRadius: BorderRadius.circular(10),
@@ -306,13 +323,14 @@ class _PackageCard extends StatelessWidget {
                             Text(
                               'View Details',
                               style: TextStyle(
-                                color: Colors.white,
+                                color: AppColors.textOnYellow,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                               ),
                             ),
                             SizedBox(width: 4),
-                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15),
+                            Icon(Icons.arrow_forward_rounded,
+                                color: AppColors.textOnYellow, size: 15),
                           ],
                         ),
                       ),
@@ -332,7 +350,8 @@ class _SuggestCustomTourDialog extends StatefulWidget {
   const _SuggestCustomTourDialog();
 
   @override
-  State<_SuggestCustomTourDialog> createState() => _SuggestCustomTourDialogState();
+  State<_SuggestCustomTourDialog> createState() =>
+      _SuggestCustomTourDialogState();
 }
 
 class _SuggestCustomTourDialogState extends State<_SuggestCustomTourDialog> {
@@ -370,7 +389,9 @@ class _SuggestCustomTourDialogState extends State<_SuggestCustomTourDialog> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tour suggestion submitted! We will contact you soon.')),
+          const SnackBar(
+              content:
+                  Text('Tour suggestion submitted! We will contact you soon.')),
         );
       }
     } catch (e) {
@@ -389,7 +410,8 @@ class _SuggestCustomTourDialogState extends State<_SuggestCustomTourDialog> {
 
     return AlertDialog(
       backgroundColor: colors.surface,
-      title: Text('Suggest a Custom Tour', style: TextStyle(color: colors.textPrimary)),
+      title: Text('Suggest a Custom Tour',
+          style: TextStyle(color: colors.textPrimary)),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -441,10 +463,20 @@ class _SuggestCustomTourDialogState extends State<_SuggestCustomTourDialog> {
         ),
         ElevatedButton(
           onPressed: _submitting ? null : _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGold),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryGold,
+            foregroundColor: AppColors.textOnYellow,
+          ),
           child: _submitting
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : const Text('Submit', style: TextStyle(color: Colors.white)),
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                      color: AppColors.textOnYellow, strokeWidth: 2))
+              : const Text('Submit',
+                  style: TextStyle(
+                      color: AppColors.textOnYellow,
+                      fontWeight: FontWeight.bold)),
         ),
       ],
     );

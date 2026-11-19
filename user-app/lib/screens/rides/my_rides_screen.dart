@@ -222,12 +222,12 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
         decoration: BoxDecoration(
           color: colors.surfaceCard,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: colors.inputBorder.withValues(alpha: 0.1)),
+          border: Border.all(color: colors.inputBorder),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             )
           ],
         ),

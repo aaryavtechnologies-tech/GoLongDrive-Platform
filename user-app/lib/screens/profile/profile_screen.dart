@@ -5,7 +5,6 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/theme_scope.dart';
 import '../../routes/app_routes.dart';
 import '../../core/services/user_controller.dart';
 import '../../core/services/user_scope.dart';
@@ -53,6 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Log Out', style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
@@ -110,8 +110,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 40,
               width: 40,
               decoration: BoxDecoration(
-                color: colors.surface,
+                color: colors.surfaceSecondary,
                 shape: BoxShape.circle,
+                border: Border.all(color: colors.divider),
               ),
               child: Icon(Icons.arrow_back, color: colors.textPrimary, size: 20),
             ),
@@ -147,26 +148,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
         border: Border.all(color: colors.inputBorder),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           )
         ],
       ),
       child: isLoading
         ? const SizedBox(
             height: 200,
-            child: Center(child: CircularProgressIndicator(color: AppColors.primaryGold)),
+            child: Center(child: CircularProgressIndicator(color: AppColors.primaryYellow)),
           )
         : Column(
             children: [
               Container(
-                height: 80,
-                width: 80,
+                height: 84,
+                width: 84,
                 decoration: BoxDecoration(
-                  color: colors.surfaceElevated,
+                  color: AppColors.surfaceElevated,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primaryGold, width: 2),
+                  border: Border.all(color: AppColors.primaryYellow, width: 3),
                   image: imageUrl.isNotEmpty
                       ? DecorationImage(
                           image: NetworkImage(imageUrl),
@@ -178,7 +179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ? Center(
                         child: Text(
                           displayFullName.isNotEmpty ? displayFullName[0].toUpperCase() : 'U',
-                          style: AppTextStyles.largeHeading.copyWith(color: AppColors.primaryGold),
+                          style: AppTextStyles.largeHeading.copyWith(color: AppColors.textPrimary),
                         ),
                       )
                     : null,
@@ -189,18 +190,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Text(phone, style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary)),
               const SizedBox(height: 4),
               Text(email, style: AppTextStyles.caption.copyWith(color: colors.textSecondary)),
-              const SizedBox(height: 12),
+              const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: colors.surfaceSecondary,
+                  color: AppColors.surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: colors.inputBorder.withValues(alpha: 0.5)),
+                  border: Border.all(color: AppColors.primaryYellow.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.pin, color: AppColors.primaryGold, size: 16),
+                    const Icon(Icons.pin, color: AppColors.textPrimary, size: 16),
                     const SizedBox(width: 8),
                     Text(
                       'Ride PIN: ${_showPin ? (userProfile?['ridePin'] ?? 'N/A') : '••••'}',
@@ -226,11 +227,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               OutlinedButton(
                 onPressed: () => Navigator.of(context).pushNamed(AppRoutes.accountDetails),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.primaryGold),
+                  side: const BorderSide(color: AppColors.primaryYellow, width: 1.5),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 ),
-                child: Text('Edit Profile', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold, fontWeight: FontWeight.w600)),
+                child: Text('Edit Profile', style: AppTextStyles.body.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
               ),
             ],
           ),
@@ -245,23 +246,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _buildMenuCard(
           context: context,
           items: [
-            _MenuItem(icon: Icons.history, label: 'My Bookings', route: AppRoutes.myRides),
-            _MenuItem(icon: Icons.person_outline, label: 'Personal Information', route: AppRoutes.accountDetails),
-            _MenuItem(icon: Icons.payment_outlined, label: 'Payment History', route: AppRoutes.paymentMethods),
-          ],
-        ),
-        const SizedBox(height: 24),
-        _buildSectionTitle(context, 'Preferences'),
-        _buildMenuCard(
-          context: context,
-          items: [
-            _MenuItem(
-              icon: ThemeScope.of(context).isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
-              label: 'Dark Mode',
-              isToggle: true,
-              toggleValue: ThemeScope.of(context).isDark,
-              onToggle: (_) => ThemeScope.of(context).toggle(),
-            ),
+            const _MenuItem(icon: Icons.history, label: 'My Bookings', route: AppRoutes.myRides),
+            const _MenuItem(icon: Icons.person_outline, label: 'Personal Information', route: AppRoutes.accountDetails),
+            const _MenuItem(icon: Icons.payment_outlined, label: 'Payment History', route: AppRoutes.paymentMethods),
+            const _MenuItem(icon: Icons.help_outline, label: 'Help & Support', route: AppRoutes.helpSupport),
           ],
         ),
       ],
@@ -283,6 +271,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: colors.surfaceCard,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colors.inputBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
       ),
       child: Column(
         children: List.generate(items.length, (index) {
@@ -292,15 +287,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: item.isToggle
-                      ? null
-                      : () {
-                          if (item.onTap != null) {
-                            item.onTap!();
-                          } else if (item.route != null) {
-                            Navigator.of(context).pushNamed(item.route!);
-                          }
-                        },
+                  onTap: () {
+                    Navigator.of(context).pushNamed(item.route);
+                  },
                   borderRadius: index == 0
                       ? const BorderRadius.vertical(top: Radius.circular(20))
                       : index == items.length - 1
@@ -313,23 +302,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: colors.surfaceElevated,
+                            color: AppColors.surfaceElevated,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(item.icon, color: AppColors.primaryGold, size: 20),
+                          child: Icon(item.icon, color: AppColors.textPrimary, size: 20),
                         ),
                         const SizedBox(width: 16),
                         Expanded(
-                          child: Text(item.label, style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w500)),
+                          child: Text(
+                            item.label,
+                            style: AppTextStyles.body.copyWith(
+                              color: colors.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                        if (item.isToggle)
-                          Switch(
-                            value: item.toggleValue ?? false,
-                            onChanged: item.onToggle,
-                            activeColor: AppColors.primaryGold,
-                          )
-                        else
-                          Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
+                        Icon(Icons.chevron_right, color: colors.textSecondary, size: 20),
                       ],
                     ),
                   ),
@@ -358,18 +346,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: colors.surfaceCard,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.logout, color: Colors.redAccent, size: 20),
+            const Icon(Icons.logout, color: AppColors.error, size: 20),
             const SizedBox(width: 10),
             Text(
               'Log Out',
               style: AppTextStyles.body.copyWith(
-                color: Colors.redAccent,
-                fontWeight: FontWeight.w600,
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -442,12 +430,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 await launchUrl(uri, mode: LaunchMode.externalApplication);
               }
             },
-            child: Text('Web Portal', style: AppTextStyles.body.copyWith(color: AppColors.primaryGold)),
+            child: Text('Web Portal', style: AppTextStyles.body.copyWith(color: AppColors.primaryYellow)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Delete Account', style: AppTextStyles.body.copyWith(color: Colors.white, fontWeight: FontWeight.w600)),
@@ -492,18 +481,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _MenuItem {
   final IconData icon;
   final String label;
-  final String? route;
-  final VoidCallback? onTap;
-  final bool isToggle;
-  final bool? toggleValue;
-  final ValueChanged<bool>? onToggle;
+  final String route;
 
   const _MenuItem({
     required this.icon,
     required this.label,
-    this.route,
-    this.isToggle = false,
-    this.toggleValue,
-    this.onToggle,
-  }) : onTap = null;
+    required this.route,
+  });
 }

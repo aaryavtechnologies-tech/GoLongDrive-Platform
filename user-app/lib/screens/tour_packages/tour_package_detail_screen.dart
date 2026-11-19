@@ -10,12 +10,14 @@ class TourPackageDetailScreen extends StatefulWidget {
   const TourPackageDetailScreen({super.key, required this.package});
 
   @override
-  State<TourPackageDetailScreen> createState() => _TourPackageDetailScreenState();
+  State<TourPackageDetailScreen> createState() =>
+      _TourPackageDetailScreenState();
 }
 
 class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
   final TourPackageService _service = TourPackageService();
-  final TextEditingController _pickupAddressController = TextEditingController();
+  final TextEditingController _pickupAddressController =
+      TextEditingController();
 
   DateTime? _selectedDate;
   TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
@@ -26,7 +28,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _passengers = widget.package.numberOfPersons > 0 ? widget.package.numberOfPersons : 2;
+    _passengers =
+        widget.package.numberOfPersons > 0 ? widget.package.numberOfPersons : 2;
     _selectedDate = DateTime.now().add(const Duration(days: 2));
     if (widget.package.pricing.isNotEmpty) {
       _selectedVehicleType = widget.package.pricing.first.vehicleType;
@@ -87,17 +90,19 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
             backgroundColor: AppColors.of(context).surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
+                    color: AppColors.success.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 50),
+                  child: const Icon(Icons.check_circle_rounded,
+                      color: AppColors.success, size: 50),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -136,12 +141,15 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGold,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: const Text(
                       'Done',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                          color: AppColors.textOnYellow,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -171,7 +179,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
       appBar: AppBar(
         title: Text(
           'Package Details',
-          style: AppTextStyles.subtitle.copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
+          style: AppTextStyles.subtitle
+              .copyWith(color: colors.textPrimary, fontWeight: FontWeight.bold),
         ),
         backgroundColor: colors.surface,
         elevation: 0,
@@ -194,7 +203,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                       height: 230,
                       color: colors.surfaceElevated,
                       child: const Center(
-                        child: Icon(Icons.landscape_rounded, size: 60, color: Colors.grey),
+                        child: Icon(Icons.landscape_rounded,
+                            size: 60, color: Colors.grey),
                       ),
                     ),
                   )
@@ -214,11 +224,13 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                   bottom: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.4)),
+                      border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.4)),
                     ),
                     child: Text(
                       '${pkg.days} Days / ${pkg.nights} Nights',
@@ -251,7 +263,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.route_rounded, color: AppColors.primaryGold, size: 18),
+                        const Icon(Icons.route_rounded,
+                            color: AppColors.primaryGold, size: 18),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -274,7 +287,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                     decoration: BoxDecoration(
                       color: colors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: colors.divider.withValues(alpha: 0.4)),
+                      border: Border.all(
+                          color: colors.divider.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -284,7 +298,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                           children: [
                             Text(
                               'Package Price',
-                              style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: colors.textSecondary),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -306,7 +321,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                           children: [
                             Text(
                               'Per Person Rate',
-                              style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                              style: AppTextStyles.caption
+                                  .copyWith(color: colors.textSecondary),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -318,7 +334,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             ),
                             Text(
                               'for ${pkg.numberOfPersons} persons',
-                              style: AppTextStyles.caption.copyWith(color: colors.textSecondary, fontSize: 10),
+                              style: AppTextStyles.caption.copyWith(
+                                  color: colors.textSecondary, fontSize: 10),
                             ),
                           ],
                         ),
@@ -361,16 +378,19 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                       runSpacing: 8,
                       children: pkg.placesToExplore.map((place) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: colors.surface,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: colors.divider.withValues(alpha: 0.5)),
+                            border: Border.all(
+                                color: colors.divider.withValues(alpha: 0.5)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.place_rounded, size: 14, color: AppColors.primaryGold),
+                              const Icon(Icons.place_rounded,
+                                  size: 14, color: AppColors.primaryGold),
                               const SizedBox(width: 6),
                               Text(
                                 place,
@@ -402,7 +422,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colors.divider.withValues(alpha: 0.4)),
+                        border: Border.all(
+                            color: colors.divider.withValues(alpha: 0.4)),
                       ),
                       child: Column(
                         children: pkg.includes.map((item) {
@@ -410,7 +431,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.check_circle_rounded, color: Colors.green, size: 18),
+                                const Icon(Icons.check_circle_rounded,
+                                    color: Colors.green, size: 18),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -445,7 +467,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                       decoration: BoxDecoration(
                         color: colors.surface,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: colors.divider.withValues(alpha: 0.4)),
+                        border: Border.all(
+                            color: colors.divider.withValues(alpha: 0.4)),
                       ),
                       child: Column(
                         children: pkg.excludes.map((item) {
@@ -453,7 +476,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 18),
+                                const Icon(Icons.cancel_rounded,
+                                    color: Colors.redAccent, size: 18),
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
@@ -485,18 +509,25 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                     const SizedBox(height: 10),
                     Column(
                       children: pkg.pricing.map((tier) {
-                        final isSelected = _selectedVehicleType == tier.vehicleType;
+                        final isSelected =
+                            _selectedVehicleType == tier.vehicleType;
                         return InkWell(
-                          onTap: () => setState(() => _selectedVehicleType = tier.vehicleType),
+                          onTap: () => setState(
+                              () => _selectedVehicleType = tier.vehicleType),
                           borderRadius: BorderRadius.circular(14),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.12) : colors.surface,
+                              color: isSelected
+                                  ? AppColors.primaryGold
+                                      .withValues(alpha: 0.12)
+                                  : colors.surface,
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: isSelected ? AppColors.primaryGold : colors.divider.withValues(alpha: 0.5),
+                                color: isSelected
+                                    ? AppColors.primaryGold
+                                    : colors.divider.withValues(alpha: 0.5),
                                 width: isSelected ? 1.5 : 1,
                               ),
                             ),
@@ -504,7 +535,9 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                               children: [
                                 Icon(
                                   Icons.directions_car_rounded,
-                                  color: isSelected ? AppColors.primaryGold : colors.textSecondary,
+                                  color: isSelected
+                                      ? AppColors.primaryGold
+                                      : colors.textSecondary,
                                   size: 22,
                                 ),
                                 const SizedBox(width: 12),
@@ -513,7 +546,9 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                                     tier.vehicleType,
                                     style: TextStyle(
                                       color: colors.textPrimary,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      fontWeight: isSelected
+                                          ? FontWeight.bold
+                                          : FontWeight.w500,
                                       fontSize: 14,
                                     ),
                                   ),
@@ -521,7 +556,9 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                                 Text(
                                   '₹${tier.price.toInt()}',
                                   style: TextStyle(
-                                    color: isSelected ? AppColors.primaryGold : colors.textPrimary,
+                                    color: isSelected
+                                        ? AppColors.primaryGold
+                                        : colors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
@@ -542,7 +579,8 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                     decoration: BoxDecoration(
                       color: colors.surface,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                      border: Border.all(
+                          color: AppColors.primaryGold.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -559,16 +597,20 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                         // Date Picker
                         Text(
                           'Select Departure Date',
-                          style: AppTextStyles.caption.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.caption.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 6),
                         InkWell(
                           onTap: () async {
                             final date = await showDatePicker(
                               context: context,
-                              initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 2)),
+                              initialDate: _selectedDate ??
+                                  DateTime.now().add(const Duration(days: 2)),
                               firstDate: DateTime.now(),
-                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                              lastDate:
+                                  DateTime.now().add(const Duration(days: 365)),
                             );
                             if (date != null) {
                               setState(() => _selectedDate = date);
@@ -578,18 +620,22 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
                               color: colors.background,
-                              border: Border.all(color: colors.divider.withValues(alpha: 0.6)),
+                              border: Border.all(
+                                  color: colors.divider.withValues(alpha: 0.6)),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
-                                const Icon(Icons.calendar_today_rounded, color: AppColors.primaryGold, size: 18),
+                                const Icon(Icons.calendar_today_rounded,
+                                    color: AppColors.primaryGold, size: 18),
                                 const SizedBox(width: 10),
                                 Text(
                                   _selectedDate != null
                                       ? '${_selectedDate!.day}/${_selectedDate!.month}/${_selectedDate!.year}'
                                       : 'Choose Date',
-                                  style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w600),
+                                  style: TextStyle(
+                                      color: colors.textPrimary,
+                                      fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -601,14 +647,18 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                         // Travelers Counter
                         Text(
                           'Number of Travelers',
-                          style: AppTextStyles.caption.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.caption.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: colors.background,
-                            border: Border.all(color: colors.divider.withValues(alpha: 0.6)),
+                            border: Border.all(
+                                color: colors.divider.withValues(alpha: 0.6)),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -616,27 +666,33 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             children: [
                               Row(
                                 children: [
-                                  const Icon(Icons.people_outline_rounded, color: AppColors.primaryGold, size: 20),
+                                  const Icon(Icons.people_outline_rounded,
+                                      color: AppColors.primaryGold, size: 20),
                                   const SizedBox(width: 10),
                                   Text(
                                     '$_passengers Persons',
-                                    style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                        color: colors.textPrimary,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
                               Row(
                                 children: [
                                   IconButton(
-                                    icon: const Icon(Icons.remove_circle_outline),
+                                    icon:
+                                        const Icon(Icons.remove_circle_outline),
                                     color: AppColors.primaryGold,
                                     onPressed: () {
-                                      if (_passengers > 1) setState(() => _passengers--);
+                                      if (_passengers > 1)
+                                        setState(() => _passengers--);
                                     },
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.add_circle_outline),
                                     color: AppColors.primaryGold,
-                                    onPressed: () => setState(() => _passengers++),
+                                    onPressed: () =>
+                                        setState(() => _passengers++),
                                   ),
                                 ],
                               ),
@@ -649,7 +705,9 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                         // Optional pickup location
                         Text(
                           'Pickup Address / City (Optional)',
-                          style: AppTextStyles.caption.copyWith(color: colors.textSecondary, fontWeight: FontWeight.w600),
+                          style: AppTextStyles.caption.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 6),
                         TextField(
@@ -657,18 +715,23 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                           style: TextStyle(color: colors.textPrimary),
                           decoration: InputDecoration(
                             hintText: 'Enter your pickup address or city',
-                            hintStyle: TextStyle(color: colors.textSecondary.withValues(alpha: 0.6)),
-                            prefixIcon: const Icon(Icons.my_location_rounded, color: AppColors.primaryGold, size: 18),
+                            hintStyle: TextStyle(
+                                color: colors.textSecondary
+                                    .withValues(alpha: 0.6)),
+                            prefixIcon: const Icon(Icons.my_location_rounded,
+                                color: AppColors.primaryGold, size: 18),
                             filled: true,
                             fillColor: colors.background,
                             contentPadding: const EdgeInsets.all(14),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: colors.divider.withValues(alpha: 0.6)),
+                              borderSide: BorderSide(
+                                  color: colors.divider.withValues(alpha: 0.6)),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: colors.divider.withValues(alpha: 0.6)),
+                              borderSide: BorderSide(
+                                  color: colors.divider.withValues(alpha: 0.6)),
                             ),
                           ),
                         ),
@@ -704,11 +767,14 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                           decoration: BoxDecoration(
                             color: AppColors.primaryGold.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                            border: Border.all(
+                                color: AppColors.primaryGold
+                                    .withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline_rounded, color: AppColors.primaryGold, size: 18),
+                              const Icon(Icons.info_outline_rounded,
+                                  color: AppColors.primaryGold, size: 18),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -734,17 +800,20 @@ class _TourPackageDetailScreenState extends State<TourPackageDetailScreen> {
                             onPressed: _isBooking ? null : _bookPackage,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primaryGold,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              foregroundColor: AppColors.textOnYellow,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14)),
                               elevation: 2,
                             ),
                             child: _isBooking
-                                ? const CircularProgressIndicator(color: Colors.white)
+                                ? const CircularProgressIndicator(
+                                    color: AppColors.textOnYellow)
                                 : const Text(
                                     'Submit Booking Request',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                      color: AppColors.textOnYellow,
                                     ),
                                   ),
                           ),

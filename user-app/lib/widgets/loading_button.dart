@@ -4,8 +4,7 @@ import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
 /// Compact text-style button with a built-in loading spinner state — for
-/// smaller inline actions that aren't full-width (e.g. "Resend OTP",
-/// "Change Email"). For the main full-width CTA, use PrimaryButton instead.
+/// smaller inline actions (e.g. "Resend OTP", "Change Email").
 class LoadingButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -37,19 +36,22 @@ class LoadingButton extends StatelessWidget {
           ),
           child: isLoading
               ? const SizedBox(
-            height: 16,
-            width: 16,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGold),
-            ),
-          )
+                  height: 16,
+                  width: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+                  ),
+                )
               : Text(
-            label,
-            style: AppTextStyles.link.copyWith(
-              color: onPressed == null ? colors.textSecondary : AppColors.primaryGold,
-            ),
-          ),
+                  label,
+                  style: AppTextStyles.link.copyWith(
+                    color: onPressed == null
+                        ? colors.disabled
+                        : AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
         ),
       ),
     );

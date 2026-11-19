@@ -4,13 +4,8 @@ import 'package:flutter/services.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
 
-/// Standard text input used for name, email, mobile, and similar fields
-/// across auth screens. Relies on the app-wide InputDecorationTheme (borders,
-/// radius, colors) set in app_theme.dart, so it only needs to specify what's
-/// unique per field: label, hint, icon, keyboard type, and a validator.
-///
-/// This is local-only UI validation (no backend calls) — pass a validator
-/// function from core/utils/validators.dart.
+/// Standard text input used across GoLongDrive User App forms.
+/// Clean light input (#F7F7F7), crisp borders (#EEEEEE), black text (#111111).
 class AppTextField extends StatelessWidget {
   final String label;
   final String? hint;
@@ -41,11 +36,16 @@ class AppTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.body.copyWith(color: colors.textPrimary)),
+        Text(
+          label,
+          style: AppTextStyles.body.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         const SizedBox(height: 8),
         Semantics(
           textField: true,
@@ -59,11 +59,11 @@ class AppTextField extends StatelessWidget {
             enabled: enabled,
             validator: validator,
             autovalidateMode: autovalidateMode,
-            style: AppTextStyles.body.copyWith(color: colors.textPrimary),
+            style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
             decoration: InputDecoration(
               hintText: hint,
               prefixIcon: prefixIcon != null
-                  ? Icon(prefixIcon, color: colors.textSecondary, size: 20)
+                  ? Icon(prefixIcon, color: AppColors.textPrimary, size: 20)
                   : null,
             ),
           ),

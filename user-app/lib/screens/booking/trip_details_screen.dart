@@ -22,7 +22,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/theme/theme_scope.dart';
 import '../../models/ride_request.dart';
 import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
@@ -89,15 +88,15 @@ class _TripDetailsScreenState extends State<TripDetailsScreen> {
 
   Widget _datePickerTheme(BuildContext context, Widget? child) {
     final colors = AppColors.of(context);
-    final isDark = ThemeScope.of(context).isDark;
     return Theme(
       data: Theme.of(context).copyWith(
-        colorScheme: (isDark ? const ColorScheme.dark() : const ColorScheme.light()).copyWith(
+        colorScheme: const ColorScheme.light().copyWith(
           primary: AppColors.primaryGold,
           onPrimary: AppColors.textOnGold,
           surface: colors.surface,
           onSurface: colors.textPrimary,
-        ), dialogTheme: DialogThemeData(backgroundColor: colors.surface),
+        ),
+        dialogTheme: DialogThemeData(backgroundColor: colors.surface),
       ),
       child: child!,
     );

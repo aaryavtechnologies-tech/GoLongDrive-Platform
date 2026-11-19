@@ -1,11 +1,9 @@
 // lib/widgets/app_checkbox.dart
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
-import '../core/theme/app_text_styles.dart';
 
-/// Custom checkbox with gold accent, used for "Remember me" (Login) and
-/// "I agree to Terms & Conditions" (Register). Label is tappable too, not
-/// just the box itself.
+/// Custom checkbox with yellow accent (#FFC928) and black checkmark (#111111),
+/// used for "Remember me" (Login) and "I agree to Terms & Conditions" (Register).
 class AppCheckbox extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
@@ -20,7 +18,6 @@ class AppCheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
     return Semantics(
       checked: value,
       child: InkWell(
@@ -36,24 +33,19 @@ class AppCheckbox extends StatelessWidget {
               width: 20,
               margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
-                color: value ? AppColors.primaryGold : Colors.transparent,
+                color: value ? AppColors.primaryYellow : AppColors.inputBackground,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
-                  color: value ? AppColors.primaryGold : colors.inputBorder,
-                  width: 1.4,
+                  color: value ? AppColors.primaryYellow : AppColors.border,
+                  width: 1.5,
                 ),
               ),
               child: value
-                  ? const Icon(Icons.check, size: 14, color: AppColors.textOnGold)
+                  ? const Icon(Icons.check, size: 14, color: AppColors.textOnYellow)
                   : null,
             ),
             const SizedBox(width: 10),
-            Flexible(
-              child: DefaultTextStyle(
-                style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
-                child: label,
-              ),
-            ),
+            Expanded(child: label),
           ],
         ),
       ),

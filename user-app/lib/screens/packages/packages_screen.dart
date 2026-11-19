@@ -93,7 +93,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                                 child: Text(
                                   'Tour Packages',
                                   style: TextStyle(
-                                    color: _selectedTabIndex == 0 ? Colors.white : colors.textSecondary,
+                                    color: _selectedTabIndex == 0 ? AppColors.textOnYellow : colors.textSecondary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -115,7 +115,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                                 child: Text(
                                   'Ride Memberships',
                                   style: TextStyle(
-                                    color: _selectedTabIndex == 1 ? Colors.white : colors.textSecondary,
+                                    color: _selectedTabIndex == 1 ? AppColors.textOnYellow : colors.textSecondary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 13,
                                   ),
@@ -329,7 +329,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                               child: const Text(
                                 'Book Now',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.textOnYellow,
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
                                 ),
@@ -378,12 +378,12 @@ class _PackagesScreenState extends State<PackagesScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.card_membership_rounded, color: Colors.white, size: 32),
+                          const Icon(Icons.card_membership_rounded, color: AppColors.textOnYellow, size: 32),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               'GoLong Memberships',
-                              style: AppTextStyles.mediumHeading.copyWith(color: Colors.white, fontSize: 18),
+                              style: AppTextStyles.mediumHeading.copyWith(color: AppColors.textOnYellow, fontSize: 18),
                             ),
                           ),
                         ],
@@ -391,7 +391,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                       const SizedBox(height: 10),
                       Text(
                         'Pre-pay for rides and save up to 25% on every trip.',
-                        style: AppTextStyles.caption.copyWith(color: Colors.white.withValues(alpha: 0.9)),
+                        style: AppTextStyles.caption.copyWith(color: AppColors.textOnYellow.withValues(alpha: 0.8)),
                       ),
                     ],
                   ),
@@ -429,7 +429,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
       trips: '8 trips',
       validity: '30 days',
       badge: 'Most Popular',
-      badgeColor: Color(0xFF267568),
+      badgeColor: AppColors.primaryYellow,
       features: ['Free cancellation up to 2 hr', 'Priority driver match', 'AC rides only'],
       icon: Icons.calendar_month_rounded,
     ),
@@ -442,7 +442,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
       trips: '4 trips',
       validity: '30 days',
       badge: 'Best for Leisure',
-      badgeColor: Color(0xFFAD752B),
+      badgeColor: AppColors.primaryYellow,
       features: ['Valid Fri–Sun only', 'AC rides', 'Family-friendly vehicles'],
       icon: Icons.wb_sunny_rounded,
     ),
@@ -455,7 +455,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
       trips: '20 trips',
       validity: '30 days',
       badge: 'Best Value',
-      badgeColor: Color(0xFF267568),
+      badgeColor: AppColors.primaryYellow,
       features: ['GST invoice included', 'Premium sedans & SUVs', 'Meet & greet option'],
       icon: Icons.business_center_rounded,
     ),

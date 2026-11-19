@@ -83,7 +83,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             child: Text(
               'Remove',
               style: AppTextStyles.body.copyWith(
-                color: Colors.redAccent,
+                color: AppColors.error,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -197,9 +197,10 @@ class _PaymentMethodTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: method.isDefault
-            ? Border.all(color: AppColors.primaryGold, width: 1.2)
-            : null,
+        border: Border.all(
+          color: method.isDefault ? AppColors.primaryGold : colors.inputBorder,
+          width: method.isDefault ? 1.5 : 1.0,
+        ),
       ),
       child: Row(
         children: [

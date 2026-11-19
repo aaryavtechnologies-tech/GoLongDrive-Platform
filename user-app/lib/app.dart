@@ -27,24 +27,21 @@ class _GoLongDriveAppState extends State<GoLongDriveApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _themeController,
-      builder: (context, _) {
-        return MaterialApp(
-          title: 'GoLongDrive',
-          debugShowCheckedModeBanner: false,
-          theme: _themeController.isDark ? AppTheme.dark : AppTheme.light,
-          initialRoute: AppRoutes.splash,
-          onGenerateRoute: AppRoutes.generateRoute,
-          builder: (context, child) => ThemeScope(
-            controller: _themeController,
-            child: UserScope(
-              controller: _userController,
-              child: child!,
-            ),
-          ),
-        );
-      },
+    return MaterialApp(
+      title: 'GoLongDrive',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.light, // Dark mode removed: always display white-and-yellow theme
+      themeMode: ThemeMode.light, // Disables automatic system-theme switching
+      initialRoute: AppRoutes.splash,
+      onGenerateRoute: AppRoutes.generateRoute,
+      builder: (context, child) => ThemeScope(
+        controller: _themeController,
+        child: UserScope(
+          controller: _userController,
+          child: child!,
+        ),
+      ),
     );
   }
 }

@@ -2,10 +2,9 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Text style hierarchy for the whole app.
-/// Inter is used throughout, with tighter headings and relaxed body/caption
-/// text (clean, readable). Every screen/widget must use these — never
-/// reference the font families directly inside a screen file.
+/// Text style hierarchy for the GoLongDrive User App.
+/// Inter typography with high-contrast text: #111111 for primary headings & body,
+/// #666666 for secondary & caption text, and #111111 for buttons on yellow.
 class AppTextStyles {
   AppTextStyles._();
 
@@ -13,7 +12,7 @@ class AppTextStyles {
   static TextStyle largeHeading = const TextStyle(
     fontFamily: 'Inter',
     fontSize: 32,
-    letterSpacing: -1.2,
+    letterSpacing: -1.0,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
     height: 1.2,
@@ -22,7 +21,7 @@ class AppTextStyles {
   static TextStyle mediumHeading = const TextStyle(
     fontFamily: 'Inter',
     fontSize: 24,
-    letterSpacing: -0.7,
+    letterSpacing: -0.5,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     height: 1.25,
@@ -39,7 +38,7 @@ class AppTextStyles {
   static TextStyle subtitle = const TextStyle(
     fontFamily: 'Inter',
     fontSize: 16,
-    fontWeight: FontWeight.w500,
+    fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
     height: 1.3,
   );
@@ -69,20 +68,20 @@ class AppTextStyles {
     height: 1.3,
   );
 
-  // Button label — Inter, used inside primary/secondary buttons
+  // Button label — Inter, bold black text on yellow background
   static TextStyle button = const TextStyle(
     fontFamily: 'Inter',
     fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textOnGold,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textOnYellow,
   );
 
-  // Link / inline action text (e.g. "Forgot password?", "Resend OTP")
+  // Link / inline action text
   static TextStyle link = const TextStyle(
     fontFamily: 'Inter',
     fontSize: 14,
-    fontWeight: FontWeight.w500,
-    color: AppColors.primaryGold,
+    fontWeight: FontWeight.w600,
+    color: AppColors.textPrimary,
   );
 
   // Error text under form fields

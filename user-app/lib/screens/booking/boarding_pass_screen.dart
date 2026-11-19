@@ -114,7 +114,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                Icon(Icons.error_outline, color: AppColors.error, size: 48),
                 const SizedBox(height: 16),
                 Text(
                   _errorMsg ?? 'Failed to load boarding pass details.',
@@ -245,9 +245,9 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                       border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.5), width: 2),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.primaryGold.withValues(alpha: 0.1),
-                          blurRadius: 30,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
                         )
                       ],
                     ),
@@ -443,7 +443,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                                   style: AppTextStyles.caption.copyWith(
                                     color: paymentStatus == 'Paid' || paymentStatus == 'Advance Paid'
                                         ? AppColors.success
-                                        : Colors.orangeAccent,
+                                        : AppColors.primaryGold,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -464,7 +464,7 @@ class _BoardingPassScreenState extends State<BoardingPassScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       ridePin,
-                                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: 12, color: Colors.white),
+                                      style: TextStyle(fontSize: 48, fontWeight: FontWeight.w900, letterSpacing: 12, color: colors.textPrimary),
                                     ),
                                   ],
                                 ),

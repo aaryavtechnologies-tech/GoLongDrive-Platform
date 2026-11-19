@@ -60,6 +60,7 @@ class _MainTabsScreenState extends State<MainTabsScreen>
     final colors = AppColors.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Stack(
         children: _screens.asMap().entries.map((entry) {
           final i = entry.key;
@@ -130,9 +131,9 @@ class _AnimatedNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        border: Border(top: BorderSide(color: colors.divider, width: 0.8)),
-        color: colors.surface,
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.border, width: 1.0)),
+        color: AppColors.background,
       ),
       child: SafeArea(
         top: false,
@@ -195,7 +196,7 @@ class _NavButtonState extends State<_NavButton>
     value: widget.isSelected ? 1.0 : 0.0,
   );
 
-  late final Animation<double> _scaleAnim = Tween<double>(begin: 1.0, end: 1.1)
+  late final Animation<double> _scaleAnim = Tween<double>(begin: 1.0, end: 1.06)
       .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
   @override
@@ -219,7 +220,6 @@ class _NavButtonState extends State<_NavButton>
   @override
   Widget build(BuildContext context) {
     final isSelected = widget.isSelected;
-    final colors = widget.colors;
     final item = widget.item;
 
     return GestureDetector(
@@ -245,7 +245,7 @@ class _NavButtonState extends State<_NavButton>
                     const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? AppColors.primaryGold.withValues(alpha: 0.14)
+                      ? AppColors.primaryYellow
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -260,8 +260,8 @@ class _NavButtonState extends State<_NavButton>
                     key: ValueKey(isSelected),
                     size: 22,
                     color: isSelected
-                        ? AppColors.primaryGold
-                        : colors.textSecondary,
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
                   ),
                 ),
               ),
@@ -269,10 +269,10 @@ class _NavButtonState extends State<_NavButton>
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 180),
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   color:
-                      isSelected ? AppColors.primaryGold : colors.textSecondary,
+                      isSelected ? AppColors.textPrimary : AppColors.textSecondary,
                   letterSpacing: 0.1,
                 ),
                 child: Text(item.label),

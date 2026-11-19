@@ -202,12 +202,12 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                     decoration: BoxDecoration(
                       color: colors.surfaceCard,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: colors.inputBorder.withValues(alpha: 0.1)),
+                      border: Border.all(color: colors.inputBorder),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
                         )
                       ],
                     ),
@@ -371,12 +371,12 @@ class _ConfirmRideScreenState extends State<ConfirmRideScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: Colors.teal.withValues(alpha: 0.10),
+                                    color: AppColors.success.withValues(alpha: 0.12),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     '⚡ Short ride — only KM rate charged, no base fare',
-                                    style: AppTextStyles.caption.copyWith(color: Colors.teal, fontWeight: FontWeight.w600),
+                                    style: AppTextStyles.caption.copyWith(color: AppColors.success, fontWeight: FontWeight.w600),
                                   ),
                                 ),
                               const SizedBox(height: 8),

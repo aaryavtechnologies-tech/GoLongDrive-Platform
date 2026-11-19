@@ -73,23 +73,50 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: [
               SizedBox(
                 height: 60,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: _index < _items.length - 1
-                        ? TextButton(
-                            onPressed: _completeOnboarding,
-                            child: Text(
-                              'Skip',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: AppColors.gold.withValues(alpha: 0.3),
+                            width: 1.5,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          'assets/images/app_icon.png',
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'GO LONG DRIVE',
+                        style: TextStyle(
+                          color: AppColors.gold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_index < _items.length - 1)
+                        TextButton(
+                          onPressed: _completeOnboarding,
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
-                          )
-                        : const SizedBox(),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),

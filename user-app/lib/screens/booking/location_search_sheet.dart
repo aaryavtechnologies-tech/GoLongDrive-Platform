@@ -122,7 +122,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
     
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceSecondary,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: SafeArea(
@@ -156,7 +156,7 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: colors.surfaceCard,
+                        color: colors.inputFill,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: colors.inputBorder),
                       ),
@@ -256,8 +256,8 @@ class _LocationSearchSheetState extends State<LocationSearchSheet> {
       contentPadding: const EdgeInsets.symmetric(vertical: 4),
       leading: Container(
         padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(color: colors.surfaceCard, shape: BoxShape.circle, border: Border.all(color: colors.divider)),
-        child: Icon(Icons.location_on_outlined, color: colors.textSecondary, size: 18),
+        decoration: BoxDecoration(color: colors.inputFill, shape: BoxShape.circle, border: Border.all(color: colors.divider)),
+        child: const Icon(Icons.location_on_outlined, color: AppColors.primaryGold, size: 18),
       ),
       title: Text(suggestion.mainText, style: AppTextStyles.body.copyWith(color: colors.textPrimary, fontWeight: FontWeight.w600)),
       subtitle: suggestion.secondaryText.isNotEmpty

@@ -35,25 +35,40 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       final bookings = await BookingService.getMyBookings();
       final List<RideHistoryItem> list = [];
       for (final b in bookings) {
-        final from = b['pickupAddress'] ?? b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
-        final to = b['dropAddress'] ?? b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
-        final fare = b['fareAmount'] != null ? '₹${b['fareAmount']}' : (b['finalFare'] != null && b['finalFare'] > 0 ? '₹${b['finalFare']}' : (b['estimatedFare'] != null ? '₹${b['estimatedFare']}' : (b['total'] ?? '')));
+        final from = b['pickupAddress'] ??
+            b['pickupLocation']?['address'] ??
+            b['from'] ??
+            'Unknown';
+        final to = b['dropAddress'] ??
+            b['dropLocation']?['address'] ??
+            b['to'] ??
+            'Unknown';
+        final fare = b['fareAmount'] != null
+            ? '₹${b['fareAmount']}'
+            : (b['finalFare'] != null && b['finalFare'] > 0
+                ? '₹${b['finalFare']}'
+                : (b['estimatedFare'] != null
+                    ? '₹${b['estimatedFare']}'
+                    : (b['total'] ?? '')));
         final date = b['pickupDate'] ?? b['date'] ?? '';
-        final String rawStatus = (b['rideStatus'] ?? b['status'] ?? '').toString();
+        final String rawStatus =
+            (b['rideStatus'] ?? b['status'] ?? '').toString();
         final statusLower = rawStatus.toLowerCase();
 
         RideStatus status;
         if (statusLower.contains('cancel')) {
           status = RideStatus.cancelled;
-        } else if (statusLower == 'trip completed' || statusLower == 'completed' || statusLower == 'paid') {
+        } else if (statusLower == 'trip completed' ||
+            statusLower == 'completed' ||
+            statusLower == 'paid') {
           status = RideStatus.completed;
         } else if (statusLower == 'trip started' ||
-                   statusLower == 'driver arriving' ||
-                   statusLower == 'driver arrived' ||
-                   statusLower == 'driver accepted' ||
-                   statusLower == 'driver assigned' ||
-                   statusLower == 'confirmed' ||
-                   statusLower == 'awaiting payment') {
+            statusLower == 'driver arriving' ||
+            statusLower == 'driver arrived' ||
+            statusLower == 'driver accepted' ||
+            statusLower == 'driver assigned' ||
+            statusLower == 'confirmed' ||
+            statusLower == 'awaiting payment') {
           status = RideStatus.ongoing;
         } else {
           status = RideStatus.upcoming;
@@ -72,7 +87,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
           carName: b['vehicleType'] ?? 'Car',
           driverName: b['driver'] is Map ? b['driver']['fullName'] : null,
           driverRating: 4.8,
-          plateNumber: b['vehicle'] is Map ? b['vehicle']['registrationNumber'] : null,
+          plateNumber:
+              b['vehicle'] is Map ? b['vehicle']['registrationNumber'] : null,
           paymentLabel: b['paymentMethod'] ?? 'Online',
         ));
       }
@@ -106,7 +122,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
     if (ride.status == RideStatus.ongoing) {
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ActiveRideScreen(bookingId: ride.bookingId ?? ride.id),
+          builder: (_) =>
+              ActiveRideScreen(bookingId: ride.bookingId ?? ride.id),
         ),
       );
     } else {
@@ -136,7 +153,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             Expanded(
               child: _isLoading
                   ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryGold),
+                      child: CircularProgressIndicator(
+                          color: AppColors.primaryGold),
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchHistory,
@@ -171,7 +189,9 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
       children: [
         AppBackButton(onPressed: () => Navigator.of(context).pop()),
         const SizedBox(width: 16),
-        Text('Ride History', style: AppTextStyles.mediumHeading.copyWith(color: colors.textPrimary)),
+        Text('Ride History',
+            style: AppTextStyles.mediumHeading
+                .copyWith(color: colors.textPrimary)),
       ],
     ).animate().fadeIn(duration: 300.ms);
   }
@@ -188,18 +208,21 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedTab = tab),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.primaryGold : colors.surface,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: selected ? AppColors.primaryGold : colors.inputBorder,
+                    color:
+                        selected ? AppColors.primaryGold : colors.inputBorder,
                   ),
                 ),
                 child: Text(
                   tab,
                   style: AppTextStyles.caption.copyWith(
-                    color: selected ? AppColors.textOnGold : colors.textSecondary,
+                    color:
+                        selected ? AppColors.textOnGold : colors.textSecondary,
                     fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
@@ -223,7 +246,8 @@ class _RideHistoryScreenState extends State<RideHistoryScreen> {
             const SizedBox(height: 12),
             Text(
               'No $_selectedTab rides found',
-              style: AppTextStyles.bodySecondary.copyWith(color: colors.textSecondary),
+              style: AppTextStyles.bodySecondary
+                  .copyWith(color: colors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -253,9 +277,10 @@ class _RideHistoryTile extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: isOngoing
-                ? Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6), width: 1.5)
-                : null,
+            border: Border.all(
+              color: isOngoing ? AppColors.primaryGold : colors.inputBorder,
+              width: isOngoing ? 1.5 : 1.0,
+            ),
           ),
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -271,8 +296,12 @@ class _RideHistoryTile extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
-                      isOngoing ? Icons.navigation : Icons.directions_car_filled_outlined,
-                      color: isOngoing ? AppColors.primaryGold : colors.textPrimary,
+                      isOngoing
+                          ? Icons.navigation
+                          : Icons.directions_car_filled_outlined,
+                      color: isOngoing
+                          ? AppColors.primaryGold
+                          : colors.textPrimary,
                       size: 20,
                     ),
                   ),
@@ -293,7 +322,8 @@ class _RideHistoryTile extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '${ride.dateLabel} · ${ride.vehicleLabel}',
-                          style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
+                          style: AppTextStyles.caption
+                              .copyWith(color: colors.textSecondary),
                         ),
                       ],
                     ),
@@ -312,13 +342,16 @@ class _RideHistoryTile extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: ride.status.color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      ride.rawStatus?.isNotEmpty == true ? ride.rawStatus! : ride.status.label,
+                      ride.rawStatus?.isNotEmpty == true
+                          ? ride.rawStatus!
+                          : ride.status.label,
                       style: AppTextStyles.caption.copyWith(
                         color: ride.status.color,
                         fontWeight: FontWeight.w700,
@@ -337,7 +370,8 @@ class _RideHistoryTile extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.primaryGold),
+                        const Icon(Icons.arrow_forward_ios,
+                            size: 12, color: AppColors.primaryGold),
                       ],
                     ),
                 ],

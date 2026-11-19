@@ -136,7 +136,7 @@ class _JourneyDateTimeSheetState extends State<JourneyDateTimeSheet> {
     final colors = AppColors.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: colors.surfaceSecondary,
+        color: colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: EdgeInsets.only(

@@ -76,29 +76,46 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset(
-              AppAssets.logo,
-              width: 200,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 200,
-                  height: 200,
-                  color: Colors.red.withAlpha(38),
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.broken_image, color: Colors.red, size: 40),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Logo failed to load:\n$error',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.red, fontSize: 11),
-                      ),
-                    ],
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
                   ),
-                );
-              },
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Image.asset(
+                AppAssets.logo,
+                width: 140,
+                height: 140,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 140,
+                    height: 140,
+                    color: Colors.red.withAlpha(38),
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.broken_image, color: Colors.red, size: 40),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Logo failed to load:\n$error',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.red, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             )
                 .animate()
                 .fadeIn(duration: 600.ms)
@@ -117,6 +134,15 @@ class _SplashScreenState extends State<SplashScreen> {
                 letterSpacing: 0.3,
               ),
             ).animate().fadeIn(delay: 300.ms, duration: 600.ms),
+            const SizedBox(height: 28),
+            const SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryYellow),
+              ),
+            ).animate().fadeIn(delay: 500.ms, duration: 400.ms),
           ],
         ),
       ),

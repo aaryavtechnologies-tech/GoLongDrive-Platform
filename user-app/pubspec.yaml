@@ -112,10 +112,10 @@ flutter:
 # Matches the app's black background + logo so the native launch screen
 # and the Dart SplashScreen look identical — no white flash between them.
 flutter_native_splash:
-  color: "#071421"
+  color: "#FFFFFF"
   image: assets/images/app_icon.png
   android_12:
-    color: "#071421"
+    color: "#FFFFFF"
     image: assets/images/app_icon.png
 
 flutter_launcher_icons:

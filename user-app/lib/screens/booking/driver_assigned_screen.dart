@@ -392,10 +392,10 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.green.withValues(alpha: 0.12),
+                  color: AppColors.success.withValues(alpha: 0.12),
                 ),
                 child: const Icon(Icons.check_circle_rounded,
-                    color: Colors.green, size: 60),
+                    color: AppColors.success, size: 60),
               )
                   .animate()
                   .scale(
