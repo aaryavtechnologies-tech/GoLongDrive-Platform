@@ -69,6 +69,11 @@ class UserSocketService {
   static Stream<Map<String, dynamic>> get onDriverLocation =>
       _driverLocationCtrl.stream;
 
+  static final StreamController<Map<String, dynamic>> _rideCancelledCtrl =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideCancelled =>
+      _rideCancelledCtrl.stream;
+
   // ── Public API ─────────────────────────────────────────────────────────────
 
   static bool get isConnected => _socket?.connected ?? false;
@@ -173,6 +178,20 @@ class UserSocketService {
     _socket!.on('driver:location', (data) {
       if (data is Map) {
         _driverLocationCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('ride:cancelled', (data) {
+      debugPrint('📥 ride:cancelled: $data');
+      if (data is Map) {
+        _rideCancelledCtrl.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('booking:cancelled', (data) {
+      debugPrint('📥 booking:cancelled: $data');
+      if (data is Map) {
+        _rideCancelledCtrl.add(Map<String, dynamic>.from(data));
       }
     });
   }

@@ -49,6 +49,12 @@ class SocketService {
   static Stream<Map<String, dynamic>> get onRideCompleted =>
       _rideCompletedController.stream;
 
+  /// Emits when a ride/booking is cancelled
+  static final StreamController<Map<String, dynamic>> _rideCancelledController =
+      StreamController.broadcast();
+  static Stream<Map<String, dynamic>> get onRideCancelled =>
+      _rideCancelledController.stream;
+
   // ── Reconnect state ──────────────────────────────────────────────────────────
   static bool _intentionalDisconnect = false;
   static int _reconnectDelaySeconds = 2;
@@ -154,6 +160,20 @@ class SocketService {
       debugPrint('📥 ride:completed: $data');
       if (data is Map) {
         _rideCompletedController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('ride:cancelled', (data) {
+      debugPrint('📥 ride:cancelled: $data');
+      if (data is Map) {
+        _rideCancelledController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket!.on('booking:cancelled', (data) {
+      debugPrint('📥 booking:cancelled: $data');
+      if (data is Map) {
+        _rideCancelledController.add(Map<String, dynamic>.from(data));
       }
     });
     } finally {

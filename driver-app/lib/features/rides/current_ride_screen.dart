@@ -51,8 +51,10 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
   bool _loading = true;
   bool _actionLoading = false;
   bool _isPaymentReceived = false;
+  bool _isCancelled = false;
   StreamSubscription? _paymentSub;
   StreamSubscription? _completeSub;
+  StreamSubscription? _cancelSub;
 
   @override
   void initState() {
@@ -85,13 +87,419 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
         });
       }
     });
+
+    _cancelSub = SocketService.onRideCancelled.listen((data) {
+      if (!mounted || _isCancelled) return;
+      final incId = (data['bookingId'] ?? data['_id'])?.toString();
+      if (_ride != null && (incId == null || incId == _ride!.id || incId == _ride!.customerId)) {
+        _handleCustomerCancelled(data['reason']?.toString() ?? 'The passenger has cancelled the ride.');
+      }
+    });
   }
 
   @override
   void dispose() {
     _paymentSub?.cancel();
     _completeSub?.cancel();
+    _cancelSub?.cancel();
     super.dispose();
+  }
+
+  void _handleCustomerCancelled(String reason) {
+    if (_isCancelled || !mounted) return;
+    _isCancelled = true;
+    _paymentSub?.cancel();
+    _completeSub?.cancel();
+    _cancelSub?.cancel();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Ride Cancelled',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'The passenger has cancelled this ride.',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 14),
+            ),
+            if (reason.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceAlt,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.borderSubtle),
+                ),
+                child: Text(
+                  'Reason: $reason',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              label: 'Return to Rides',
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/tabs');
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelRideSheet() {
+    if (_ride == null) return;
+
+    final List<String> reasons = [
+      'Unable to contact the passenger.',
+      'Passenger is not available at pickup location.',
+      'Passenger requested cancellation.',
+      'Incorrect pickup location.',
+      'Vehicle issue.',
+      'Emergency or personal reason.',
+      'Other.',
+    ];
+
+    String selectedReason = reasons.first;
+    final TextEditingController customController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                border: Border(top: BorderSide(color: AppColors.borderSubtle2)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 20, offset: const Offset(0, -4)),
+                ],
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppColors.dividerStrong,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.red.withValues(alpha: 0.15),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.cancel_outlined, color: Colors.red, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Cancel Ride',
+                                style: TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              Text(
+                                'Please specify the cancellation reason',
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.close, color: AppColors.textSecondary),
+                          onPressed: () => Navigator.of(bottomSheetContext).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Divider(color: AppColors.divider, height: 1),
+                    const SizedBox(height: 12),
+                    ...reasons.map((r) {
+                      final isSelected = selectedReason == r;
+                      return InkWell(
+                        onTap: () {
+                          setModalState(() {
+                            selectedReason = r;
+                          });
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isSelected ? AppColors.gold : AppColors.borderSubtle2,
+                                    width: 2,
+                                  ),
+                                  color: isSelected ? AppColors.gold : Colors.transparent,
+                                ),
+                                child: isSelected
+                                    ? const Center(
+                                        child: Icon(Icons.check, size: 14, color: Colors.black),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  r,
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                    if (selectedReason == 'Other.') ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceAlt,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppColors.borderSubtle2),
+                        ),
+                        child: TextField(
+                          controller: customController,
+                          maxLines: 3,
+                          maxLength: 200,
+                          style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Enter cancellation details...',
+                            hintStyle: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            border: InputBorder.none,
+                            counterText: '',
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () => Navigator.of(bottomSheetContext).pop(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: AppColors.borderSubtle2),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: Text(
+                              'Keep Ride',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: isSubmitting
+                                ? null
+                                : () async {
+                                    // Require confirmation before completing cancellation
+                                    final confirmed = await showDialog<bool>(
+                                      context: bottomSheetContext,
+                                      builder: (confirmCtx) => AlertDialog(
+                                        backgroundColor: AppColors.surface,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        title: Text(
+                                          'Confirm Ride Cancellation',
+                                          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                                        ),
+                                        content: Text(
+                                          'Are you sure you want to cancel this ride? This will release the passenger and reset your status.',
+                                          style: TextStyle(color: AppColors.textSecondary),
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(confirmCtx).pop(false),
+                                            child: Text('No, Keep Ride', style: TextStyle(color: AppColors.textSecondary)),
+                                          ),
+                                          ElevatedButton(
+                                            onPressed: () => Navigator.of(confirmCtx).pop(true),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.red,
+                                              foregroundColor: Colors.white,
+                                            ),
+                                            child: const Text('Yes, Cancel Ride'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirmed != true) return;
+
+                                    setModalState(() => isSubmitting = true);
+                                    try {
+                                      final targetId = _ride!.id;
+                                      final customDetails = selectedReason == 'Other.'
+                                          ? customController.text.trim()
+                                          : null;
+                                      final res = await ApiService.post(
+                                        '/driver/bookings/rides/$targetId/cancel',
+                                        body: {
+                                          'reason': selectedReason,
+                                          if (customDetails != null && customDetails.isNotEmpty)
+                                            'details': customDetails,
+                                        },
+                                      );
+
+                                      if (!mounted) return;
+                                      if (res.statusCode == 200 || res.statusCode == 201) {
+                                        _isCancelled = true;
+                                        _paymentSub?.cancel();
+                                        _completeSub?.cancel();
+                                        _cancelSub?.cancel();
+                                        Navigator.of(bottomSheetContext).pop();
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Ride cancelled successfully.'),
+                                            backgroundColor: AppColors.success,
+                                          ),
+                                        );
+                                        if (context.canPop()) {
+                                          context.pop();
+                                        } else {
+                                          context.go('/tabs');
+                                        }
+                                      } else {
+                                        setModalState(() => isSubmitting = false);
+                                        final err = jsonDecode(res.body);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(err['message'] ?? 'Failed to cancel ride'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      setModalState(() => isSubmitting = false);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Error: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                            child: isSubmitting
+                                ? const SizedBox(
+                                    height: 18,
+                                    width: 18,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Text(
+                                    'Cancel Ride',
+                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _fetchCurrentRide() async {
@@ -105,6 +513,10 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
             setState(() {
               _ride = Ride.fromJson(rideData);
               final status = rideData['rideStatus'];
+              if (status != null && status.toString().contains('Cancel')) {
+                _handleCustomerCancelled(rideData['cancellationReason']?.toString() ?? 'Ride was cancelled.');
+                return;
+              }
               if (status == 'Trip Started') {
                 _stage = _TripStage.inProgress;
               } else if (status == 'Awaiting Payment') {
@@ -502,6 +914,17 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                         ),
                         const SizedBox(width: 4),
                         Text('Current Ride', style: AppText.cardHeadline),
+                        if (_stage != _TripStage.completed && _stage != _TripStage.awaitingPayment) ...[
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: _showCancelRideSheet,
+                            icon: const Icon(Icons.cancel_outlined, size: 16, color: Colors.redAccent),
+                            label: const Text(
+                              'Cancel Ride',
+                              style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -752,6 +1175,29 @@ class _CurrentRideScreenState extends State<CurrentRideScreen> {
                           ],
                         ),
                       ),
+                      if (_stage != _TripStage.completed && _stage != _TripStage.awaitingPayment) ...[
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _showCancelRideSheet,
+                            icon: const Icon(Icons.cancel_outlined, size: 18, color: Colors.redAccent),
+                            label: const Text(
+                              'Cancel Ride',
+                              style: TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.4)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
 
                       // --- RideSupportCard ---

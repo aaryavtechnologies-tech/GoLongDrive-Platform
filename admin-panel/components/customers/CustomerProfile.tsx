@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CustomerStatusBadge } from './CustomerStatusBadge';
 import { Mail, Phone, MapPin, Calendar, User, UserCircle2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 
 export function CustomerProfile({ customer }: { customer: Customer }) {
   return (
@@ -70,7 +70,7 @@ export function CustomerProfile({ customer }: { customer: Customer }) {
               <span className="text-sm text-zinc-500">Joined Date</span>
               <div className="flex items-center gap-2 font-medium">
                 <Calendar className="h-4 w-4 text-zinc-400" />
-                {format(new Date(customer.joinedDate), 'MMMM dd, yyyy')}
+                {safeFormatDate(customer.joinedDate, 'MMMM dd, yyyy')}
               </div>
             </div>
             

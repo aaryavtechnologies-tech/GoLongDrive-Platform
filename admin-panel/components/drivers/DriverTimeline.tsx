@@ -4,7 +4,7 @@ import { DriverTimelineEvent } from '@/types/driver';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UserPlus, FileUp, FileCheck, Navigation, Ban, RefreshCcw, Activity } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 
 export function DriverTimeline({ data, isLoading }: { data?: DriverTimelineEvent[], isLoading: boolean }) {
   const getIcon = (type: string) => {
@@ -49,7 +49,7 @@ export function DriverTimeline({ data, isLoading }: { data?: DriverTimelineEvent
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-1">
                     <h4 className="font-medium text-sm text-zinc-200">{event.title}</h4>
                     <span className="text-xs text-zinc-500 whitespace-nowrap">
-                      {format(new Date(event.date), 'MMM dd, yyyy HH:mm')}
+                      {safeFormatDate(event.date, 'MMM dd, yyyy HH:mm')}
                     </span>
                   </div>
                   <p className="text-sm text-zinc-400">{event.description}</p>

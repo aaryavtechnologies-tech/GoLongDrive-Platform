@@ -1,13 +1,19 @@
 // src/controllers/customer.booking.controller.js
 
 const Booking = require('../models/Booking.model');
+const Driver = require('../models/Driver.model');
 const { calculateEstimatedFare, calculateFareFromSettings } = require('../services/fare.service');
 const { generateBookingId, addTimelineEntry, emitBookingEvent, broadcastRideRequest } = require('../services/booking.service');
 const { sendBookingConfirmationEmail, sendBookingCancelledEmail } = require('../services/email.service');
 const { sendSuccess } = require('../helpers/response.helper');
 const ApiError = require('../utils/ApiError');
 const asyncHandler = require('../utils/asyncHandler');
-const { RIDE_STATUS } = require('../utils/constants');
+const { RIDE_STATUS, AVAILABILITY_STATUS } = require('../utils/constants');
+
+const getBookingQuery = (idParam) => {
+  const isObjectId = /^[a-fA-F0-9]{24}$/.test(idParam);
+  return isObjectId ? { _id: idParam } : { bookingId: idParam };
+};
 
 /**
  * @route   POST /api/customer/bookings
@@ -181,7 +187,7 @@ const getCancelledBookings = asyncHandler(async (req, res) => {
  */
 const getBookingDetails = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
-  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId })
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), customer: customerId })
     .populate('driver', 'fullName phoneNumber profileImage vehicle rating')
     .populate('tourPackage', 'title imageUrl route days nights price pricePerPerson placesToExplore includes excludes description');
   
@@ -198,7 +204,7 @@ const updateBooking = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
   const updates = req.body;
 
-  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId });
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), customer: customerId });
   if (!booking) throw ApiError.notFound('Booking not found');
 
   // Can only update if not yet confirmed or started
@@ -229,25 +235,80 @@ const updateBooking = asyncHandler(async (req, res) => {
 
 /**
  * @route   PATCH /api/customer/bookings/:id/cancel
+ * @route   POST /api/customer/bookings/:id/cancel
  * @access  Private (Customer)
  */
 const cancelBooking = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
-  const { reason } = req.body;
+  const { reason, details } = req.body;
 
-  const booking = await Booking.findOne({ _id: req.params.id, customer: customerId });
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), customer: customerId });
   if (!booking) throw ApiError.notFound('Booking not found');
 
-  // Can only cancel active bookings
-  if ([RIDE_STATUS.TRIP_COMPLETED, RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN].includes(booking.rideStatus)) {
-    throw ApiError.badRequest(`Booking is already ${booking.rideStatus}`);
+  // Can only cancel active / cancellable bookings
+  if ([RIDE_STATUS.TRIP_COMPLETED, RIDE_STATUS.AWAITING_PAYMENT, RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN].includes(booking.rideStatus)) {
+    throw ApiError.badRequest(`Booking cannot be cancelled. Current status is ${booking.rideStatus}`);
   }
 
+  if (booking.rideStatus === RIDE_STATUS.TRIP_STARTED) {
+    throw ApiError.badRequest('Trip has already started. Please contact support or request your driver to end the trip.');
+  }
+
+  const cancellationText = reason || 'Cancelled by customer';
   booking.rideStatus = RIDE_STATUS.CANCELLED_BY_CUSTOMER;
+  booking.cancelledAt = new Date();
+  booking.cancelledBy = 'Customer';
+  booking.cancellationReason = cancellationText;
+  if (details) {
+    booking.cancellationDetails = details;
+  }
   await booking.save();
 
-  await addTimelineEntry(booking._id, 'Booking Cancelled', customerId, reason || 'Cancelled by customer');
-  emitBookingEvent('booking:cancelled', { bookingId: booking.bookingId, status: booking.rideStatus });
+  // If a driver was assigned, release the driver back to available
+  if (booking.driver) {
+    const driverId = booking.driver._id || booking.driver;
+    await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
+  }
+
+  const timelineNote = details ? `${cancellationText} — Details: ${details}` : cancellationText;
+  await addTimelineEntry(booking._id, 'Booking Cancelled', customerId, timelineNote);
+
+  // Real-time socket notification to driver and rooms
+  const { getDriverSocket, getIO } = require('../config/socket');
+  try {
+    const io = getIO();
+    const cancelPayload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      cancelledBy: 'Customer',
+      reason: cancellationText,
+      details: details || '',
+      status: RIDE_STATUS.CANCELLED_BY_CUSTOMER,
+    };
+
+    if (booking.driver) {
+      const driverId = (booking.driver._id || booking.driver).toString();
+      const driverSockId = getDriverSocket(driverId);
+      if (driverSockId) {
+        io.to(driverSockId).emit('ride:cancelled', cancelPayload);
+        io.to(driverSockId).emit('booking:cancelled', cancelPayload);
+      }
+    }
+
+    io.to(`ride:${booking.bookingId}`).emit('ride:cancelled', cancelPayload);
+    io.to(`ride:${booking._id}`).emit('ride:cancelled', cancelPayload);
+    io.to(`ride:${booking.bookingId}`).emit('booking:cancelled', cancelPayload);
+    io.to(`ride:${booking._id}`).emit('booking:cancelled', cancelPayload);
+  } catch (err) {
+    console.error('Socket emit error on customer cancellation:', err.message);
+  }
+
+  emitBookingEvent('booking:cancelled', {
+    bookingId: booking.bookingId,
+    status: booking.rideStatus,
+    reason: cancellationText,
+    details: details || '',
+  });
 
   sendBookingCancelledEmail(req.user.email, req.user.fullName, booking).catch(err => console.error(err));
 

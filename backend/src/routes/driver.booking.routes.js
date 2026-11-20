@@ -40,6 +40,7 @@ router.post('/rides/:id/start', isDriver, startRide);
 router.post('/rides/:id/end', isDriver, endRide);
 router.post('/rides/:id/complete', isDriver, completeRide);
 router.post('/rides/:id/cancel', isDriver, cancelRide);
+router.patch('/rides/:id/cancel', isDriver, cancelRide);
 router.get('/rides/history', isDriver, getRideHistory);
 router.get('/rides/available', isDriver, getAvailableRides);
 router.get('/rides/:id', isDriver, getRideDetails);

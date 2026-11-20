@@ -143,4 +143,34 @@ class BookingService {
       rethrow;
     }
   }
+
+  /// Cancels an active booking
+  static Future<Map<String, dynamic>> cancelBooking(
+    String bookingId, {
+    required String reason,
+    String? details,
+  }) async {
+    try {
+      final payload = {
+        'reason': reason,
+        if (details != null && details.trim().isNotEmpty) 'details': details.trim(),
+      };
+      final response = await ApiClient.post('/customer/bookings/$bookingId/cancel', body: payload);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        return body['data'] ?? body;
+      } else {
+        // Fallback to PATCH if POST was not handled
+        final patchRes = await ApiClient.patch('/customer/bookings/$bookingId/cancel', body: payload);
+        if (patchRes.statusCode == 200) {
+          final body = jsonDecode(patchRes.body);
+          return body['data'] ?? body;
+        }
+        final err = jsonDecode(patchRes.body);
+        throw Exception(err['message'] ?? 'Failed to cancel booking');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

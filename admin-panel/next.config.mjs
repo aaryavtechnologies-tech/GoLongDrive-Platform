@@ -1,15 +1,11 @@
-import type { NextConfig } from "next";
-import path from "path";
-
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.resolve(__dirname),
-  },
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   typescript: {
     // Pre-existing type declaration issues in third-party packages do not reflect logic errors in our code.
     ignoreBuildErrors: true,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 
 export function RideHistoryTable({ data, isLoading }: { data?: DriverRideSummary[], isLoading: boolean }) {
   const getStatusBadge = (status: string) => {
@@ -59,7 +59,7 @@ export function RideHistoryTable({ data, isLoading }: { data?: DriverRideSummary
                       <TableCell>{ride.customer}</TableCell>
                       <TableCell>{ride.pickup}</TableCell>
                       <TableCell>{ride.destination}</TableCell>
-                      <TableCell className="text-zinc-400">{format(new Date(ride.date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="text-zinc-400">{safeFormatDate(ride.date, 'MMM dd, yyyy')}</TableCell>
                       <TableCell>{getStatusBadge(ride.status)}</TableCell>
                       <TableCell className="text-right font-medium text-yellow-400">₹{ride.fare}</TableCell>
                     </TableRow>

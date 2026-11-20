@@ -416,24 +416,64 @@ const completeRide = asyncHandler(async (req, res) => {
  */
 const cancelRide = asyncHandler(async (req, res) => {
   const driverId = req.user._id;
-  const { reason } = req.body;
-  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId });
+  const { reason, details } = req.body;
+  const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), driver: driverId }).populate('customer');
 
   if (!booking) throw ApiError.notFound('Booking not found');
-  if (booking.rideStatus === RIDE_STATUS.TRIP_COMPLETED || booking.rideStatus.includes('Cancelled')) {
-    throw ApiError.badRequest(`Ride already ${booking.rideStatus}`);
+  if (booking.rideStatus === RIDE_STATUS.TRIP_COMPLETED || booking.rideStatus === RIDE_STATUS.AWAITING_PAYMENT || booking.rideStatus.includes('Cancelled')) {
+    throw ApiError.badRequest(`Ride cannot be cancelled. Current status is ${booking.rideStatus}`);
   }
 
+  const cancellationText = reason || 'Driver cancelled';
   booking.rideStatus = RIDE_STATUS.CANCELLED_BY_DRIVER;
   booking.cancelledAt = new Date();
   booking.cancelledBy = 'Driver';
-  booking.cancellationReason = reason || 'Driver cancelled';
+  booking.cancellationReason = cancellationText;
+  if (details) {
+    booking.cancellationDetails = details;
+  }
   await booking.save();
 
   await Driver.findByIdAndUpdate(driverId, { availabilityStatus: AVAILABILITY_STATUS.AVAILABLE });
 
-  await addTimelineEntry(booking._id, 'Cancelled by Driver', driverId, reason);
-  emitBookingEvent('ride:cancelled', { bookingId: booking.bookingId, reason });
+  const timelineNote = details ? `${cancellationText} — Details: ${details}` : cancellationText;
+  await addTimelineEntry(booking._id, 'Cancelled by Driver', driverId, timelineNote);
+
+  // Real-time notification to customer and rooms
+  const { getCustomerSocket, getIO } = require('../config/socket');
+  try {
+    const io = getIO();
+    const cancelPayload = {
+      bookingId: booking.bookingId,
+      _id: booking._id,
+      cancelledBy: 'Driver',
+      reason: cancellationText,
+      details: details || '',
+      status: RIDE_STATUS.CANCELLED_BY_DRIVER,
+    };
+
+    if (booking.customer) {
+      const custId = (booking.customer._id || booking.customer).toString();
+      const customerSockId = getCustomerSocket(custId);
+      if (customerSockId) {
+        io.to(customerSockId).emit('ride:cancelled', cancelPayload);
+        io.to(customerSockId).emit('booking:cancelled', cancelPayload);
+      }
+    }
+
+    io.to(`ride:${booking.bookingId}`).emit('ride:cancelled', cancelPayload);
+    io.to(`ride:${booking._id}`).emit('ride:cancelled', cancelPayload);
+    io.to(`ride:${booking.bookingId}`).emit('booking:cancelled', cancelPayload);
+    io.to(`ride:${booking._id}`).emit('booking:cancelled', cancelPayload);
+  } catch (err) {
+    console.error('Socket notification error on driver cancel:', err.message);
+  }
+
+  emitBookingEvent('ride:cancelled', {
+    bookingId: booking.bookingId,
+    reason: cancellationText,
+    details: details || '',
+  });
 
   return sendSuccess(res, 200, 'Trip cancelled', { booking });
 });

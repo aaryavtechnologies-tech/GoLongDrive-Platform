@@ -20,7 +20,7 @@ import { DriverStatusBadge } from './DriverStatusBadge';
 import { AvailabilityBadge } from './AvailabilityBadge';
 import { DriverActions } from './DriverActions';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { FileCheck2 } from 'lucide-react';
@@ -94,7 +94,7 @@ export function DriverTable({ data, isLoading }: DriverTableProps) {
     {
       accessorKey: 'joinedDate',
       header: 'Registered',
-      cell: ({ row }) => <span className="text-sm text-zinc-400">{format(new Date(row.original.joinedDate), 'MMM dd, yyyy')}</span>,
+      cell: ({ row }) => <span className="text-sm text-zinc-400">{safeFormatDate(row.original.joinedDate, 'MMM dd, yyyy')}</span>,
     },
     {
       id: 'actions',
@@ -137,9 +137,9 @@ export function DriverTable({ data, isLoading }: DriverTableProps) {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>

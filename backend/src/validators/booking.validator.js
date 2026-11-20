@@ -54,8 +54,9 @@ const updateBookingValidator = [
 ];
 
 const cancelBookingValidator = [
-  param('id').isMongoId().withMessage('Invalid booking ID format'),
-  body('reason').optional().isString().trim()
+  param('id').notEmpty().withMessage('Booking ID is required'),
+  body('reason').optional().isString().trim(),
+  body('details').optional().isString().trim()
 ];
 
 const getBookingDetailsValidator = [

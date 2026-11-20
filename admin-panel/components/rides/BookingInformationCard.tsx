@@ -3,7 +3,7 @@
 import { Ride } from '@/types/ride';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, Users, Luggage, Navigation, Hash } from 'lucide-react';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 import { RideStatusBadge } from './RideStatusBadge';
 
 export function BookingInformationCard({ ride }: { ride: Ride }) {
@@ -35,14 +35,14 @@ export function BookingInformationCard({ ride }: { ride: Ride }) {
             <span className="text-sm text-zinc-500">Pickup Date</span>
             <div className="font-medium text-white flex items-center gap-2">
               <Calendar className="h-4 w-4 text-zinc-400" />
-              {format(new Date(ride.pickupDate), 'MMM dd, yyyy')}
+              {safeFormatDate(ride.pickupDate, 'MMM dd, yyyy')}
             </div>
           </div>
           <div className="space-y-1">
             <span className="text-sm text-zinc-500">Pickup Time</span>
             <div className="font-medium text-white flex items-center gap-2">
               <Clock className="h-4 w-4 text-zinc-400" />
-              {ride.pickupTime}
+              {ride.pickupTime || 'N/A'}
             </div>
           </div>
           {ride.returnDate && (
@@ -51,7 +51,7 @@ export function BookingInformationCard({ ride }: { ride: Ride }) {
                 <span className="text-sm text-zinc-500">Return Date</span>
                 <div className="font-medium text-white flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-zinc-400" />
-                  {format(new Date(ride.returnDate), 'MMM dd, yyyy')}
+                  {safeFormatDate(ride.returnDate, 'MMM dd, yyyy')}
                 </div>
               </div>
               <div className="space-y-1">

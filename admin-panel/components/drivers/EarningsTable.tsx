@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/utils';
 
 export function EarningsTable({ data, isLoading }: { data?: DriverEarningSummary[], isLoading: boolean }) {
   const getSettlementBadge = (status: string) => {
@@ -55,7 +55,7 @@ export function EarningsTable({ data, isLoading }: { data?: DriverEarningSummary
                     <TableRow key={earning.id} className="border-white/10 hover:bg-zinc-900/50">
                       <TableCell className="font-medium text-zinc-300">{earning.id}</TableCell>
                       <TableCell>{earning.rideId}</TableCell>
-                      <TableCell className="text-zinc-400">{format(new Date(earning.date), 'MMM dd, yyyy')}</TableCell>
+                      <TableCell className="text-zinc-400">{safeFormatDate(earning.date, 'MMM dd, yyyy')}</TableCell>
                       <TableCell className="text-right text-zinc-300">₹{earning.fare}</TableCell>
                       <TableCell className="text-right text-red-400">-₹{earning.commission}</TableCell>
                       <TableCell className="text-right font-bold text-green-400">₹{earning.driverEarning}</TableCell>

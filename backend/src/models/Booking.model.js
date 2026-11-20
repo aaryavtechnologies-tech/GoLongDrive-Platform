@@ -90,6 +90,7 @@ const bookingSchema = new mongoose.Schema(
     cancelledAt: { type: Date },
     cancelledBy: { type: String }, // 'Customer', 'Driver', 'Admin'
     cancellationReason: { type: String },
+    cancellationDetails: { type: String },
     driverResponseTime: { type: Number }, // Time taken by driver to accept in ms
     actualDistance: { type: Number, default: 0 }, // in KM
     actualDuration: { type: Number, default: 0 }, // in Minutes

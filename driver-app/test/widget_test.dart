@@ -16,7 +16,7 @@ void main() {
     // Let the splash decision finish, then dispose the router tree so no
     // navigation work leaks into another test.
     await tester.pump(const Duration(milliseconds: 600));
-    await tester.pumpAndSettle();
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump(const Duration(seconds: 1));
   });
 }
