@@ -11,6 +11,7 @@ import '../../widgets/primary_button.dart';
 import '../../routes/app_routes.dart';
 import '../booking/location_search_sheet.dart';
 import '../tour_packages/tour_package_entry.dart';
+import '../tour_packages/tour_packages_screen.dart';
 import '../booking/journey_date_time_sheet.dart';
 import '../../core/services/user_scope.dart';
 import '../../core/services/booking_service.dart';
@@ -682,26 +683,20 @@ class _HomeScreenState extends State<HomeScreen>
           onRefresh: _fetchRecentBookings,
           color: AppColors.primaryGold,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+            padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
             children: [
               _buildHeader(colors),
+              const SizedBox(height: 20),
+              _buildQuickCategories(colors),
               if (_activeBooking != null) ...[
                 const SizedBox(height: 24),
                 _buildActiveBookingBanner(colors),
               ],
-              const SizedBox(height: 32),
-              const TourPackageEntry(),
-              const SizedBox(height: 32),
-              Text('Going a little further?',
-                  style: AppTextStyles.mediumHeading
-                      .copyWith(color: colors.textPrimary)),
-              const SizedBox(height: 8),
-              Text('Plan an outstation journey, your way.',
-                  style: AppTextStyles.bodySecondary
-                      .copyWith(color: colors.textSecondary)),
-              const SizedBox(height: 16),
+              const SizedBox(height: 28),
               _buildSearchCard(colors),
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
+              const TourPackageEntry(),
+              const SizedBox(height: 36),
               _buildRecentRidesSection(colors),
             ],
           ),
@@ -721,25 +716,25 @@ class _HomeScreenState extends State<HomeScreen>
         status.isEmpty || status == 'pending' || status == 'searching driver';
 
     String title = 'Ride Request Sent';
-    String subtitle = 'Waiting for drivers to accept...';
+    String subtitle = 'Waiting for nearby drivers to accept...';
     IconData icon = Icons.car_rental;
 
     if (status.contains('awaiting')) {
       title = 'Ride Completed · Payment Due';
       subtitle = 'Tap to pay online via Razorpay';
-      icon = Icons.payment;
+      icon = Icons.payment_rounded;
     } else if (status.contains('started') || status.contains('progress')) {
       title = 'Trip In Progress';
-      subtitle = 'Tap to view live map & ride info';
-      icon = Icons.navigation;
+      subtitle = 'Tap to view live navigation & ETA';
+      icon = Icons.navigation_rounded;
     } else if (status.contains('arrived')) {
       title = 'Driver Arrived at Pickup';
       subtitle = 'Share your ride PIN with driver';
-      icon = Icons.pin_drop;
+      icon = Icons.pin_drop_rounded;
     } else if (status.contains('accepted') || status.contains('assigned') || status.contains('arriving')) {
       title = 'Driver En Route';
       subtitle = 'Driver assigned! Tap to view live tracking';
-      icon = Icons.directions_car;
+      icon = Icons.directions_car_rounded;
     }
 
     return GestureDetector(
@@ -758,33 +753,79 @@ class _HomeScreenState extends State<HomeScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: AppColors.primaryGold.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.6)),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.primaryYellow,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryYellow.withValues(alpha: 0.18),
+              blurRadius: 18,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: colors.background,
-                shape: BoxShape.circle,
+                color: AppColors.primaryYellow,
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryYellow.withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: AppColors.primaryGold),
+              child: Icon(icon, color: AppColors.textPrimary, size: 24),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'LIVE RIDE ACTIVE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 1.0,
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
                   Text(
                     title,
                     style: AppTextStyles.subtitle.copyWith(
                       color: colors.textPrimary,
                       fontWeight: FontWeight.w700,
+                      fontSize: 15,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
@@ -792,10 +833,18 @@ class _HomeScreenState extends State<HomeScreen>
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.primaryGold),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: AppColors.inputBackground,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_forward_ios_rounded,
+                  size: 14, color: AppColors.textPrimary),
+            ),
           ],
         ),
-      ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
+      ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05, end: 0),
     );
   }
 
@@ -811,21 +860,58 @@ class _HomeScreenState extends State<HomeScreen>
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Hello, $firstName',
-                  style: AppTextStyles.bodySecondary
-                      .copyWith(color: colors.textSecondary)),
-              const SizedBox(height: 8),
+              // Current Service Pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryYellow.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primaryYellow.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.near_me_rounded,
+                        size: 12, color: AppColors.textPrimary),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Outstation & City Cabs',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
               Text(
-                'Where will today take you?',
-                style: AppTextStyles.mediumHeading
-                    .copyWith(color: colors.textPrimary),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                'Hello, $firstName 👋',
+                style: AppTextStyles.bodySecondary.copyWith(
+                  color: colors.textSecondary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Where to next?',
+                style: AppTextStyles.largeHeading.copyWith(
+                  color: colors.textPrimary,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
               ),
             ],
           ),
@@ -834,12 +920,22 @@ class _HomeScreenState extends State<HomeScreen>
         GestureDetector(
           onTap: _openProfile,
           child: Container(
-            height: 48,
-            width: 48,
+            height: 50,
+            width: 50,
             decoration: BoxDecoration(
-              color: colors.surface,
+              color: Colors.white,
               shape: BoxShape.circle,
-              border: Border.all(color: colors.inputBorder),
+              border: Border.all(
+                color: AppColors.primaryYellow,
+                width: 2.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryYellow.withValues(alpha: 0.25),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: ClipOval(
               child: (profileImage != null && profileImage.isNotEmpty)
@@ -852,12 +948,15 @@ class _HomeScreenState extends State<HomeScreen>
                           Icon(Icons.person, color: colors.textPrimary),
                     )
                   : Container(
-                      color: AppColors.primaryGold.withValues(alpha: 0.15),
+                      color: AppColors.inputBackground,
                       alignment: Alignment.center,
                       child: Text(
                         firstName.isNotEmpty ? firstName[0].toUpperCase() : 'U',
-                        style: AppTextStyles.mediumHeading
-                            .copyWith(color: AppColors.primaryGold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
             ),
@@ -867,69 +966,248 @@ class _HomeScreenState extends State<HomeScreen>
     ).animate().fadeIn(duration: 300.ms);
   }
 
-  Widget _buildSearchCard(AppColorPalette colors) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: colors.surfaceCard,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.025),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          )
-        ],
-        border: Border.all(color: colors.inputBorder.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // FROM
-          GestureDetector(
-            onTap: () => _showSearchBottomSheet(context),
-            behavior: HitTestBehavior.opaque,
+  Widget _buildQuickCategories(AppColorPalette colors) {
+    return Row(
+      children: [
+        // Outstation (Active)
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryYellow,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryYellow.withValues(alpha: 0.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
             child: Row(
-              children: [
-                const Icon(Icons.location_on,
-                    color: AppColors.primaryGold, size: 24),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('FROM',
-                          style: AppTextStyles.caption.copyWith(
-                              color: colors.textSecondary, letterSpacing: 1.2)),
-                      const SizedBox(height: 4),
-                      Text(
-                        _fromLocation.isEmpty
-                            ? 'Search location'
-                            : _fromLocation,
-                        style: _fromLocation.isEmpty
-                            ? AppTextStyles.subtitle
-                                .copyWith(color: colors.textSecondary)
-                            : AppTextStyles.subtitle
-                                .copyWith(color: colors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.directions_car_rounded,
+                    size: 18, color: AppColors.textPrimary),
+                SizedBox(width: 6),
+                Text(
+                  'Outstation',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
+        ),
+        const SizedBox(width: 10),
+        // Tour Packages
+        Expanded(
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => TourPackagesScreen()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.landscape_rounded,
+                      size: 18, color: colors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Tours',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // My Bookings
+        Expanded(
+          child: GestureDetector(
+            onTap: _openMyRides,
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.receipt_long_rounded,
+                      size: 18, color: colors.textSecondary),
+                  const SizedBox(width: 6),
+                  Text(
+                    'My Rides',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    ).animate().fadeIn(delay: 50.ms, duration: 350.ms);
+  }
 
-          // Swap and Divider
+  Widget _buildSearchCard(AppColorPalette colors) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colors.surfaceCard,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: const Color(0xFFEEEEEE),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: AppColors.primaryYellow.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Title
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryYellow.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.route_rounded,
+                    color: AppColors.textPrimary, size: 16),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Plan Your Journey',
+                style: AppTextStyles.subtitle.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: colors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+
+          // FROM Tile
+          GestureDetector(
+            onTap: () => _showSearchBottomSheet(context),
+            behavior: HitTestBehavior.opaque,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: AppColors.success,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'PICKUP LOCATION',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _fromLocation.isEmpty
+                              ? 'Enter pickup point (airport, city...)'
+                              : _fromLocation,
+                          style: _fromLocation.isEmpty
+                              ? AppTextStyles.body.copyWith(
+                                  color: colors.textSecondary,
+                                  fontSize: 13,
+                                )
+                              : AppTextStyles.body.copyWith(
+                                  color: colors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.search_rounded,
+                      size: 18, color: colors.textSecondary),
+                ],
+              ),
+            ),
+          ),
+
+          // Swap and Connector
           Padding(
-            padding: const EdgeInsets.only(left: 11, top: 8, bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Row(
               children: [
                 Container(
-                  height: 40,
                   width: 2,
-                  color: colors.divider,
+                  height: 20,
+                  margin: const EdgeInsets.only(left: 10),
+                  color: const Color(0xFFDDDDDD),
                 ),
                 const Spacer(),
                 GestureDetector(
@@ -940,145 +1218,248 @@ class _HomeScreenState extends State<HomeScreen>
                       return Transform.rotate(
                         angle: _swapController.value * math.pi,
                         child: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(7),
                           decoration: BoxDecoration(
-                            color: colors.surfaceElevated,
+                            color: AppColors.primaryYellow,
                             shape: BoxShape.circle,
-                            border: Border.all(color: colors.divider),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryYellow
+                                    .withValues(alpha: 0.4),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
-                          child: Icon(Icons.swap_vert,
-                              color: colors.accentIcon, size: 20),
+                          child: const Icon(Icons.swap_vert_rounded,
+                              color: AppColors.textPrimary, size: 18),
                         ),
                       );
                     },
                   ),
                 ),
+                const SizedBox(width: 8),
               ],
             ),
           ),
 
-          // TO
+          // TO Tile
           GestureDetector(
             onTap: () => _showSearchBottomSheet(context),
             behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                const Icon(Icons.location_on,
-                    color: AppColors.primaryGold, size: 24),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('TO',
-                          style: AppTextStyles.caption.copyWith(
-                              color: colors.textSecondary, letterSpacing: 1.2)),
-                      const SizedBox(height: 4),
-                      Text(
-                        _toLocation.isEmpty
-                            ? 'Search destination'
-                            : _toLocation,
-                        style: _toLocation.isEmpty
-                            ? AppTextStyles.subtitle
-                                .copyWith(color: colors.textSecondary)
-                            : AppTextStyles.subtitle
-                                .copyWith(color: colors.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.inputBackground,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFEEEEEE)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryYellow.withValues(alpha: 0.25),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.location_on_rounded,
+                          size: 15, color: AppColors.textPrimary),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-          Container(height: 1, width: double.infinity, color: colors.divider),
-          const SizedBox(height: 24),
-
-          // Details (Date & Time)
-          GestureDetector(
-            onTap: () => _showSearchBottomSheet(context),
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(Icons.calendar_month,
-                        size: 20,
-                        color: _journeyDate != null
-                            ? AppColors.primaryGold
-                            : colors.textSecondary),
-                    const SizedBox(width: 8),
-                    Text(
-                        _journeyDate == null
-                            ? 'Journey Date'
-                            : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)}',
-                        style: AppTextStyles.body.copyWith(
-                          color: _journeyDate != null
-                              ? colors.textPrimary
-                              : colors.textSecondary,
-                          fontWeight: _journeyDate != null
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        )),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.schedule,
-                        size: 20,
-                        color: _pickupTime != null
-                            ? AppColors.primaryGold
-                            : colors.textSecondary),
-                    const SizedBox(width: 8),
-                    Text(
-                        _pickupTime == null
-                            ? 'Time'
-                            : _pickupTime!.format(context),
-                        style: AppTextStyles.body.copyWith(
-                          color: _pickupTime != null
-                              ? colors.textPrimary
-                              : colors.textSecondary,
-                          fontWeight: _pickupTime != null
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        )),
-                  ],
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'DROP DESTINATION',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          _toLocation.isEmpty
+                              ? 'Where to? (Destination city, hotel...)'
+                              : _toLocation,
+                          style: _toLocation.isEmpty
+                              ? AppTextStyles.body.copyWith(
+                                  color: colors.textSecondary,
+                                  fontSize: 13,
+                                )
+                              : AppTextStyles.body.copyWith(
+                                  color: colors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.search_rounded,
+                      size: 18, color: colors.textSecondary),
+                ],
+              ),
             ),
           ),
 
           const SizedBox(height: 16),
 
-          // Details (Passengers)
-          GestureDetector(
-            onTap: () => _showSearchBottomSheet(context),
-            behavior: HitTestBehavior.opaque,
-            child: Row(
-              children: [
-                Icon(Icons.person, size: 20, color: colors.textSecondary),
-                const SizedBox(width: 8),
-                Text('$_passengers People',
-                    style: AppTextStyles.body
-                        .copyWith(color: colors.textSecondary)),
-                const SizedBox(width: 24),
-                Icon(Icons.luggage, size: 20, color: colors.textSecondary),
-                const SizedBox(width: 8),
-                Text('$_luggage Bags',
-                    style: AppTextStyles.body
-                        .copyWith(color: colors.textSecondary)),
-              ],
-            ),
+          // Date, Time, Passengers Chips Row
+          Row(
+            children: [
+              // Date Chip
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showSearchBottomSheet(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.calendar_today_rounded,
+                          size: 15,
+                          color: _journeyDate != null
+                              ? AppColors.textPrimary
+                              : colors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _journeyDate == null
+                                ? 'Date'
+                                : '${_journeyDate!.day} ${_getMonthName(_journeyDate!.month)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _journeyDate != null
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _journeyDate != null
+                                  ? colors.textPrimary
+                                  : colors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Time Chip
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showSearchBottomSheet(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 15,
+                          color: _pickupTime != null
+                              ? AppColors.textPrimary
+                              : colors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            _pickupTime == null
+                                ? 'Time'
+                                : _pickupTime!.format(context),
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _pickupTime != null
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _pickupTime != null
+                                  ? colors.textPrimary
+                                  : colors.textSecondary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Passengers Chip
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _showSearchBottomSheet(context),
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: AppColors.inputBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFEEEEEE)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.group_outlined,
+                          size: 15,
+                          color: colors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            '$_passengers Riders',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: colors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 22),
 
+          // Primary CTA
           PrimaryButton(
-            label: 'Find outstation cars',
+            label: 'Search Outstation Cabs',
             onPressed: () {
               if (_fromLatLng == null || _toLatLng == null) {
                 _showSearchBottomSheet(context);
@@ -1092,7 +1473,7 @@ class _HomeScreenState extends State<HomeScreen>
     )
         .animate()
         .fadeIn(delay: 100.ms, duration: 400.ms)
-        .slideY(begin: 0.1, end: 0, duration: 400.ms);
+        .slideY(begin: 0.05, end: 0, duration: 400.ms);
   }
 
   Widget _buildRecentRidesSection(AppColorPalette colors) {

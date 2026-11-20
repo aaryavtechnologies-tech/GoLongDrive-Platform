@@ -215,6 +215,7 @@ class _AccountStepState extends State<AccountStep> {
         const SizedBox(height: 24),
         AppCheckbox(
           value: _acceptedTerms,
+          isExpanded: true,
           onChanged: (v) => setState(() => _acceptedTerms = v),
           label: Text.rich(
             TextSpan(

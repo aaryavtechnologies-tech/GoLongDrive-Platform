@@ -203,7 +203,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       );
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
       itemCount: _mockUpcoming.length,
       itemBuilder: (context, index) {
         return Padding(
@@ -362,7 +362,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       return _buildEmptyState(Icons.history, 'No completed rides yet.');
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
       itemCount: _mockCompleted.length,
       itemBuilder: (context, index) {
         return Padding(
@@ -381,7 +381,7 @@ class _MyRidesScreenState extends State<MyRidesScreen> with SingleTickerProvider
       return _buildEmptyState(Icons.cancel_outlined, 'No cancelled rides.');
     }
     return ListView.builder(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
       itemCount: _mockCancelled.length,
       itemBuilder: (context, index) {
         return Padding(

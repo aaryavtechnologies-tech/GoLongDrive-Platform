@@ -82,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: colors.background,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 110),
           children: [
             _buildTopBar(context),
             const SizedBox(height: 32),

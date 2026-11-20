@@ -8,12 +8,14 @@ class AppCheckbox extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final Widget label;
+  final bool isExpanded;
 
   const AppCheckbox({
     super.key,
     required this.value,
     required this.onChanged,
     required this.label,
+    this.isExpanded = false,
   });
 
   @override
@@ -22,7 +24,7 @@ class AppCheckbox extends StatelessWidget {
       onTap: () => onChanged(!value),
       behavior: HitTestBehavior.opaque,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: isExpanded ? MainAxisSize.max : MainAxisSize.min,
         children: [
           Icon(
             value ? Icons.check_box : Icons.check_box_outline_blank,
@@ -30,7 +32,10 @@ class AppCheckbox extends StatelessWidget {
             size: 22,
           ),
           const SizedBox(width: 8),
-          Flexible(child: label),
+          if (isExpanded)
+            Flexible(child: label)
+          else
+            label,
         ],
       ),
     );

@@ -177,7 +177,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
       onRefresh: _fetchTours,
       color: AppColors.primaryGold,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 110),
         itemCount: _tourPackages.length,
         itemBuilder: (context, index) {
           final pkg = _tourPackages[index];
@@ -411,7 +411,7 @@ class _PackagesScreenState extends State<PackagesScreen> {
                   child: _MembershipCard(pkg: pkg),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 110),
             ]),
           ),
         ),

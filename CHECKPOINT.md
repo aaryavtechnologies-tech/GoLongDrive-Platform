@@ -29,7 +29,7 @@
 Applied strictly across all screens, dialogs, sheets, and components of `user-app`:
 
 | Token | Hex Value | Role & Usage |
-|---|---|---|
+| --- | --- | --- |
 | **Primary Background** | `#FFFFFF` | Scaffold background, screen canvases, full-sheet backgrounds |
 | **Primary Brand Color** | `#FFC928` | Accent gold/yellow for CTAs, active highlights, badges, pills |
 | **Primary Text** | `#111111` | Headings, titles, high-contrast readable button labels, body |
@@ -208,14 +208,84 @@ CHECKPOINT.md
 
 ---
 
-### 10. Remaining Bugs or Incomplete Work
+### 10. Login Screen Layout Crash Fix (2026-11-20)
+
+- **Issue**: Navigating to `LoginScreen` triggered `RenderFlex children have non-zero flex but incoming width constraints are unbounded` at `Row: lib/widgets/app_checkbox.dart:26:16`, causing the login screen to crash / display blank.
+- **Root Cause**: `AppCheckbox` was placed inside `Row(mainAxisAlignment: MainAxisAlignment.spaceBetween)` in `login_screen.dart`. Inside `AppCheckbox`, an `Expanded(child: label)` was used inside another `Row`. In Flutter, placing an `Expanded` inside a `Row` with unbounded incoming width throws a fatal rendering assertion.
+- **Fix Applied**:
+  - `user-app/lib/widgets/app_checkbox.dart`:
+    - Added `LayoutBuilder` to dynamically inspect incoming constraints (`constraints.hasBoundedWidth`).
+    - Added `bool? isExpanded` parameter.
+    - If `isExpanded == false` or horizontal constraints are unbounded, `label` renders directly without `Expanded` and `Row` uses `MainAxisSize.min`.
+    - If bounded, `Expanded(child: label)` is used with `MainAxisSize.max`.
+  - `user-app/lib/screens/auth/login_screen.dart`: Configured `AppCheckbox` with `isExpanded: false` inside the flex row.
+  - `user-app/lib/screens/auth/register_screen.dart`: Configured `AppCheckbox` with `isExpanded: true` for clean wrapping of multi-line Terms & Conditions text.
+  - `driver-app/lib/core/widgets/app_checkbox.dart`: Proactively applied the same constraint-safe `LayoutBuilder` pattern to prevent identical issues in `driver-app`.
+- **Verification**: `flutter analyze` passed with 0 errors across the codebase.
+
+---
+
+### 11. 2026 Floating Island Navigation & UI Styles Upgrade (2026-11-20)
+
+- **2026 Modern Floating Island Navigation Bar (`MainTabsScreen`)**:
+  - Replaced standard flat docked bar with a floating capsule dock:
+    - Floating pill elevation with curved corners (`borderRadius: 32px`).
+    - Triple-layer ambient diffuse shadows (`BoxShadow` with alpha blending).
+    - Crisp `1.2px` subtle outline border (`#EEEEEE`).
+    - `extendBody: true` on `Scaffold` allowing the background and map to flow beneath the floating navigation bar.
+  - **Dynamic Pill-Morphing Selection**:
+    - Active tab expands horizontally with an animated yellow pill container (`#FFC928` with `#111111` bold text and active icon).
+    - Inactive tabs collapse smoothly into clean minimalist icons (`#757575`).
+    - Integrated tactile haptic feedback on tab changes (`HapticFeedback.lightImpact()`).
+- **Scroll Padding & Layout Polish**:
+  - Adjusted bottom scroll view padding across all 4 tab screens (`HomeScreen`, `MyRidesScreen`, `PackagesScreen`, and `ProfileScreen`) to `110px`, ensuring content, action buttons, and lists never get obscured by the floating bar.
+- **2026 Tactile Button & Input Enhancements**:
+  - `PrimaryButton`: Added `HapticFeedback.lightImpact()`, enhanced 2026 dual-layer ambient gold glow, and `18px` rounded pill curvature with responsive `0.965` scale on press.
+  - `SecondaryButton`: Updated with `HapticFeedback.lightImpact()`, `18px` rounded borders, and smooth tactile spring scale.
+- **Automated Verification**:
+  - Added [main_tabs_test.dart](file:///C:/GoLongDrive-Platform/user-app/test/main_tabs_test.dart) covering tab rendering, active pill transitions, and tab switches.
+  - Ran `flutter test`: **9/9 tests passed!**
+
+---
+
+### 12. User App Login Screen & Home Screen Modern UI Redesign (2026-11-20)
+
+- **Login Screen Modernization (`login_screen.dart`)**:
+  - **Brand Identity Header**: Added 56x56 elevated logo badge with ambient yellow glow, alongside a sleek uppercase brand pill (`GO LONG DRIVE`).
+  - **Hero Typography**: Refined to 30px bold heading (`letterSpacing: -0.8`) with clean subtitle.
+  - **Elevated Form Canvas**: Wrapped inputs and controls in an elevated white card with 24px rounded corners, dual diffuse shadows, and crisp 1.2px `#EEEEEE` border.
+  - **Auth Error Banner**: Added a dedicated warning banner with soft red background and red border for clear, friendly error feedback.
+  - **Trust & Security Pill**: Added "256-Bit SSL Encrypted & Verified Rides" badge with shield icon.
+  - **Pill Sign-Up Footer**: Modern pill-framed link directing new riders to Sign Up.
+  - **Preserved**: All auth logic, API endpoints, `FlutterSecureStorage` credentials persistence, validators, and routes.
+- **Home Screen Modernization (`home_screen.dart`)**:
+  - **Header Polish**: Added a top location pill badge (`📍 Outstation & City Cabs`), friendly personalized greeting with emoji (`Hello, $firstName 👋`), and a profile avatar with glowing yellow border.
+  - **Quick Service Categories**: Added a prominent 3-service switcher:
+    - 🚗 **Outstation** (Active yellow pill)
+    - 🌴 **Tours** (Taps to open `TourPackagesScreen`)
+    - 📋 **My Rides** (Taps to open `MyRidesScreen`)
+  - **Active Ride Banner**: Redesigned with pulsing live indicator (`● LIVE RIDE ACTIVE`), vehicle icon, and quick navigation arrow.
+  - **Modern Search Card**:
+    - Emerald neon dot for Pickup location (`#16A34A`).
+    - Amber diamond pin for Drop destination (`#FFC928`).
+    - Animated rotating swap button on a vertical route connector line.
+    - Interactive customization chips for Date, Time, and Passengers & Luggage.
+    - Prominent `Search Outstation Cabs` CTA button.
+  - **Preserved**: All booking workflows, state variables, distance preview calculation, location search bottom sheets, and Google Maps integrations.
+- **Automated Verification**:
+  - Added [home_and_login_ui_test.dart](file:///C:/GoLongDrive-Platform/user-app/test/home_and_login_ui_test.dart) covering both screens.
+  - Ran `flutter test`: **11/11 tests passed!**
+
+---
+
+### 13. Remaining Bugs or Incomplete Work
 
 - Zero compilation errors in both `user-app` and `driver-app`.
 - All icon assets and native configurations match Play Store / App Store requirements.
 
 ---
 
-### 11. Exact Next Steps for Next Session
+### 14. Exact Next Steps for Next Session
 
 1. **Build APK / App Bundle**: Run `flutter build apk --release` (or `flutter build appbundle --release`) on both User and Driver apps.
 2. **Device / Emulator Verification**: Deploy the release APKs to test startup, splash transition, and launcher icon appearance on the device home screen.

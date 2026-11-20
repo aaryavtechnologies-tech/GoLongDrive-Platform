@@ -8,12 +8,14 @@ class AppCheckbox extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
   final Widget label;
+  final bool isExpanded;
 
   const AppCheckbox({
     super.key,
     required this.value,
     required this.onChanged,
     required this.label,
+    this.isExpanded = false,
   });
 
   @override
@@ -24,7 +26,7 @@ class AppCheckbox extends StatelessWidget {
         onTap: () => onChanged(!value),
         borderRadius: BorderRadius.circular(8),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: isExpanded ? MainAxisSize.max : MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AnimatedContainer(
@@ -33,7 +35,9 @@ class AppCheckbox extends StatelessWidget {
               width: 20,
               margin: const EdgeInsets.only(top: 2),
               decoration: BoxDecoration(
-                color: value ? AppColors.primaryYellow : AppColors.inputBackground,
+                color: value
+                    ? AppColors.primaryYellow
+                    : AppColors.inputBackground,
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(
                   color: value ? AppColors.primaryYellow : AppColors.border,
@@ -41,11 +45,15 @@ class AppCheckbox extends StatelessWidget {
                 ),
               ),
               child: value
-                  ? const Icon(Icons.check, size: 14, color: AppColors.textOnYellow)
+                  ? const Icon(Icons.check,
+                      size: 14, color: AppColors.textOnYellow)
                   : null,
             ),
             const SizedBox(width: 10),
-            Expanded(child: label),
+            if (isExpanded)
+              Expanded(child: label)
+            else
+              label,
           ],
         ),
       ),
