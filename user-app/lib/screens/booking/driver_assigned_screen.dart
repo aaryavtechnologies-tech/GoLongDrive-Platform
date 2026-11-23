@@ -13,6 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../../routes/app_routes.dart';
 import '../../core/services/booking_service.dart';
 import '../../core/services/socket_service.dart';
 import '../../core/theme/app_colors.dart';
@@ -334,6 +335,7 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                                     try {
                                       final targetId = _mongoBookingId ?? _bookingId;
                                       if (targetId != null) {
+                                        BookingService.markBookingCancelled(targetId);
                                         final customDetails = selectedReason == 'Other.'
                                             ? customController.text.trim()
                                             : null;
@@ -352,8 +354,9 @@ class _DriverAssignedScreenState extends State<DriverAssignedScreen>
                                           backgroundColor: Colors.black87,
                                         ),
                                       );
-                                      Navigator.of(context).popUntil(
-                                        (route) => route.settings.name == '/home' || route.isFirst,
+                                      Navigator.of(context).pushNamedAndRemoveUntil(
+                                        AppRoutes.home,
+                                        (route) => false,
                                       );
                                     } catch (e) {
                                       setModalState(() => isSubmitting = false);

@@ -1,8 +1,35 @@
+import 'dart:async';
 import 'dart:convert';
 import '../data/api_client.dart';
+import 'socket_service.dart';
 
 class BookingService {
   static String get baseUrl => ApiClient.baseUrl;
+
+  /// In-memory cache of cancelled booking IDs to instantly suppress active ride displays
+  static final Set<String> _cancelledBookingIds = <String>{};
+
+  /// Broadcast stream to notify UI immediately when a booking is cancelled
+  static final StreamController<String> _localBookingCancelledCtrl =
+      StreamController<String>.broadcast();
+  static Stream<String> get onLocalBookingCancelled =>
+      _localBookingCancelledCtrl.stream;
+
+  /// Mark a booking as cancelled locally
+  static void markBookingCancelled(String bookingId) {
+    if (bookingId.trim().isNotEmpty) {
+      final id = bookingId.trim();
+      _cancelledBookingIds.add(id);
+      _localBookingCancelledCtrl.add(id);
+      UserSocketService.notifyRideCancelled(id);
+    }
+  }
+
+  /// Check whether a booking was marked cancelled locally
+  static bool isBookingCancelled(String? bookingId) {
+    if (bookingId == null || bookingId.trim().isEmpty) return false;
+    return _cancelledBookingIds.contains(bookingId.trim());
+  }
 
   /// Searches for available vehicles based on the route and date/time
   static Future<Map<String, dynamic>> searchVehicles({
@@ -144,12 +171,33 @@ class BookingService {
     }
   }
 
+  /// Fetches current active ride from dedicated active endpoint
+  static Future<Map<String, dynamic>?> getCurrentActiveRide() async {
+    try {
+      final response = await ApiClient.get('/customer/bookings/current/active');
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        final ride = body['data']?['ride'];
+        if (ride != null && ride is Map<String, dynamic>) {
+          final bId = (ride['bookingId'] ?? ride['_id'] ?? '').toString();
+          if (!isBookingCancelled(bId)) {
+            return ride;
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
   /// Cancels an active booking
   static Future<Map<String, dynamic>> cancelBooking(
     String bookingId, {
     required String reason,
     String? details,
   }) async {
+    // Record locally right away to suppress active banner immediately
+    markBookingCancelled(bookingId);
+
     try {
       final payload = {
         'reason': reason,

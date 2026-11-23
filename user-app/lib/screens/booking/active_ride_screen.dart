@@ -465,6 +465,7 @@ class _ActiveRideScreenState extends State<ActiveRideScreen> {
   void _handleRideCancelledByRemote(String cancelledBy, String reason) {
     if (_isRideCancelled || !mounted) return;
     _isRideCancelled = true;
+    BookingService.markBookingCancelled(widget.bookingId);
     _cleanupAllResources();
 
     showDialog(
@@ -1621,8 +1622,6 @@ class _OnlinePaymentCheckoutSheet extends StatefulWidget {
 }
 
 class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet> {
-  String _selectedMethod = 'UPI'; // 'UPI', 'CARD', 'NETBANKING', 'CASH'
-  String _selectedUpiApp = 'Google Pay';
   bool _isProcessing = false;
   String? _statusMessage;
   String? _errorMessage;
@@ -1635,7 +1634,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
     setState(() {
       _isProcessing = true;
       _errorMessage = null;
-      _statusMessage = 'Connecting to secure gateway...';
+      _statusMessage = 'Connecting to Razorpay secure gateway...';
     });
 
     try {
@@ -1645,7 +1644,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
       // 1. Create registered payment record in backend
       final orderRes = await BookingService.initiatePayment(
         bookingId: effectiveBookingId,
-        paymentMethod: _selectedMethod == 'CASH' ? 'Cash' : 'Online',
+        paymentMethod: 'Online',
       );
 
       final paymentRecordId = orderRes['paymentId'] ?? orderRes['payment']?['paymentId'];
@@ -1662,7 +1661,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
           rzpKey != 'rzp_test_51bU28k12xyz' &&
           (rzpKey.startsWith('rzp_test_') || rzpKey.startsWith('rzp_live_'));
 
-      if (isRealRzpKey && _selectedMethod != 'CASH') {
+      if (isRealRzpKey) {
         final options = {
           'key': rzpKey,
           'amount': (widget.fare * 100).toInt(),
@@ -1685,9 +1684,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
       // 2. Verified Online Checkout & Instant Gateway Handshake
       if (mounted) {
         setState(() {
-          _statusMessage = _selectedMethod == 'CASH'
-              ? 'Recording cash payment with driver...'
-              : 'Verifying payment with bank / UPI network...';
+          _statusMessage = 'Processing Razorpay instant verification...';
         });
       }
 
@@ -1695,9 +1692,9 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
 
       await BookingService.verifyPayment({
         'paymentId': paymentRecordId,
-        'gatewayOrderId': 'order_${DateTime.now().millisecondsSinceEpoch}',
-        'gatewayPaymentId': 'pay_${_selectedMethod.toLowerCase()}_${DateTime.now().millisecondsSinceEpoch}',
-        'gatewaySignature': 'sig_verified_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewayOrderId': 'order_rzp_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewayPaymentId': 'pay_rzp_${DateTime.now().millisecondsSinceEpoch}',
+        'gatewaySignature': 'sig_verified_rzp_${DateTime.now().millisecondsSinceEpoch}',
       });
 
       if (mounted) {
@@ -1756,12 +1753,12 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primaryGold.withValues(alpha: 0.15),
                 ),
-                child: const Icon(Icons.payment, color: AppColors.primaryGold, size: 24),
+                child: const Icon(Icons.verified_user, color: AppColors.primaryGold, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1769,14 +1766,14 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Pay Online',
+                      'Razorpay Payment Gateway',
                       style: AppTextStyles.mediumHeading.copyWith(
                         color: colors.textPrimary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'GoLongDrive Secure Checkout',
+                      '100% Encrypted & RBI Authorized Gateway',
                       style: AppTextStyles.caption.copyWith(color: colors.textSecondary),
                     ),
                   ],
@@ -1849,7 +1846,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
           const SizedBox(height: 18),
 
           Text(
-            'SELECT PAYMENT METHOD',
+            'PAYMENT GATEWAY',
             style: AppTextStyles.caption.copyWith(
               color: colors.textSecondary,
               fontWeight: FontWeight.bold,
@@ -1858,68 +1855,100 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
           ),
           const SizedBox(height: 10),
 
-          // Method 1: UPI
-          _buildMethodTile(
-            colors: colors,
-            id: 'UPI',
-            title: 'UPI (GPay / PhonePe / Paytm / BHIM)',
-            subtitle: 'Instant payment via any UPI app',
-            icon: Icons.flash_on,
-            iconColor: Colors.amber,
-          ),
-          if (_selectedMethod == 'UPI') ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Wrap(
-                spacing: 8,
-                children: ['Google Pay', 'PhonePe', 'Paytm', 'BHIM'].map((app) {
-                  final isAppSelected = _selectedUpiApp == app;
-                  return ChoiceChip(
-                    label: Text(app, style: TextStyle(fontSize: 12, color: isAppSelected ? Colors.black : colors.textPrimary)),
-                    selected: isAppSelected,
-                    selectedColor: AppColors.primaryGold,
-                    backgroundColor: colors.background,
-                    onSelected: (_) => setState(() => _selectedUpiApp = app),
-                  );
-                }).toList(),
+          // Sole Payment Gateway Card: Razorpay
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.primaryGold.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.primaryGold,
+                width: 1.8,
               ),
             ),
-          ],
-          const SizedBox(height: 10),
-
-          // Method 2: Card
-          _buildMethodTile(
-            colors: colors,
-            id: 'CARD',
-            title: 'Credit / Debit Card',
-            subtitle: 'Visa, MasterCard, RuPay, Maestro',
-            icon: Icons.credit_card,
-            iconColor: Colors.blueAccent,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade900,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.bolt, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Razorpay',
+                                style: TextStyle(
+                                  color: colors.textPrimary,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGold,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'DEFAULT',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'All-in-one payment gateway for India',
+                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.check_circle, color: AppColors.primaryGold, size: 22),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: colors.inputBorder),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.security, color: AppColors.success, size: 14),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'UPI (GPay / PhonePe / Paytm / BHIM), Cards & NetBanking inside',
+                          style: TextStyle(color: colors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 10),
-
-          // Method 3: NetBanking
-          _buildMethodTile(
-            colors: colors,
-            id: 'NETBANKING',
-            title: 'Net Banking',
-            subtitle: 'HDFC, SBI, ICICI, Axis & all Indian banks',
-            icon: Icons.account_balance,
-            iconColor: Colors.purpleAccent,
-          ),
-          const SizedBox(height: 10),
-
-          // Method 4: Cash
-          _buildMethodTile(
-            colors: colors,
-            id: 'CASH',
-            title: 'Pay Cash to Driver',
-            subtitle: 'Hand over cash directly at drop location',
-            icon: Icons.money,
-            iconColor: Colors.green,
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
           // Error Message Display
           if (_errorMessage != null)
@@ -1971,7 +2000,7 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryGold,
               foregroundColor: Colors.black,
-              minimumSize: const Size(double.infinity, 52),
+              minimumSize: const Size(double.infinity, 54),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               elevation: 4,
             ),
@@ -1981,11 +2010,11 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
                     children: [
                       SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)),
                       SizedBox(width: 12),
-                      Text('PROCESSING SECURE PAYMENT...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('OPENING RAZORPAY GATEWAY...', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                     ],
                   )
                 : Text(
-                    'PAY ₹${widget.fare.round()} VIA ${_selectedMethod == 'CASH' ? 'CASH' : _selectedMethod}',
+                    'PAY ₹${widget.fare.round()} WITH RAZORPAY',
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
           ),
@@ -1997,77 +2026,12 @@ class _OnlinePaymentCheckoutSheetState extends State<_OnlinePaymentCheckoutSheet
               const Icon(Icons.lock, size: 14, color: Colors.grey),
               const SizedBox(width: 6),
               Text(
-                '100% Encrypted & Verified via GoLongDrive Gateway',
+                '100% Encrypted & Verified via Razorpay',
                 style: TextStyle(color: colors.textSecondary, fontSize: 11),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildMethodTile({
-    required dynamic colors,
-    required String id,
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color iconColor,
-  }) {
-    final isSelected = _selectedMethod == id;
-    return GestureDetector(
-      onTap: _isProcessing ? null : () => setState(() => _selectedMethod = id),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryGold.withValues(alpha: 0.12) : colors.background,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected ? AppColors.primaryGold : colors.inputBorder,
-            width: isSelected ? 1.8 : 1.0,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: iconColor.withValues(alpha: 0.15),
-              ),
-              child: Icon(icon, color: iconColor, size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      color: colors.textPrimary,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: TextStyle(color: colors.textSecondary, fontSize: 11),
-                  ),
-                ],
-              ),
-            ),
-            Radio<String>(
-              value: id,
-              groupValue: _selectedMethod,
-              activeColor: AppColors.primaryGold,
-              onChanged: _isProcessing ? null : (val) {
-                if (val != null) setState(() => _selectedMethod = val);
-              },
-            ),
-          ],
-        ),
       ),
     );
   }

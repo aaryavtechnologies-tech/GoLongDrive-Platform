@@ -203,6 +203,18 @@ class UserSocketService {
     }
   }
 
+  /// Notify local listeners that a ride was cancelled
+  static void notifyRideCancelled(String bookingId, {String? cancelledBy, String? reason}) {
+    final payload = {
+      'bookingId': bookingId,
+      'tripId': bookingId,
+      'status': 'cancelled',
+      'cancelledBy': cancelledBy ?? 'Customer',
+      'reason': reason ?? 'Ride cancelled',
+    };
+    _rideCancelledCtrl.add(payload);
+  }
+
   /// Disconnect cleanly (on logout)
   static void dispose() {
     _intentionalDisconnect = true;

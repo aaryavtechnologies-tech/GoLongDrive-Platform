@@ -135,6 +135,8 @@ router.get('/cancelled', isCustomer, getCancelledBookings);
  *         description: Dashboard stats retrieved
  */
 router.get('/dashboard', isCustomer, getDashboardStats);
+router.get('/current/active', isCustomer, getCurrentRide);
+router.get('/current', isCustomer, getCurrentRide);
 
 /**
  * @swagger
@@ -211,7 +213,6 @@ router.put('/:id', isCustomer, V.updateBookingValidator, validate, updateBooking
  */
 router.patch('/:id/cancel', isCustomer, V.cancelBookingValidator, validate, cancelBooking);
 router.post('/:id/cancel', isCustomer, V.cancelBookingValidator, validate, cancelBooking);
-router.get('/current/active', isCustomer, getCurrentRide);
 router.get('/:id/driver', isCustomer, getDriverDetails);
 
 module.exports = router;

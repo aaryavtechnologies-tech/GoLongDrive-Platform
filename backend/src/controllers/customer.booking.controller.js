@@ -340,6 +340,7 @@ const getDashboardStats = asyncHandler(async (req, res) => {
  */
 const getCurrentRide = asyncHandler(async (req, res) => {
   const customerId = req.user._id;
+  const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
   const ride = await Booking.findOne({
     customer: customerId,
     rideStatus: { 
@@ -351,8 +352,14 @@ const getCurrentRide = asyncHandler(async (req, res) => {
         RIDE_STATUS.DRIVER_ARRIVING, 
         RIDE_STATUS.TRIP_STARTED
       ] 
-    }
-  }).populate('driver', 'fullName phoneNumber profileImage vehicle rating');
+    },
+    $or: [
+      { rideStatus: { $in: [RIDE_STATUS.TRIP_STARTED, RIDE_STATUS.DRIVER_ARRIVING, RIDE_STATUS.CONFIRMED, RIDE_STATUS.DRIVER_ACCEPTED, RIDE_STATUS.DRIVER_ASSIGNED] } },
+      { createdAt: { $gte: fourHoursAgo } }
+    ]
+  })
+    .sort({ createdAt: -1 })
+    .populate('driver', 'fullName phoneNumber profileImage vehicle rating');
 
   return sendSuccess(res, 200, 'Current ride fetched', { ride });
 });
