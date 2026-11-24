@@ -6,7 +6,7 @@ const axios = require('axios');
 const Payment = require('../models/Payment.model');
 const Setting = require('../models/Setting.model');
 const { generateBookingId } = require('./booking.service');
-const { PAYMENT_STATUS } = require('../utils/constants');
+const { PAYMENT_STATUS, GATEWAYS } = require('../utils/constants');
 
 /**
  * Creates a unique payment reference ID
@@ -148,7 +148,7 @@ const createPaymentOrder = async ({ bookingId, customerId, amount, paymentMethod
     amount: amount,
     paymentMethod,
     paymentStatus: PAYMENT_STATUS.PENDING,
-    gatewayName: 'TEST', // Dynamic when adapter is real
+    gatewayName: 'Razorpay',
     gatewayResponse: orderDetails,
   });
 

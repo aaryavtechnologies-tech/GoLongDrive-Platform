@@ -44,7 +44,7 @@ const paymentSchema = new mongoose.Schema(
     },
     gatewayName: {
       type: String,
-      enum: Object.values(GATEWAYS),
+      default: 'Razorpay',
     },
     gatewayResponse: {
       type: mongoose.Schema.Types.Mixed,

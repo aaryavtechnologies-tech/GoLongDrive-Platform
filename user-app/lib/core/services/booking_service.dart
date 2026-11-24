@@ -1,10 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../data/api_client.dart';
 import 'socket_service.dart';
 
 class BookingService {
   static String get baseUrl => ApiClient.baseUrl;
+
+  static const String _dismissedRidesKey = 'dismissed_or_cancelled_booking_ids';
 
   /// In-memory cache of cancelled booking IDs to instantly suppress active ride displays
   static final Set<String> _cancelledBookingIds = <String>{};
@@ -15,20 +18,44 @@ class BookingService {
   static Stream<String> get onLocalBookingCancelled =>
       _localBookingCancelledCtrl.stream;
 
-  /// Mark a booking as cancelled locally
-  static void markBookingCancelled(String bookingId) {
-    if (bookingId.trim().isNotEmpty) {
-      final id = bookingId.trim();
+  /// Mark a booking as cancelled or dismissed locally and persistently
+  static Future<void> markBookingCancelled(String bookingId) async {
+    final id = bookingId.trim();
+    if (id.isNotEmpty) {
       _cancelledBookingIds.add(id);
       _localBookingCancelledCtrl.add(id);
       UserSocketService.notifyRideCancelled(id);
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final list = prefs.getStringList(_dismissedRidesKey) ?? [];
+        if (!list.contains(id)) {
+          list.add(id);
+          await prefs.setStringList(_dismissedRidesKey, list);
+        }
+      } catch (_) {}
     }
   }
 
-  /// Check whether a booking was marked cancelled locally
+  /// Check whether a booking was marked cancelled locally (sync)
   static bool isBookingCancelled(String? bookingId) {
     if (bookingId == null || bookingId.trim().isEmpty) return false;
     return _cancelledBookingIds.contains(bookingId.trim());
+  }
+
+  /// Check whether a booking was marked cancelled or dismissed (async with SharedPreferences)
+  static Future<bool> isBookingCancelledAsync(String? bookingId) async {
+    if (bookingId == null || bookingId.trim().isEmpty) return false;
+    final id = bookingId.trim();
+    if (_cancelledBookingIds.contains(id)) return true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final list = prefs.getStringList(_dismissedRidesKey) ?? [];
+      if (list.contains(id)) {
+        _cancelledBookingIds.add(id);
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   /// Searches for available vehicles based on the route and date/time

@@ -245,9 +245,14 @@ const cancelBooking = asyncHandler(async (req, res) => {
   const booking = await Booking.findOne({ ...getBookingQuery(req.params.id), customer: customerId });
   if (!booking) throw ApiError.notFound('Booking not found');
 
-  // Can only cancel active / cancellable bookings
-  if ([RIDE_STATUS.TRIP_COMPLETED, RIDE_STATUS.AWAITING_PAYMENT, RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN].includes(booking.rideStatus)) {
-    throw ApiError.badRequest(`Booking cannot be cancelled. Current status is ${booking.rideStatus}`);
+  // If already cancelled, return success idempotently
+  if ([RIDE_STATUS.CANCELLED_BY_CUSTOMER, RIDE_STATUS.CANCELLED_BY_DRIVER, RIDE_STATUS.CANCELLED_BY_ADMIN].includes(booking.rideStatus)) {
+    return sendSuccess(res, 200, 'Booking is already cancelled', { booking });
+  }
+
+  // Completed and paid trips cannot be cancelled
+  if (booking.rideStatus === RIDE_STATUS.TRIP_COMPLETED && booking.paymentStatus === 'Paid') {
+    throw ApiError.badRequest('Completed and paid trip cannot be cancelled.');
   }
 
   if (booking.rideStatus === RIDE_STATUS.TRIP_STARTED) {

@@ -96,54 +96,78 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _fetchRecentBookings() async {
     try {
+      // 1. Fetch current live active ride from dedicated endpoint
+      Map<String, dynamic>? activeRide;
+      final currentRide = await BookingService.getCurrentActiveRide();
+      if (currentRide != null) {
+        final cId = (currentRide['bookingId'] ?? currentRide['_id'] ?? '').toString();
+        final cStatus = (currentRide['rideStatus'] ?? currentRide['status'] ?? '').toString().toLowerCase();
+        final isCancelled = await BookingService.isBookingCancelledAsync(cId);
+        if (!isCancelled && !cStatus.contains('cancel') && !cStatus.contains('complete')) {
+          activeRide = currentRide;
+        }
+      }
+
+      // 2. Fetch history bookings
       final bookings = await BookingService.getMyBookings();
       final List<RideHistoryItem> items = [];
-      Map<String, dynamic>? activeRide;
 
-      const activeStatuses = [
-        'pending',
-        'searching driver',
-        'driver accepted',
-        'driver assigned',
-        'driver arriving',
-        'driver arrived',
-        'trip started',
-        'in progress',
-        'awaiting payment',
-        'awaitingpayment',
-      ];
+      // If dedicated endpoint didn't return an active ride, check if there is an in-flight ride
+      if (activeRide == null) {
+        const strictActiveStatuses = [
+          'searching driver',
+          'driver accepted',
+          'driver assigned',
+          'driver arriving',
+          'driver arrived',
+          'trip started',
+          'in progress',
+        ];
+
+        for (final b in bookings) {
+          final bId = (b['_id'] ?? b['id'] ?? b['bookingId'] ?? '').toString();
+          final statusStr =
+              (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '')
+                  .toLowerCase()
+                  .trim();
+
+          final isCancelled = await BookingService.isBookingCancelledAsync(bId);
+
+          if (!isCancelled &&
+              !statusStr.contains('cancel') &&
+              !statusStr.contains('complete') &&
+              strictActiveStatuses.contains(statusStr)) {
+            // Check created time: ignore if older than 2 hours
+            bool isRecent = true;
+            final dateStr = b['createdAt']?.toString();
+            if (dateStr != null && dateStr.isNotEmpty) {
+              final parsed = DateTime.tryParse(dateStr);
+              if (parsed != null && DateTime.now().difference(parsed).inHours >= 2) {
+                isRecent = false;
+              }
+            }
+            if (isRecent) {
+              activeRide = b;
+              break;
+            }
+          }
+        }
+      }
 
       for (final b in bookings) {
+        if (items.length >= 5) break;
+
         final bId = (b['_id'] ?? b['id'] ?? b['bookingId'] ?? '').toString();
         final statusStr =
             (b['rideStatus']?.toString() ?? b['status']?.toString() ?? '')
                 .toLowerCase()
                 .trim();
+        final isCancelled = await BookingService.isBookingCancelledAsync(bId);
 
-        final isLocallyCancelled = BookingService.isBookingCancelled(bId);
-
-        if (!isLocallyCancelled &&
-            !statusStr.contains('cancel') &&
-            !statusStr.contains('complete') &&
-            activeStatuses.contains(statusStr)) {
-          // If it's a stale pending/searching ride older than 4 hours, ignore it
-          bool isStale = false;
-          if (statusStr == 'pending' || statusStr == 'searching driver') {
-            final dateStr = b['createdAt']?.toString() ?? b['pickupDate']?.toString();
-            if (dateStr != null && dateStr.isNotEmpty) {
-              final parsed = DateTime.tryParse(dateStr);
-              if (parsed != null && DateTime.now().difference(parsed).inHours >= 4) {
-                isStale = true;
-              }
-            }
-          }
-          if (!isStale) {
-            activeRide ??= b;
-            continue;
-          }
+        // Skip the currently active ride from the past history list
+        if (activeRide != null && (activeRide['bookingId'] == bId || activeRide['_id'] == bId)) {
+          continue;
         }
-
-        if (items.length >= 5) continue;
 
         final from = b['pickupAddress'] ?? b['pickupLocation']?['address'] ?? b['from'] ?? 'Unknown';
         final to = b['dropAddress'] ?? b['dropLocation']?['address'] ?? b['to'] ?? 'Unknown';
@@ -151,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen>
             ? '₹${b['fareAmount']}'
             : (b['total']?.toString() ?? '');
         final date = b['pickupDate'] ?? b['date'] ?? '';
-        final status = (isLocallyCancelled || statusStr.contains('cancel'))
+        final status = (isCancelled || statusStr.contains('cancel'))
             ? RideStatus.cancelled
             : RideStatus.completed;
 
@@ -893,6 +917,20 @@ class _HomeScreenState extends State<HomeScreen>
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                // Quick Dismiss (X)
+                GestureDetector(
+                  onTap: _dismissActiveBanner,
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 6),
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 16, color: Colors.grey),
+                  ),
+                ),
+                // Cancel Ride
                 GestureDetector(
                   onTap: () => _confirmCancelActiveRide(),
                   child: Container(
@@ -906,7 +944,7 @@ class _HomeScreenState extends State<HomeScreen>
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.close_rounded, size: 14, color: AppColors.error),
+                        Icon(Icons.cancel_outlined, size: 14, color: AppColors.error),
                         SizedBox(width: 4),
                         Text(
                           'Cancel',
@@ -935,6 +973,24 @@ class _HomeScreenState extends State<HomeScreen>
         ),
       ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05, end: 0),
     );
+  }
+
+  Future<void> _dismissActiveBanner() async {
+    if (_activeBooking == null) return;
+    final bId = (_activeBooking!['bookingId'] ?? _activeBooking!['_id'] ?? '').toString();
+    if (bId.isNotEmpty) {
+      await BookingService.markBookingCancelled(bId);
+    }
+    if (mounted) {
+      setState(() => _activeBooking = null);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Active ride banner dismissed.'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+    _fetchRecentBookings();
   }
 
   Future<void> _confirmCancelActiveRide() async {
@@ -966,7 +1022,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
 
     if (confirm == true && mounted) {
-      BookingService.markBookingCancelled(bId);
+      await BookingService.markBookingCancelled(bId);
       setState(() => _activeBooking = null);
       try {
         await BookingService.cancelBooking(bId, reason: 'Cancelled by customer from Home');
